@@ -98,7 +98,7 @@ O agente preenche cada quadrante com **suposições declaradas** a partir do con
 | Quadrante | Alinhamentos — preencher com suposições ou confirmar |
 | :--- | :--- |
 | **Q1: Contratos de API & Tipagem** | Formato do payload (Body/Query/Params), status HTTP esperados, estrutura do JSON de saída, versão da rota. |
-| **Q2: Dados & Transacionalidade** | Precisa de transação atômica? Há risco de duplicidade (idempotência)? A migração é aditiva? Impacto em índices? |
+| **Q2: Dados, Concorrência & Transações** | Precisa de transação atômica? Há risco de race condition (saldo, estoque, filas)? Exige lock otimista (ex: version column) ou pessimista? Chave de idempotência (Idempotency-Key ou unique constraint) para duplo envio? A migração é estritamente aditiva? |
 | **Q3: Estados de Interface (se houver UI)** | Como a tela se comporta em **Carregando**, **Erro**, **Vazio** e **Sucesso**? Quais componentes reutilizar? |
 | **Q4: Segurança & Permissões** | Rota pública ou privada? Exige autenticação, roles/RBAC, filtro por usuário/tenant? Algum dado sensível em log ou resposta? |
 
@@ -212,13 +212,21 @@ graph LR
 - **Se o agente não tem escrita:** entregue patch em formato unificado (`diff --git a/... b/...`), um bloco por arquivo, pronto para `git apply`.
 - Mantenha cada diff pequeno e reversível. Mudanças independentes ficam em blocos separados.
 
+### 6.1 Snapshot e Rollback Atômico
+
+Nas Rotas B e C, antes de aplicar o primeiro diff:
+1. **Inspeção de Estado Limpo:** Cheque `git status --porcelain`. Se houver arquivos modificados previamente pelo usuário, registre explicitamente quais são para não revertê-los por engano.
+2. **Falha Crítica / Abort:** Se o ciclo de Falsificação revelar falhas arquiteturais insolúveis após o limite de iterações, ou se os testes quebrarem de forma irrecuperável, o agente **não deve** tentar aplicar correções cumulativas gerando código espaguete.
+3. **Rollback Mecânico:** Execute a reversão limpa dos arquivos tocados nesta demanda (`git restore <arquivos>` ou `git checkout -- <arquivos>`), devolvendo o repositório ao estado estável anterior e informando o usuário com precisão.
+
 ---
 
 ## 7. Descoberta de comandos e auditoria de segurança
 
 1. Procure os comandos do projeto nesta ordem: `README` / `CONTRIBUTING`, workflows de CI (`.github/workflows`, `.gitlab-ci.yml`), `Makefile` / `justfile`, scripts do `package.json`, `tox.ini` / `pyproject.toml`.
 2. **Monorepos:** rode no pacote afetado, não na raiz, salvo indicação contrária.
-3. Use a tabela abaixo apenas como fallback:
+3. **Higiene de Performance & Banco (Anti-N+1):** Em alterações que tocam banco ou serviços assíncronos, inspecione se laços (`for`, `map`, `while`) realizam queries ou requisições HTTP individuais por item. Em caso positivo, exija carregamento em lote (`IN (...)`, `include`/`eager loading` do ORM ou bulk API).
+4. Use a tabela abaixo apenas como fallback:
 
 | Ecossistema | Indicadores | Build / tipos / lint | Testes |
 | :--- | :--- | :--- | :--- |

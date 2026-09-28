@@ -2,14 +2,15 @@
 /**
  * scripts/cartographer.js - Engine utilitária do Repo Cartographer
  * 
- * Executa tarefas determinísticas de I/O, cache incremental, validação de hash
- * e exportação Obsidian sem dependências externas (Zero dependencies).
+ * Executa tarefas determinísticas de I/O, cache incremental, validação de hash,
+ * resolução de path aliases (tsconfig/jsconfig), detecção de ciclos e exportação Obsidian.
+ * Zero dependências externas.
  * 
  * Uso:
  *   node cartographer.js init [projectDir]
  *   node cartographer.js check [projectDir]
+ *   node cartographer.js trace <entrypointFile> [projectDir]
  *   node cartographer.js obsidian [projectDir]
- *   node cartographer.js handshake --task="desc" --entrypoint="/checkout" [projectDir]
  */
 
 const fs = require('fs');
@@ -27,6 +28,238 @@ function calculateFileHash(filePath) {
   } catch (e) {
     return null;
   }
+}
+
+// 1. Resolução de Path Aliases (tsconfig.json / jsconfig.json)
+function loadTsConfigPaths(projectDir) {
+  const configs = ['tsconfig.json', 'jsconfig.json', 'tsconfig.app.json'];
+  for (const cfg of configs) {
+    const fullPath = path.join(projectDir, cfg);
+    if (fs.existsSync(fullPath)) {
+      try {
+        let content = fs.readFileSync(fullPath, 'utf-8');
+        // Remove comentários // e /* */ para parsing JSON
+        content = content.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '$1');
+        const parsed = JSON.parse(content);
+        const compilerOptions = parsed.compilerOptions || {};
+        return {
+          baseUrl: compilerOptions.baseUrl ? path.resolve(projectDir, compilerOptions.baseUrl) : projectDir,
+          paths: compilerOptions.paths || {}
+        };
+      } catch (e) {
+        // Falha silenciosa, segue fallback
+      }
+    }
+  }
+  return { baseUrl: projectDir, paths: {} };
+}
+
+function resolveWithExtensions(basePath) {
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.json', ''];
+  for (const ext of extensions) {
+    const candidate = basePath + ext;
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+  // Se for diretório com index
+  for (const ext of extensions) {
+    const candidate = path.join(basePath, 'index' + ext);
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function resolveImportPath(importStr, currentFilePath, projectDir, tsConfig) {
+  // Ignora pacotes de node_modules nativos
+  if (!importStr.startsWith('.') && !importStr.startsWith('/') && Object.keys(tsConfig.paths).length === 0) {
+    return null;
+  }
+
+  // 1. Relativo
+  if (importStr.startsWith('.')) {
+    const dir = path.dirname(currentFilePath);
+    return resolveWithExtensions(path.resolve(dir, importStr));
+  }
+
+  // 2. Path Aliases do tsconfig (ex: @/*, ~/*)
+  for (const [aliasPattern, targetPatterns] of Object.entries(tsConfig.paths)) {
+    const prefix = aliasPattern.replace(/\*$/, '');
+    if (importStr.startsWith(prefix)) {
+      const rest = importStr.slice(prefix.length);
+      for (const targetPattern of targetPatterns) {
+        const targetPrefix = targetPattern.replace(/\*$/, '');
+        const candidateBase = path.resolve(tsConfig.baseUrl, targetPrefix, rest);
+        const resolved = resolveWithExtensions(candidateBase);
+        if (resolved) return resolved;
+      }
+    }
+  }
+
+  // 3. BaseUrl direto
+  const fromBase = resolveWithExtensions(path.resolve(tsConfig.baseUrl, importStr));
+  if (fromBase) return fromBase;
+
+  return null;
+}
+
+// 2. Classificação de Camada
+function classifyLayer(filePath, content) {
+  const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+  
+  if (normalized.includes('/pages/') || normalized.includes('/views/') || normalized.includes('/components/') || normalized.endsWith('.tsx') || normalized.endsWith('.jsx')) {
+    return { layer: 1, type: 'ui' };
+  }
+  if (normalized.includes('/store') || normalized.includes('/slices') || normalized.includes('/context') || normalized.includes('use') || content.includes('zustand') || content.includes('createContext')) {
+    return { layer: 2, type: 'state' };
+  }
+  if (normalized.includes('/api/') || normalized.includes('/routes/') || normalized.includes('/controllers/') || content.includes('express') || content.includes('router.')) {
+    return { layer: 4, type: 'backend' };
+  }
+  if (normalized.includes('/models/') || normalized.includes('/schemas/') || normalized.includes('/entities/') || normalized.includes('prisma') || content.includes('@prisma') || content.includes('typeorm')) {
+    return { layer: 5, type: 'database' };
+  }
+  if (normalized.includes('redis') || normalized.includes('queue') || normalized.includes('worker') || normalized.includes('kafka')) {
+    return { layer: 6, type: 'infra' };
+  }
+  return { layer: 3, type: 'api' };
+}
+
+// 3. Detecção de Ciclos de Dependência (DFS)
+function detectCycles(edges) {
+  const adj = new Map();
+  edges.forEach((e) => {
+    if (!adj.has(e.source)) adj.set(e.source, []);
+    adj.get(e.source).push(e.target);
+  });
+
+  const visited = new Set();
+  const recStack = new Set();
+  const cycles = [];
+
+  function dfs(node, pathAcc) {
+    visited.add(node);
+    recStack.add(node);
+
+    const neighbors = adj.get(node) || [];
+    for (const neighbor of neighbors) {
+      if (!visited.has(neighbor)) {
+        dfs(neighbor, [...pathAcc, neighbor]);
+      } else if (recStack.has(neighbor)) {
+        const cyclePath = [...pathAcc.slice(pathAcc.indexOf(neighbor)), neighbor];
+        cycles.push(cyclePath);
+      }
+    }
+    recStack.delete(node);
+  }
+
+  for (const node of adj.keys()) {
+    if (!visited.has(node)) {
+      dfs(node, [node]);
+    }
+  }
+
+  return cycles;
+}
+
+// 4. Trace 360° Determinístico
+function traceDependencies(entrypointRelative, projectDir) {
+  const tsConfig = loadTsConfigPaths(projectDir);
+  const fullEntry = path.resolve(projectDir, entrypointRelative);
+
+  if (!fs.existsSync(fullEntry)) {
+    console.error(`❌ Ponto de entrada não encontrado: ${fullEntry}`);
+    return;
+  }
+
+  const nodes = [];
+  const edges = [];
+  const visitedFiles = new Set();
+  const queue = [fullEntry];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visitedFiles.has(current)) continue;
+    visitedFiles.add(current);
+
+    let content = '';
+    try {
+      content = fs.readFileSync(current, 'utf-8');
+    } catch (e) {
+      continue;
+    }
+
+    const relPath = path.relative(projectDir, current).replace(/\\/g, '/');
+    const hash = calculateFileHash(current);
+    const mtime = fs.statSync(current).mtimeMs;
+    const classification = classifyLayer(relPath, content);
+
+    const nodeId = path.basename(relPath, path.extname(relPath));
+    nodes.push({
+      id: nodeId,
+      path: relPath,
+      type: classification.type,
+      layer: classification.layer,
+      hash,
+      mtime: Math.floor(mtime),
+      lastIndexed: new Date().toISOString()
+    });
+
+    // Scanner regex rápido de imports e requires
+    const importRegex = /(?:import\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\))/g;
+    let match;
+
+    while ((match = importRegex.exec(content)) !== null) {
+      const importStr = match[1] || match[2];
+      const resolved = resolveImportPath(importStr, current, projectDir, tsConfig);
+
+      if (resolved && !visitedFiles.has(resolved) && queue.length < 50) {
+        queue.push(resolved);
+        const targetRel = path.relative(projectDir, resolved).replace(/\\/g, '/');
+        const targetId = path.basename(targetRel, path.extname(targetRel));
+        edges.push({
+          source: nodeId,
+          target: targetId,
+          relation: 'imports',
+          status: 'confirmed'
+        });
+      }
+    }
+  }
+
+  // Detecta ciclos
+  const cycles = detectCycles(edges);
+  if (cycles.length > 0) {
+    console.log(`⚠️  ${cycles.length} dependência(s) circular(es) detectada(s):`);
+    cycles.forEach((c) => console.log(`   🔁 ${c.join(' ➔ ')}`));
+  }
+
+  // Salva no .code-map/graph.json
+  const mapDir = getCodeMapDir(projectDir);
+  if (!fs.existsSync(mapDir)) fs.mkdirSync(mapDir, { recursive: true });
+
+  const graphData = {
+    version: '1.0.0',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    entrypoint: entrypointRelative,
+    metadata: {
+      generator: 'repo-cartographer',
+      nodesCount: nodes.length,
+      edgesCount: edges.length,
+      cyclesFound: cycles.length
+    },
+    nodes,
+    edges
+  };
+
+  fs.writeFileSync(path.join(mapDir, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf-8');
+  console.log(`✅ Grafo 360° gerado com sucesso em .code-map/graph.json!`);
+  console.log(`   - Nós identificados: ${nodes.length}`);
+  console.log(`   - Conexões (arestas): ${edges.length}`);
+  console.log(`   - Ciclos: ${cycles.length}`);
 }
 
 function initCodeMap(projectDir) {
@@ -186,7 +419,7 @@ function exportToObsidian(projectDir) {
 // CLI Runner
 const args = process.argv.slice(2);
 const command = args[0] || 'check';
-const targetDir = args.find((a) => !a.startsWith('--') && a !== command) || process.cwd();
+const targetDir = args.find((a) => !a.startsWith('--') && a !== command && a !== args[1]) || process.cwd();
 
 switch (command) {
   case 'init':
@@ -195,9 +428,17 @@ switch (command) {
   case 'check':
     checkCacheValidity(targetDir);
     break;
+  case 'trace':
+    const entrypoint = args[1];
+    if (!entrypoint) {
+      console.error('❌ Informe o ponto de entrada. Ex: node cartographer.js trace src/pages/Checkout.tsx');
+      process.exit(1);
+    }
+    traceDependencies(entrypoint, targetDir);
+    break;
   case 'obsidian':
     exportToObsidian(targetDir);
     break;
   default:
-    console.log(`Uso: node cartographer.js [init|check|obsidian] [diretório]`);
+    console.log(`Uso: node cartographer.js [init|check|trace <entrypoint>|obsidian] [diretório]`);
 }
