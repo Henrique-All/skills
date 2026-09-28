@@ -10,33 +10,29 @@
 As cinco skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
 
 ```mermaid
-flowchart LR
-    subgraph S1 ["1. Descoberta e Contexto"]
-        RC["🗺️ repo-cartographer"]
+flowchart TD
+    subgraph FASE1 ["1. Descoberta, Contratos e Design"]
+        RC["🗺️ repo-cartographer<br/><b>Mapeamento 360°</b>"]
+        RG["🛡️ route-guard<br/><b>Blast Radius & Schemas</b>"]
+        FC["🎨 frontend-craftsman<br/><b>Design Engineering</b>"]
     end
 
-    subgraph S2 ["2. Contratos e Impacto"]
-        RG["🛡️ route-guard"]
+    subgraph FASE2 ["2. Núcleo de Governança e Execução Cirúrgica"]
+        HO["⚡ hybrid-orchestrator<br/><b>Sabatina 4Q • Snapshot git • Falsifier</b>"]
     end
 
-    subgraph S3 ["3. Design Engineering - Anti-AI Slop"]
-        FC["🎨 frontend-craftsman"]
-    end
-
-    subgraph S4 ["4. Governança e Execução"]
-        HO["⚡ hybrid-orchestrator"]
-    end
-
-    subgraph S5 ["5. Conformidade e CI/CD"]
-        SA["🔒 security-audit"]
+    subgraph FASE3 ["3. Portão DevSecOps e Entrega"]
+        SA["🔒 security-audit<br/><b>18 Pilares OWASP</b>"]
+        Deploy["🚀 Deploy Seguro em Produção"]
     end
 
     RC -->|"Handshake 360°"| HO
-    RG -->|"Trava de Contrato e Blast Radius"| HO
-    FC <-->|"DESIGN_SPEC.md e craft-audit"| HO
-    RG <-->|"Validação de Schemas"| FC
+    RG -->|"Trava de Contrato"| HO
+    RG <-->|"Validação Zod/DTO"| FC
+    FC <-->|"DESIGN_SPEC.md"| HO
+
     HO -->|"Diff Atômico + Falsifier"| SA
-    SA -->|"Exit Code 0 ou 1"| Deploy["🚀 Produção"]
+    SA -->|"Exit Code 0 (Aprovado)"| Deploy
 ```
 
 ---
@@ -47,37 +43,31 @@ Nenhuma skill opera como uma ilha isolada. Quando instaladas juntas no workspace
 
 ```mermaid
 flowchart TD
-    subgraph C1 ["Camada de Descoberta e Contratos"]
-        RC["🗺️ repo-cartographer"]
-        RG["🛡️ route-guard"]
+    subgraph C1 ["Camada 1: Descoberta e Contratos"]
+        RC["🗺️ repo-cartographer<br/>Mapeamento 360°"]
+        RG["🛡️ route-guard<br/>Blast Radius & Schemas"]
     end
 
-    subgraph C2 ["Camada de Design e Validação Visual"]
-        FC["🎨 frontend-craftsman"]
+    subgraph C2 ["Camada 2: Design e Validação Visual"]
+        FC["🎨 frontend-craftsman<br/>Anti-AI Slop • Molas • Spec"]
     end
 
-    subgraph C3 ["Núcleo de Governança e Execução"]
-        HO["⚡ hybrid-orchestrator"]
+    subgraph C3 ["Camada 3: Governança e Execução"]
+        HO["⚡ hybrid-orchestrator<br/>Sabatina 4Q • Snapshot • Falsifier"]
     end
 
-    subgraph C4 ["Portão de Qualidade e DevSecOps"]
-        SA["🔒 security-audit"]
+    subgraph C4 ["Camada 4: Portão DevSecOps"]
+        SA["🔒 security-audit<br/>18 Pilares OWASP"]
     end
 
-    %% Ligações do Cartógrafo
-    RC -- "1. handshake.json (Nós 360°)" --> HO
-    RC -. "Resolve caminhos e aliases" .-> RG
-
-    %% Ligações do Route Guard
-    RG -- "2. Blast Radius e Alerta de Quebra" --> HO
-    RG -- "Validação de Schemas" --> FC
-
-    %% Ligações do Frontend Craftsman
-    FC -- "3. DESIGN_SPEC.md (Alimenta Q3)" --> HO
-    HO -- "4. Pipeline 7.2: craft-audit.js" --> FC
-
-    %% Ligações da Hybrid com Security
-    HO -- "5. Pipeline 7.1: audit.js" --> SA
+    %% Ligações
+    RC -- "1. handshake.json" --> HO
+    RC -. "Resolve aliases" .-> RG
+    RG -- "2. Blast Radius" --> HO
+    RG -- "Validação Schemas" --> FC
+    FC -- "3. DESIGN_SPEC.md" --> HO
+    HO -- "4. craft-audit.js" --> FC
+    HO -- "5. audit.js" --> SA
     SA -- "Exit Code 0 ou 1" --> HO
 ```
 
@@ -230,25 +220,40 @@ cd frontend-craftsman && npm test
 
 Quando você possui ambas as skills instaladas, elas se conectam automaticamente criando um **ciclo simbiótico de alta engenharia**:
 
+#### 🎨 Fluxo 1: Design-First (Iniciado no Craftsman)
+> Recomendado quando o foco principal é concepção visual, telas novas ou redesign de interface.
+
 ```mermaid
 flowchart TD
-    subgraph F1 ["Fluxo 1: Design-First - Iniciado no Craftsman"]
-        D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
-        D2 --> D3{"Usuário Aprova o Design?"}
-        D3 -- NÃO --> D4["Ajustar Paleta / Tipografia / Wireframe"]
-        D4 --> D2
-        D3 -- SIM (OK) --> D5["Handoff para Hybrid Orchestrator"]
-        D5 --> D6["Snapshot git stash + Sabatina Q1-Q4 + Falsifier + Testes"]
-    end
+    D1["👤 Usuário solicita Front-end / UI"] --> D2["🎨 Craftsman gera DESIGN_SPEC.md<br/>• Paleta calibrada & Molas<br/>• Preview interativo local"]
+    D2 --> D3{"Usuário aprova<br/>o design?"}
+    
+    D3 -- NÃO --> D4["✏️ Ajustar Paleta,<br/>Fontes ou Wireframe"]
+    D4 --> D2
+    
+    D3 -- SIM (OK) --> D5["🤝 Handoff para Hybrid Orchestrator<br/>• Snapshot git stash<br/>• Sabatina Q1-Q4 (Q3 preenchido)"]
+    D5 --> D6["⚡ Execução Cirúrgica & Falsifier<br/>• Física de molas real<br/>• Pipeline craft-audit.js (Score ≥ 90)"]
+```
 
-    subgraph F2 ["Fluxo 2: Engineering-First - Iniciado no Hybrid"]
-        H1["Usuário solicita Feature no Hybrid"] --> H2{"Demanda toca em UI / Telas?"}
-        H2 -- SIM --> H3["Hybrid aciona Craftsman para gerar DESIGN_SPEC.md"]
-        H3 --> H4["DESIGN_SPEC.md anexado ao Turno 1 (Trava Obrigatória)"]
-        H4 --> H5{"Usuário Aprova Turno 1?"}
-        H5 -- SIM --> H6["Turno 2: Implementação com Molas e Radix"]
-        H6 --> H7["Pipeline 7.2: craft-audit.js (Score >= 90)"]
-    end
+#### ⚡ Fluxo 2: Engineering-First (Iniciado no Hybrid)
+> Recomendado quando o foco é uma feature completa, refatoração de regras ou correção de bug.
+
+```mermaid
+flowchart TD
+    H1["👤 Usuário solicita feature<br/>no Hybrid Orchestrator"] --> H2{"Demanda toca em<br/>UI / Telas / Componentes?"}
+
+    H2 -- NÃO --> H_BACK["⚙️ Hybrid segue fluxo padrão<br/>(backend / regras / banco)"]
+
+    H2 -- SIM --> H3["🎨 Hybrid invoca Craftsman<br/>para gerar DESIGN_SPEC.md"]
+    H3 --> H4["🛑 Turno 1 (Trava Obrigatória)<br/>DESIGN_SPEC.md anexado ao plano"]
+    
+    H4 --> H5{"Usuário aprova<br/>o Turno 1?"}
+
+    H5 -- NÃO --> H_ADJUST["✏️ Ajustar arquitetura,<br/>design ou requisitos"]
+    H_ADJUST --> H3
+
+    H5 -- SIM --> H6["⚡ Turno 2: Implementação Cirúrgica<br/>• Física de molas & Radix UI<br/>• Ataque com Falsifier"]
+    H6 --> H7["🏆 Pipeline 7.2: craft-audit.js<br/>Score ≥ 90 Obrigatório"]
 ```
 
 1. **Se você chamar `frontend-craftsman` primeiro:** Ele elabora o `DESIGN_SPEC.md` visual. Após o seu "OK", se o `hybrid-orchestrator` estiver presente, ele assume a execução técnica (criando snapshot de segurança `git stash`, rodando a Sabatina dos 4 Quadrantes, implementando com física de molas e atacando com o Falsifier).

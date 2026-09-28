@@ -40,12 +40,12 @@ Ative o protocolo sempre que:
 
 ```mermaid
 flowchart TD
-    A["Início: Requisito de UI"] --> B["1. Estrutura & Tipografia (Grid 4px/8px, Tracking-Tight)"]
-    B --> C["2. Superfícies & Profundidade (Camadas + Borda 1px + Inner Shadow)"]
-    C --> D["3. Paleta Deliberada (Monocromático + 1 Accent Cirúrgico)"]
-    D --> E["4. Dinâmica Framer Motion (Física de Molas + layoutId)"]
-    E --> F["5. Micro-Interações & Acessibilidade (whileTap, Radix, Skeletons)"]
-    F --> G["Validação via craft-audit.js (Score >= 90)"]
+    A["🎯 Requisito de UI"] --> B["1. Estrutura & Tipografia<br/>Grid 4px/8px • Tracking-Tight"]
+    B --> C["2. Superfícies & Profundidade<br/>Camadas • Borda 1px • Inner Shadow"]
+    C --> D["3. Paleta Deliberada<br/>Monocromático • 1 Accent Cirúrgico"]
+    D --> E["4. Dinâmica Framer Motion<br/>Física de Molas • layoutId"]
+    E --> F["5. Micro-Interações & A11y<br/>whileTap • Radix UI • Skeletons"]
+    F --> G["🏆 craft-audit.js<br/>Score ≥ 90 Aprovado"]
 ```
 
 ---
@@ -132,31 +132,46 @@ Para dar acabamento de hardware físico (estilo Apple e Linear):
 
 Quando ambas as skills estão presentes no repositório ou no perfil global do usuário (`hybrid-orchestrator` + `frontend-craftsman`), elas estabelecem um **elo simbiótico automático**:
 
+### 🎨 Fluxo 1: Design-First (Iniciado no Craftsman)
+> Quando o desenvolvedor ou usuário solicita uma alteração visual, nova tela ou refinamento estético:
+
 ```mermaid
 flowchart TD
-    subgraph F1 ["Fluxo 1: Design-First - Iniciado no Craftsman"]
-        D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
-        D2 --> D3["Preview Instantâneo no Navegador"]
-        D3 --> D4{"Usuário Aprova o Design?"}
-        D4 -- NÃO --> D5["Ajustar Paleta / Tipografia / Wireframe"]
-        D5 --> D2
-        D4 -- SIM (OK) --> D6{"Hybrid Orchestrator Presente?"}
-        D6 -- SIM --> D7["Handoff para Hybrid Orchestrator (Rota B/C)"]
-        D7 --> D8["Snapshot git stash + Sabatina Q1-Q4 + Falsifier"]
-        D6 -- NÃO --> D9["Craftsman implementa diretamente"]
-    end
+    D1["👤 Usuário solicita Front-end / UI"] --> D2["🎨 Craftsman gera DESIGN_SPEC.md<br/>• Paleta, fontes e molas"]
+    D2 --> D3["🖥️ Preview Instantâneo local<br/>(node scripts/preview-spec.js)"]
+    D3 --> D4{"Usuário aprova<br/>o Design?"}
+    
+    D4 -- NÃO --> D5["✏️ Ajustar Paleta,<br/>Fontes ou Wireframe"]
+    D5 --> D2
+    
+    D4 -- SIM (OK) --> D6{"hybrid-orchestrator<br/>está presente?"}
+    
+    D6 -- SIM --> D7["🤝 Handoff para Hybrid (Rota B/C)<br/>• Snapshot de segurança git stash<br/>• Sabatina Q1-Q4 (Q3 preenchido)"]
+    D7 --> D8["⚡ Execução Cirúrgica & Falsifier<br/>• Física de molas real<br/>• Pipeline craft-audit.js (Score ≥ 90)"]
+    
+    D6 -- NÃO --> D9["🎨 Craftsman implementa diretamente<br/>com componentes de alta fidelidade"]
+```
 
-    subgraph F2 ["Fluxo 2: Engineering-First - Iniciado no Hybrid"]
-        H1["Usuário solicita Feature no Hybrid"] --> H2{"Demanda toca em UI / Telas?"}
-        H2 -- SIM --> H3{"Frontend Craftsman Presente?"}
-        H3 -- SIM --> H4["Hybrid aciona Craftsman para gerar DESIGN_SPEC.md"]
-        H4 --> H5["DESIGN_SPEC.md anexado ao Turno 1 (Trava)"]
-        H5 --> H6{"Usuário Aprova Turno 1?"}
-        H6 -- SIM --> H7["Turno 2: Implementação com Molas e Radix"]
-        H7 --> H8["Pipeline 7.2: craft-audit.js (Score >= 90)"]
-        H3 -- NÃO --> H9["Hybrid segue sem especificação visual"]
-        H2 -- NÃO --> H10["Hybrid segue fluxo backend-only"]
-    end
+### ⚡ Fluxo 2: Engineering-First (Iniciado no Hybrid)
+> Quando a solicitação começa pela orquestração técnica, bug ou feature de ponta a ponta:
+
+```mermaid
+flowchart TD
+    H1["👤 Usuário solicita feature<br/>no Hybrid Orchestrator"] --> H2{"Demanda toca em<br/>UI / Telas / Componentes?"}
+
+    H2 -- NÃO --> H10["⚙️ Hybrid segue fluxo<br/>backend / regras puras"]
+
+    H2 -- SIM --> H3{"frontend-craftsman<br/>está presente?"}
+
+    H3 -- NÃO --> H9["⚡ Hybrid implementa sem<br/>especificação visual prévia"]
+
+    H3 -- SIM --> H4["🎨 Hybrid invoca Craftsman<br/>para gerar DESIGN_SPEC.md"]
+    H4 --> H5["🛑 Turno 1 (Trava Obrigatória)<br/>DESIGN_SPEC.md anexado ao plano"]
+    
+    H5 --> H6{"Usuário aprova<br/>o Turno 1?"}
+
+    H6 -- SIM --> H7["⚡ Turno 2: Implementação<br/>• Física de Molas & Radix<br/>• Testes & Ataque Falsifier"]
+    H7 --> H8["🏆 Pipeline 7.2: craft-audit.js<br/>Score ≥ 90 Obrigatório"]
 ```
 
 ### Regras do Acordo Simbiótico:

@@ -24,21 +24,21 @@ Ative e siga este protocolo sempre que:
 
 ```mermaid
 flowchart TD
-    Start["Identificar Método e Rota (ex: POST /pedidos)"] --> RunScan["Executar analyze-route.js"]
-    RunScan --> Check{"A Rota já existe no Backend?"}
+    Start["Identificar Método e Rota<br/>(ex: POST /pedidos)"] --> RunScan["Executar<br/>analyze-route.js"]
+    RunScan --> Check{"A Rota já existe<br/>no Backend?"}
     
-    Check -- SIM (Existente) --> Warn["⚠️ ALERTA DE IMPACTO & RISCO DE QUEBRA"]
-    Warn --> MapCallers["Mapear todas as telas consumidoras"]
-    MapCallers --> AskPermission{"🛑 TRAVA DE RETROCOMPATIBILIDADE"}
+    Check -- SIM (Existente) --> Warn["⚠️ ALERTA DE IMPACTO<br/>& Risco de Quebra"]
+    Warn --> MapCallers["Mapear todas as<br/>telas consumidoras"]
+    MapCallers --> AskPermission{"🛑 TRAVA DE<br/>RETROCOMPATIBILIDADE"}
     
-    AskPermission -- NÃO AUTORIZADO --> Abort["⛔ Abortar alteração da rota"]
-    AskPermission -- AUTORIZADO --> Align["Alinhamento de Contrato (Payload/Status)"]
+    AskPermission -- NÃO AUTORIZADO --> Abort["⛔ Abortar alteração<br/>da rota"]
+    AskPermission -- AUTORIZADO --> Align["Alinhamento de Contrato<br/>(Payload / DTO / Status)"]
 
     Check -- NÃO (Rota Nova) --> ConfirmNew["✨ ROTA NOVA CONFIRMADA"]
     ConfirmNew --> Align
 
-    Align --> Implement["Implementação com Zero-Trust & Validação de Schema"]
-    Implement --> Finish["Conclusão com Contrato Verificado"]
+    Align --> Implement["Implementação com Zero-Trust<br/>& Validação de Schema"]
+    Implement --> Finish["Conclusão com<br/>Contrato Verificado"]
 ```
 
 ---
