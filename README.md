@@ -217,13 +217,18 @@ npm test
 
 ## 🤖 Como Acionar no Chat com seu Agente de IA
 
-| Objetivo | Prompt Exemplo |
-| :--- | :--- |
-| **Mapear arquitetura sem gastar tokens** | *"Mapeie o fluxo da tela de Checkout usando a skill `repo-cartographer`."* |
-| **Desenvolver feature com governança** | *"Implemente o recálculo de frete usando a skill `hybrid-orchestrator`."* |
-| **Edição rápida cirúrgica** | *"Corrija a tipagem da interface de usuário com `hybrid-orchestrator --fast`."* |
-| **Checar quebra de contrato de API** | *"Analise o impacto e os consumidores da rota `POST /api/pedidos` usando `route-guard`."* |
-| **Auditoria completa de segurança** | *"Execute a auditoria DevSecOps pré-deploy usando a skill `security-audit`."* |
+Você pode acionar as skills tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no Claude Code e Antigravity, ou via **Regras Contextuais (`@`)** no Cursor e Windsurf:
+
+| Slash Command / Atalho | Objetivo | Exemplo de Uso no Chat |
+| :--- | :--- | :--- |
+| **`/hybrid-orchestrator`** | Desenvolver feature com governança e Falsifier | `/hybrid-orchestrator Implemente o recálculo de frete na tela de checkout` |
+| **`/hybrid-orchestrator --fast`** | Correção cirúrgica direta (Rota A sem travas) | `/hybrid-orchestrator --fast Ajuste a tipagem de retorno do UserService` |
+| **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° sem gastar tokens | `/repo-cartographer Mapeie o fluxo completo da tela de Checkout` |
+| **`/route-guard`** | Prevenir quebra de contrato e analisar endpoints | `/route-guard Analise o impacto da rota POST /api/orders` |
+| **`/security-audit`** | Auditoria DevSecOps completa pré-deploy (18 pilares) | `/security-audit Execute a auditoria de segurança pré-deploy` |
+| **`/security-audit --pilares=2,5`** | Auditoria seletiva (ex: Auth e JWT) | `/security-audit --pilares=2,5 Audite as alterações no login` |
+
+> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
 
 ---
 
