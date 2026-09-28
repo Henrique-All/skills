@@ -80,7 +80,8 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 
 ### Route A
 ```
-Route A (surgical): [reason in one line]
+[ORCHESTRATOR: ROUTE A | DIRECT EXECUTION]
+Reason: [reason in one line]
 Files: [list]
 
 [diff]
@@ -90,27 +91,29 @@ Verify: `[command]`
 
 ### Routes B & C
 ```
+[ORCHESTRATOR: ROUTE B | TURN 1 - MANDATORY GATE]
 ### Planning
 [impact analysis + 4Q review + visual map + checklist]
-🛑 GATE: Awaiting approval...
+🛑 GATE: Awaiting explicit approval before writing code...
 
 --- (only after approval) ---
 
-### 1. Strategy
-Route: [B/C] | Justification: [...] | Acceptance criteria: [...]
+[ORCHESTRATOR: ROUTE B | TURN 2 - EXECUTION AUTHORIZED]
+### 1. Strategy & Git Snapshot
+Route: [B/C] | Snapshot recorded (`git stash create`) | Acceptance criteria: [...]
 
 ### 2. Falsification Report
 | # | Category | Attack | Status | Result |
 | 1 | [category] | [concrete attack] | EXECUTADO/RACIOCINADO | [result] |
 Safeguards: [...] | Residual risks: [...]
 
-### 3. Diff
-[git diff or unified patch]
+### 3. Diff & Rollback Plan
+[git diff or unified patch reversibility]
 
-### 4. Verification
+### 4. Verification (Local & Monorepo Blast Radius)
 ```bash
 [build + lint + types]
-[tests including new ones]
+[tests locally + cross-package tests if shared dependencies touched]
 ```
 ```
 

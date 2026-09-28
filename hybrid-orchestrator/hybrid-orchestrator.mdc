@@ -57,34 +57,39 @@ Após aprovação da Trava, execute com as 3 personas:
 - **Builder:** Implementa código, tipos e testes do caminho feliz
 - **Falsifier:** Tenta quebrar (concorrência, timeouts, inputs inválidos, memory leak, permissões). Escreve o ataque concreto antes de concluir que resiste.
 
-## 5. Formato de Saída
+## 5. Formato de Saída (Anti-Prompt-Drift)
+
+> 💡 Toda resposta DEVE iniciar com o selo `[ORCHESTRATOR: ...]` para fixar o foco da atenção no protocolo.
 
 ### Rota A
 ```
-Rota A (cirúrgica): [motivo]  |  Arquivos: [lista]
+[ORCHESTRATOR: ROTA A | EXECUÇÃO DIRETA]
+Motivo: [motivo]  |  Arquivos: [lista]
 [diff]
 Verificar: `[comando]`
 ```
 
 ### Rotas B e C
 ```
+[ORCHESTRATOR: ROTA B | TURNO 1 - TRAVA OBRIGATÓRIA]
 ### Planejamento
-[análise de impacto + sabatina + mapa visual + checklist]
-🛑 TRAVA: [aguarda resposta]
+[análise de impacto + sabatina Q1-Q4 + mapa visual + checklist]
+🛑 TRAVA: [aguarda resposta do usuário antes de tocar em código]
 
---- (somente após aprovação) ---
+--- (somente após aprovação da Trava) ---
 
-### 1. Estratégia
-Rota: [B/C] | Justificativa: [...] | Critérios de aceite: [...]
+[ORCHESTRATOR: ROTA B | TURNO 2 - EXECUÇÃO AUTORIZADA]
+### 1. Estratégia & Snapshot
+Rota: [B/C] | Snapshot git registrado | Critérios de aceite: [...]
 
 ### 2. Relatório de Falsificação
 | # | Categoria | Ataque | Status | Resultado |
 | 1 | [cat] | [ataque concreto] | EXECUTADO/RACIOCINADO | [resultado] |
 Blindagens: [...] | Riscos residuais: [...]
 
-### 3. Diff
-[git diff / patch]
+### 3. Diff & Rollback
+[git diff / patch reversível]
 
-### 4. Verificação
-[build + testes]
+### 4. Verificação (Local + Monorepo Blast Radius)
+[build + testes locais + testes transversais se compartilhado]
 ```

@@ -111,6 +111,12 @@ No workspace analisado, o cartógrafo mantém um diretório leve e padronizado:
    - **Sim (inalterado):** Reutilize o nó imediatamente (economia de 95% de tokens).
    - **Não (modificado ou ausente):** Reindexe cirurgicamente apenas este nó e seus dependentes.
 
+### Capacidades Avançadas do Scanner Determinístico:
+- **Resolução de Path Aliases:** Carrega automaticamente `tsconfig.json`/`jsconfig.json` para resolver `@/components`, `~services` e `baseUrl`.
+- **Rastreamento de Barrel Files:** Se um import apontar para um `index` com `export * from '...'` ou `export { Foo }`, o cartógrafo segue a cadeia recursivamente até o componente ou serviço de origem.
+- **Detecção de Endpoints Literais:** Mapeia chamadas `axios.get/post(...)` e `fetch(...)` literais diretamente para nós virtuais da Camada 3 (`api`).
+- **Detecção de Dependências Circulares:** Identifica ciclos de dependência via busca em profundidade (DFS), alertando quando módulos importam um ao outro em loop.
+
 ---
 
 ## 5. Contrato de Handshake (`handshake.json`)

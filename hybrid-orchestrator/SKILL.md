@@ -215,16 +215,18 @@ graph LR
 ### 6.1 Snapshot e Rollback Atômico
 
 Nas Rotas B e C, antes de aplicar o primeiro diff:
-1. **Inspeção de Estado Limpo:** Cheque `git status --porcelain`. Se houver arquivos modificados previamente pelo usuário, registre explicitamente quais são para não revertê-los por engano.
+1. **Snapshot de Segurança:** Cheque `git status --porcelain`. Em seguida, registre o snapshot do estado atual com `git stash create` ou capture o HEAD para ter uma âncora de reversão garantida.
 2. **Falha Crítica / Abort:** Se o ciclo de Falsificação revelar falhas arquiteturais insolúveis após o limite de iterações, ou se os testes quebrarem de forma irrecuperável, o agente **não deve** tentar aplicar correções cumulativas gerando código espaguete.
-3. **Rollback Mecânico:** Execute a reversão limpa dos arquivos tocados nesta demanda (`git restore <arquivos>` ou `git checkout -- <arquivos>`), devolvendo o repositório ao estado estável anterior e informando o usuário com precisão.
+3. **Rollback Mecânico:** Execute a reversão atômica dos arquivos tocados nesta demanda (`git restore <arquivos>` ou `git checkout -- <arquivos>`), devolvendo o repositório ao estado estável anterior e informando o usuário com precisão.
 
 ---
 
 ## 7. Descoberta de comandos e auditoria de segurança
 
 1. Procure os comandos do projeto nesta ordem: `README` / `CONTRIBUTING`, workflows de CI (`.github/workflows`, `.gitlab-ci.yml`), `Makefile` / `justfile`, scripts do `package.json`, `tox.ini` / `pyproject.toml`.
-2. **Monorepos:** rode no pacote afetado, não na raiz, salvo indicação contrária.
+2. **Monorepos & Workspaces (Blast Radius):**
+   - Detecte se há monorepo (`turbo.json`, `pnpm-workspace.yaml`, `lerna.json`, `nx.json` ou `"workspaces"` no `package.json` raiz).
+   - Se a alteração tocar um pacote compartilhado (`shared`, `core`, `types`) consumido por outras aplicações, o teste NÃO pode rodar isolado apenas no pacote. Execute a verificação transversal dos dependentes: `turbo run test --filter=...^...`, `pnpm -r test` ou `npm run test --workspaces`.
 3. **Higiene de Performance & Banco (Anti-N+1):** Em alterações que tocam banco ou serviços assíncronos, inspecione se laços (`for`, `map`, `while`) realizam queries ou requisições HTTP individuais por item. Em caso positivo, exija carregamento em lote (`IN (...)`, `include`/`eager loading` do ORM ou bulk API).
 4. Use a tabela abaixo apenas como fallback:
 
@@ -265,7 +267,8 @@ Exemplos de `--pilares`: `zero-trust`, `cookies`, `uploads`, `dependencias`, `co
 ### Rota A
 
 ```markdown
-**Rota A (cirúrgica):** [motivo em uma linha]
+[ORCHESTRATOR: ROTA A | EXECUÇÃO DIRETA]
+**Motivo:** [justificativa em uma linha]
 **Arquivos:** [lista]
 
 [diff]
@@ -277,8 +280,11 @@ Exemplos de `--pilares`: `zero-trust`, `cookies`, `uploads`, `dependencias`, `co
 
 O template é dividido em **dois turnos**. O primeiro termina na Trava; o segundo só começa após a aprovação.
 
+> 💡 **Âncora de Estado Anti-Drift:** Toda resposta DEVE iniciar com o selo de estado `[ORCHESTRATOR: ...]`. Isso fixa os pesos de atenção do modelo no protocolo exato, eliminando o esquecimento da trava em conversas longas.
+
 ````markdown
 <!-- TURNO 1 — enviado antes de qualquer código -->
+[ORCHESTRATOR: ROTA B | TURNO 1 - TRAVA OBRIGATÓRIA]
 
 ### Estratégia
 - **Rota:** [B ou C] | **Justificativa:** [flag, criticidade ou nº de arquivos]
@@ -307,6 +313,7 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
      Lembrete: migrações de banco exigem confirmação separada, mesmo após "OK - Executar Tudo".
 
 <!-- TURNO 2 — somente após aprovação da Trava -->
+[ORCHESTRATOR: ROTA B | TURNO 2 - EXECUÇÃO AUTORIZADA]
 
 ### Critérios de aceite
 [lista curta e mensurável]

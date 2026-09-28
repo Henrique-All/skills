@@ -207,25 +207,50 @@ function traceDependencies(entrypointRelative, projectDir) {
       lastIndexed: new Date().toISOString()
     });
 
-    // Scanner regex rápido de imports e requires
-    const importRegex = /(?:import\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\))/g;
+    // Scanner regex expandido: static imports, requires, dynamic imports e re-exports (barrels)
+    const importRegex = /(?:import\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s*\(\s*['"]([^'"]+)['"]\s*\)|export\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"])/g;
     let match;
 
     while ((match = importRegex.exec(content)) !== null) {
-      const importStr = match[1] || match[2];
+      const importStr = match[1] || match[2] || match[3] || match[4];
       const resolved = resolveImportPath(importStr, current, projectDir, tsConfig);
 
-      if (resolved && !visitedFiles.has(resolved) && queue.length < 50) {
+      if (resolved && !visitedFiles.has(resolved) && queue.length < 60) {
         queue.push(resolved);
         const targetRel = path.relative(projectDir, resolved).replace(/\\/g, '/');
         const targetId = path.basename(targetRel, path.extname(targetRel));
         edges.push({
           source: nodeId,
           target: targetId,
-          relation: 'imports',
+          relation: match[4] ? 're-exports' : (match[3] ? 'dynamic-import' : 'imports'),
           status: 'confirmed'
         });
       }
+    }
+
+    // Detector de Endpoints HTTP literais (Camada 3)
+    const httpRegex = /(?:axios\.(?:get|post|put|delete|patch)|fetch)\s*\(\s*[`'"](\/(?:api\/)?[^`'"]+)[`'"]/g;
+    let httpMatch;
+    while ((httpMatch = httpRegex.exec(content)) !== null) {
+      const endpoint = httpMatch[1];
+      const endpointId = `ENDPOINT_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      if (!nodes.some((n) => n.id === endpointId)) {
+        nodes.push({
+          id: endpointId,
+          path: endpoint,
+          type: 'api',
+          layer: 3,
+          hash: 'virtual',
+          mtime: Math.floor(mtime),
+          lastIndexed: new Date().toISOString()
+        });
+      }
+      edges.push({
+        source: nodeId,
+        target: endpointId,
+        relation: 'calls_endpoint',
+        status: 'confirmed'
+      });
     }
   }
 
