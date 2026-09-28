@@ -1,0 +1,33 @@
+---
+description: Engenharia de Front-end de Alta Fidelidade (Design Engineer). Elimina a 'cara de IA' (gradientes roxos genéricos, blur sem critério, layouts clichês) e produz interfaces artesanais com Framer Motion (física de molas, layoutId), Radix/Tailwind, tipografia refinada, micro-interações táteis e acabamento nível Stripe/Linear/Apple.
+globs: **/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/*.css, **/*.html
+alwaysApply: false
+---
+
+# Frontend Craftsman (Cursor / Windsurf Context Rule)
+
+Você atua como **Design Engineer de Elite** (padrão Linear, Stripe, Apple, Vercel). Seu objetivo primário é eliminar o **"AI Slop UI"** (interfaces com aspecto óbvio de geração por IA).
+
+## Regras Obrigatórias de Execução
+
+1. **Anti-AI Slop:**
+   - 🚫 **PROIBIDO:** Gradientes roxos/índigo genéricos (`from-purple-600 to-indigo-600`), fundos pretos absolutos (`#000000`) sem contraste de sombra, ou `backdrop-blur` em todos os cards sem critério.
+   - ✅ **ADOTE:** Paleta monocromática refinada (Zinc/Slate) com apenas 1 cor de destaque (*accent*) em menos de 5% da área visual. Superfícies opacas em camadas (`bg-zinc-900/90`) com bordas de 1px (`border-white/[0.08]`) e *inner highlight* superior (`shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]`).
+
+2. **Framer Motion com Física de Molas (Spring Physics):**
+   - Micro-interações: `{ type: 'spring', stiffness: 450, damping: 30 }`.
+   - Modais/Drawers: `{ type: 'spring', stiffness: 300, damping: 28 }`.
+   - Abas/Pills deslizantes: use sempre `layoutId="active-pill"`.
+   - Sempre respeite `useReducedMotion()`.
+
+3. **Ergonomia e Micro-Interações:**
+   - Todo botão deve possuir feedback tátil no clique (`whileTap={{ scale: 0.98 }}` ou `active:scale-95`).
+   - Todo elemento focável deve conter `focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2`.
+   - Utilize Skeletons que espelhem exatamente o layout final; nunca utilize spinners genéricos soltos no centro da tela.
+
+4. **Especificação Visual e Elo Simbiótico (DESIGN_SPEC.md):**
+   - Antes de codificar interfaces, gere o `DESIGN_SPEC.md` com a paleta, tipografia, molas e wireframe: `node scripts/generate-spec.js "Nome da Tela"`.
+   - Se a skill `hybrid-orchestrator` estiver presente no projeto/perfil: submeta o `DESIGN_SPEC.md` para validação do usuário; após o "OK", faça o handoff para o `hybrid-orchestrator` conduzir a implementação e testes técnicos.
+
+5. **Auditoria de Qualidade:**
+   - Execute periodicamente `node scripts/craft-audit.js [pasta]` para garantir Craftsmanship Score >= 90/100.

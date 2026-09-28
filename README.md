@@ -7,7 +7,7 @@
 
 ## 🧭 O Ciclo de Engenharia Integrado
 
-As quatro skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
+As cinco skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
 
 ```mermaid
 flowchart LR
@@ -19,16 +19,21 @@ flowchart LR
         RG["🛡️ route-guard"]
     end
 
-    subgraph 3. Governança & Execução
+    subgraph 3. Design Engineering (Anti-AI Slop)
+        FC["🎨 frontend-craftsman"]
+    end
+
+    subgraph 4. Governança & Execução
         HO["⚡ hybrid-orchestrator"]
     end
 
-    subgraph 4. Conformidade & CI/CD
+    subgraph 5. Conformidade & CI/CD
         SA["🔒 security-audit"]
     end
 
     RC -->|"Handshake 360°"| HO
     RG -->|"Contrato & Quebras"| HO
+    FC <-->|"DESIGN_SPEC.md + craft-audit"| HO
     HO -->|"Diff + Falsifier"| SA
     SA -->|"Exit Code 0 / 1"| Deploy["🚀 Produção"]
 ```
@@ -40,9 +45,10 @@ flowchart LR
 | Skill | Nota | Foco Principal | Maior Diferencial Prático |
 | :--- | :---: | :--- | :--- |
 | **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-9810)** | **`9.8` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot atômico (`git stash`) + Falsifier adversário com estresse. |
-| **[`security-audit`](#2--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
-| **[`repo-cartographer`](#3--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
-| **[`route-guard`](#4--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
+| **[`frontend-craftsman`](#2--frontend-craftsman--nota-9810)** | **`9.8` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA' (roxos clichê, blur), física de molas (Framer Motion, `layoutId`), `DESIGN_SPEC.md` e elo simbiótico. |
+| **[`security-audit`](#3--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
+| **[`repo-cartographer`](#4--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
+| **[`route-guard`](#5--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
 | **Infra do Monorepo** | **`10.0` / 10** | **Automação & CI/CD** | Instalador unificado em 1 comando, test-runner automático e **GitHub Actions CI** em Node 18, 20 e 22. |
 
 ---
@@ -92,7 +98,78 @@ node hybrid-orchestrator/install.js --global --target=all
 
 ---
 
-### 2. 🗺️ `repo-cartographer` — Nota: 9.6/10
+### 2. 🎨 `frontend-craftsman` — Nota: 9.8/10
+> **Design Engineering de Alta Fidelidade: Erradicação do "AI Slop UI" & Física de Molas.**
+
+#### 🛑 O Problema que Resolve:
+Quando modelos de linguagem geram interfaces por conta própria, caem no visual clichê de IA: fundos com gradientes roxos/índigo (`from-purple-600 to-indigo-600`), `backdrop-blur` desregulado em todos os cards, botões estáticos sem feedback tátil de press, ausência de física de molas (ou transições lineares duras `duration-300`) e textos artificiais ("Unleash next-gen AI...").
+
+#### 💡 O que ela faz:
+1. **Os 7 Pilares Anti-AI Slop:** Regras estritas que proíbem gradientes roxos genéricos e impõem paletas profundas calibradas (Zinc, Slate, Obsidian) com apenas **1 cor de acento cirúrgica** (< 5% da área visual).
+2. **Framer Motion com Física de Molas Real (Spring Physics):**
+   - Micro-interações rápidas e responsivas (`stiffness: 450, damping: 30`);
+   - Abas deslizantes fluidas com `layoutId="active-pill"` estilo macOS/Linear sem pulo visual;
+   - Modais com `AnimatePresence mode="wait"`;
+   - Respeito obrigatório a `prefers-reduced-motion`.
+3. **Superfícies de Hardware Físico:** Substitui blur embaçado por camadas opacas estruturadas, bordas ultrafinas de 1px com opacidade precisa (`border-white/[0.08]`) e **inner highlights** superiores (`shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]`).
+4. **Gerador de Especificação Visual (`DESIGN_SPEC.md`):** Cria um documento visual com tabela de cores, tipografia com `tracking-tight`, escala modular, bibliotecas e wireframe ASCII para validação do usuário antes de codificar.
+5. **Motor Determinístico de Auditoria (`craft-audit.js`):** Analisa a base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e calcula o **Craftsmanship Score (0–100)**, apontando linhas exatas e sugestões de polimento.
+6. **Catálogo de Componentes Prontos (`templates/`):** Templates de alta fidelidade para `AnimatedTabs`, `SpotlightCard`, `MagneticButton` e `SmoothAccordion`.
+
+#### 🚀 Vantagens de Usar:
+- **Acabamento nível Linear, Apple, Stripe e Raycast:** Suas interfaces deixam de parecer "projeto de IA gerado em 10 segundos" e ganham aspecto de software de alta engenharia.
+- **Validação visual prévia:** Você aprova paleta, fontes e estrutura antes que qualquer linha de código seja gerada.
+- **Micro-interações táteis nativas:** Todo botão e card responde fisicamente ao ponteiro e ao clique.
+
+#### 💻 Comandos e Ferramentas:
+```bash
+# 1. Gerar documento de especificação visual (DESIGN_SPEC.md):
+node frontend-craftsman/scripts/generate-spec.js "Dashboard de Vendas" --preset=linear-dark
+
+# 2. Auditar qualidade artesanal da interface (detecta vícios de IA):
+node frontend-craftsman/scripts/craft-audit.js src/
+
+# 3. Exportar tokens de paleta refinada para Tailwind ou CSS:
+node frontend-craftsman/scripts/craft-palette.js supabase-emerald --format=css
+
+# 4. Testar integridade da skill:
+cd frontend-craftsman && npm test
+```
+
+---
+
+### 🤝 O Elo Perfeito: `frontend-craftsman` ⟷ `hybrid-orchestrator`
+
+Quando você possui ambas as skills instaladas, elas se conectam automaticamente criando um **ciclo simbiótico de alta engenharia**:
+
+```mermaid
+flowchart TD
+    subgraph "Fluxo 1: Design-First (Iniciado no Craftsman)"
+        D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
+        D2 --> D3{"Usuário Aprova o Design?"}
+        D3 -- NÃO --> D4["Ajustar Paleta / Tipografia / Wireframe"]
+        D4 --> D2
+        D3 -- SIM (OK) --> D5["Handoff para Hybrid Orchestrator"]
+        D5 --> D6["Snapshot git stash + Sabatina Q1-Q4 + Falsifier + Testes"]
+    end
+
+    subgraph "Fluxo 2: Engineering-First (Iniciado no Hybrid)"
+        H1["Usuário solicita Feature no Hybrid"] --> H2{"Demanda toca em UI / Telas?"}
+        H2 -- SIM --> H3["Hybrid aciona Craftsman para gerar DESIGN_SPEC.md"]
+        H3 --> H4["DESIGN_SPEC.md anexado ao Turno 1 (Trava Obrigatória)"]
+        H4 --> H5{"Usuário Aprova Turno 1?"}
+        H5 -- SIM --> H6["Turno 2: Implementação com Molas e Radix"]
+        H6 --> H7["Pipeline 7.2: craft-audit.js (Score >= 90 Obrigatório)"]
+    end
+```
+
+1. **Se você chamar `frontend-craftsman` primeiro:** Ele elabora o `DESIGN_SPEC.md` visual. Após o seu "OK", se o `hybrid-orchestrator` estiver presente, ele assume a execução técnica (criando snapshot de segurança `git stash`, rodando a Sabatina dos 4 Quadrantes, implementando com física de molas e atacando com o Falsifier).
+2. **Se você chamar `hybrid-orchestrator` primeiro:** Se a demanda tocar em telas ou componentes, ele **não cria código genérico de IA**; ele invoca o `frontend-craftsman`, gera a especificação visual detalhada no Turno 1 (Trava) e só começa a codificar após você validar as cores, fontes e estrutura. No pipeline final de verificação, ele executa o `craft-audit.js` exigindo score ≥ 90.
+3. **Se você usar as skills separadas:** Cada uma funciona de forma independente e autônoma, sem dependências quebradas.
+
+---
+
+### 3. 🗺️ `repo-cartographer` — Nota: 9.6/10
 > **Motor de Cartografia Arquitetural e Contexto 360° Orientado por Evidência.**
 
 #### 🛑 O Problema que Resolve:
@@ -129,7 +206,7 @@ node repo-cartographer/scripts/cartographer.js init
 
 ---
 
-### 3. 🛡️ `route-guard` — Nota: 9.6/10
+### 4. 🛡️ `route-guard` — Nota: 9.6/10
 > **Guardião de Contratos de API, Blast Radius e Zero-Trust.**
 
 #### 🛑 O Problema que Resolve:
@@ -161,7 +238,7 @@ cd route-guard && npm test
 
 ---
 
-### 4. 🔒 `security-audit` — Nota: 9.7/10
+### 5. 🔒 `security-audit` — Nota: 9.7/10
 > **Motor DevSecOps com os 18 Pilares de Segurança e Conformidade OWASP.**
 
 #### 🛑 O Problema que Resolve:
@@ -230,6 +307,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 
 | Slash Command / Atalho | Objetivo | Exemplo de Uso no Chat |
 | :--- | :--- | :--- |
+| **`/frontend-craftsman`** | Gerar interface artesanal sem cara de IA (Framer Motion) | `/frontend-craftsman Crie a interface da Central de Clientes com paleta Linear` |
 | **`/hybrid-orchestrator`** | Desenvolver feature com governança e Falsifier | `/hybrid-orchestrator Implemente o recálculo de frete na tela de checkout` |
 | **`/hybrid-orchestrator --fast`** | Correção cirúrgica direta (Rota A sem travas) | `/hybrid-orchestrator --fast Ajuste a tipagem de retorno do UserService` |
 | **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° sem gastar tokens | `/repo-cartographer Mapeie o fluxo completo da tela de Checkout` |
@@ -237,7 +315,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 | **`/security-audit`** | Auditoria DevSecOps completa pré-deploy (18 pilares) | `/security-audit Execute a auditoria de segurança pré-deploy` |
 | **`/security-audit --pilares=2,5`** | Auditoria seletiva (ex: Auth e JWT) | `/security-audit --pilares=2,5 Audite as alterações no login` |
 
-> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
+> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@frontend-craftsman`, `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
 
 ---
 
@@ -245,6 +323,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 
 ```
 skills/
+├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
 ├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust

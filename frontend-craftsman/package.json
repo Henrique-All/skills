@@ -1,0 +1,28 @@
+{
+  "name": "frontend-craftsman-skill",
+  "version": "1.0.0",
+  "description": "Engenharia de Front-end de Alta Fidelidade (Design Engineer). Elimina a 'cara de IA' e produz interfaces artesanais com Framer Motion, física de molas, Radix/Tailwind e micro-interações táteis nível Linear/Stripe/Apple.",
+  "main": "scripts/craft-audit.js",
+  "scripts": {
+    "test": "node test/validate.js",
+    "audit": "node scripts/craft-audit.js",
+    "palette": "node scripts/craft-palette.js",
+    "spec": "node scripts/generate-spec.js",
+    "install:local": "node install.js",
+    "install:global": "node install.js --global --target=all",
+    "install:both": "node install.js --both"
+  },
+  "keywords": [
+    "antigravity",
+    "skills",
+    "frontend-craftsman",
+    "framer-motion",
+    "anti-ai-slop",
+    "design-engineer",
+    "ui-craft",
+    "tailwind",
+    "radix-ui"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}

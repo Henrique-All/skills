@@ -99,7 +99,7 @@ O agente preenche cada quadrante com **suposições declaradas** a partir do con
 | :--- | :--- |
 | **Q1: Contratos de API & Tipagem** | Formato do payload (Body/Query/Params), status HTTP esperados, estrutura do JSON de saída, versão da rota. |
 | **Q2: Dados, Concorrência & Transações** | Precisa de transação atômica? Há risco de race condition (saldo, estoque, filas)? Exige lock otimista (ex: version column) ou pessimista? Chave de idempotência (Idempotency-Key ou unique constraint) para duplo envio? A migração é estritamente aditiva? |
-| **Q3: Estados de Interface (se houver UI)** | Como a tela se comporta em **Carregando**, **Erro**, **Vazio** e **Sucesso**? Quais componentes reutilizar? |
+| **Q3: Estados de Interface (se houver UI)** | Como a tela se comporta em **Carregando**, **Erro**, **Vazio** e **Sucesso**? Quais componentes reutilizar? Se a skill `frontend-craftsman` estiver disponível, anexe o **DESIGN_SPEC.md** gerado com paleta (neutros + 1 accent), tipografia, molas Framer Motion e wireframe para validação visual prévia na Trava. |
 | **Q4: Segurança & Permissões** | Rota pública ou privada? Exige autenticação, roles/RBAC, filtro por usuário/tenant? Algum dado sensível em log ou resposta? |
 
 > Se algum quadrante não se aplicar, declare: *"Q3 não aplicável — demanda é backend-only."*
@@ -251,6 +251,16 @@ node .agents/skills/security-audit/scripts/audit.js --pilares=<pilares do domín
 Exemplos de `--pilares`: `2,5,10` (auth), `3,12` (cookies/cors), `7,15` (uploads/owasp), `16` (segredos/git), `17` (cves).
 
 > Mudanças cosméticas (cor, label, tipografia) ou de UI pura sem toque em lógica de segurança **não** acionam esta etapa.
+
+### 7.2 Auditoria de Artesanato de Interface (`frontend-craftsman`)
+
+Se a demanda envolver alteração ou criação de telas e componentes de front-end e a skill `frontend-craftsman` estiver disponível, acrescente à etapa de verificação:
+
+```bash
+node .agents/skills/frontend-craftsman/scripts/craft-audit.js [pasta-do-frontend]
+```
+
+Exija **Craftsmanship Score >= 90/100** para aprovação final. Se encontrar vícios de IA (roxo neon genérico, falta de feedback tátil `:active`/`whileTap`, blur desregulado), o Builder deve corrigir antes de concluir.
 
 ---
 
