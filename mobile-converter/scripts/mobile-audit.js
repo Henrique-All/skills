@@ -1,0 +1,185 @@
+#!/usr/bin/env node
+/**
+ * scripts/mobile-audit.js - Motor Determinístico de Auditoria Mobile
+ * Analisa arquivos .tsx, .jsx, .html, .vue e .css em busca de anti-patterns mobile.
+ * Calcula o Mobile Readiness Score (0 a 100).
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const targetArg = process.argv[2] || '.';
+const isStrict = process.argv.includes('--strict');
+
+const SUPPORTED_EXTS = ['.tsx', '.jsx', '.html', '.vue', '.css'];
+
+function getAllFiles(dirPath, arrayOfFiles = []) {
+  if (!fs.existsSync(dirPath)) return arrayOfFiles;
+  const stat = fs.statSync(dirPath);
+  if (!stat.isDirectory()) {
+    return [dirPath];
+  }
+
+  const files = fs.readdirSync(dirPath);
+  files.forEach((file) => {
+    if (file === 'node_modules' || file.startsWith('.') || file === 'dist' || file === 'build') return;
+    const fullPath = path.join(dirPath, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      getAllFiles(fullPath, arrayOfFiles);
+    } else if (SUPPORTED_EXTS.includes(path.extname(fullPath))) {
+      arrayOfFiles.push(fullPath);
+    }
+  });
+
+  return arrayOfFiles;
+}
+
+const files = getAllFiles(path.resolve(process.cwd(), targetArg));
+
+if (files.length === 0) {
+  console.log('ℹ️  Nenhum arquivo relevante (.tsx, .jsx, .html, .vue, .css) encontrado para auditoria mobile.');
+  process.exit(0);
+}
+
+console.log('===============================================================');
+console.log('📱 MOBILE CRAFTSMANSHIP & READINESS AUDIT');
+console.log('===============================================================');
+console.log(`🔍 Analisando ${files.length} arquivo(s)...\n`);
+
+let totalDeductions = 0;
+const violations = [];
+
+const RULES = [
+  {
+    id: 'VIEWPORT_100VH',
+    penalty: 15,
+    name: 'Uso de 100vh/h-screen sem dvh (Bug Safari/Chrome mobile)',
+    check: (line, content) => {
+      if ((line.includes('100vh') || line.includes('h-screen')) && !line.includes('dvh') && !line.includes('svh')) {
+        return 'Substitua "100vh" ou "h-screen" por "100dvh" ou "min-h-dvh" para evitar sobreposição da barra de navegação móvel.';
+      }
+      return null;
+    }
+  },
+  {
+    id: 'SAFE_AREA_BOTTOM',
+    penalty: 20,
+    name: 'Elemento fixado na base sem padding de Safe Area',
+    check: (line, content) => {
+      if ((line.includes('fixed bottom-0') || line.includes('bottom: 0')) && 
+          !line.includes('safe-area-inset-bottom') && 
+          !content.includes('safe-area-inset-bottom')) {
+        return 'Adicione padding para a barra Home do iPhone: pb-[env(safe-area-inset-bottom)] ou padding-bottom: max(16px, env(safe-area-inset-bottom)).';
+      }
+      return null;
+    }
+  },
+  {
+    id: 'IOS_INPUT_ZOOM',
+    penalty: 15,
+    name: 'Input com fonte < 16px (Provoca auto-zoom no iOS Safari)',
+    check: (line) => {
+      const isInput = line.includes('<input') || line.includes('<select') || line.includes('<textarea');
+      if (isInput && (line.includes('text-xs') || line.includes('text-sm')) && !line.includes('text-base')) {
+        return 'Inputs mobile devem ter no mínimo 16px (text-base md:text-sm) para impedir o zoom automático forçado do iOS Safari.';
+      }
+      return null;
+    }
+  },
+  {
+    id: 'UNRESPONSIVE_TABLE',
+    penalty: 20,
+    name: 'Tabela HTML sem adaptação para mobile (Quebra viewport)',
+    check: (line, content) => {
+      if (line.includes('<table') && !content.includes('overflow-x-auto') && !content.includes('md:table')) {
+        return 'Tabelas devem estar envoltas em container com "overflow-x-auto" ou convertidas em cards táteis no mobile (hidden md:table / md:hidden).';
+      }
+      return null;
+    }
+  },
+  {
+    id: 'SMALL_TOUCH_TARGET',
+    penalty: 10,
+    name: 'Botão/Link com área de toque inferior a 44x44px',
+    check: (line) => {
+      const isButton = line.includes('<button') || (line.includes('<a') && line.includes('role="button"'));
+      if (isButton && (line.includes('p-1 ') || line.includes('p-0.5') || line.includes('h-6 ') || line.includes('h-7 '))) {
+        if (!line.includes('min-h-[44px]') && !line.includes('min-h-[48px]')) {
+          return 'Touch targets no celular devem ter no mínimo 44x44px (Apple HIG). Adicione min-h-[44px] min-w-[44px] ou padding generoso.';
+        }
+      }
+      return null;
+    }
+  },
+  {
+    id: 'FIXED_WIDTH_SPILL',
+    penalty: 20,
+    name: 'Largura fixa grande que estoura telas de smartphone (< 390px)',
+    check: (line) => {
+      const match = line.match(/(?:w|min-w)-\[(\d+)px\]/);
+      if (match) {
+        const px = parseInt(match[1], 10);
+        if (px > 360 && !line.includes('max-w-full') && !line.includes('w-full')) {
+          return `Largura fixa de ${px}px excede a largura de smartphones padrão (~390px). Use w-full max-w-[${px}px].`;
+        }
+      }
+      return null;
+    }
+  }
+];
+
+files.forEach((filePath) => {
+  const relPath = path.relative(process.cwd(), filePath);
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+
+  lines.forEach((line, index) => {
+    RULES.forEach((rule) => {
+      const issue = rule.check(line, content);
+      if (issue) {
+        violations.push({
+          file: relPath,
+          lineNum: index + 1,
+          ruleId: rule.id,
+          penalty: rule.penalty,
+          name: rule.name,
+          snippet: line.trim().substring(0, 80),
+          suggestion: issue
+        });
+        totalDeductions += rule.penalty;
+      }
+    });
+  });
+});
+
+const score = Math.max(0, 100 - totalDeductions);
+
+console.log('---------------------------------------------------------------');
+console.log(`📊 PONTUAÇÃO FINAL DE READINESS MOBILE: ${score}/100`);
+console.log('---------------------------------------------------------------\n');
+
+if (violations.length === 0) {
+  console.log('✨ PARABÉNS! Nenhuma violação mobile encontrada.');
+  console.log('✅ Interface 100% pronta para telas mobile (iOS e Android).\n');
+  process.exit(0);
+}
+
+console.log(`⚠️  Foram detectadas ${violations.length} oportunidade(s) de melhoria:\n`);
+
+violations.forEach((v, i) => {
+  console.log(`${i + 1}. [${v.ruleId}] -${v.penalty} pts`);
+  console.log(`   📁 Arquivo: ${v.file}:${v.lineNum}`);
+  console.log(`   🏷️  Regra: ${v.name}`);
+  console.log(`   📄 Linha: "${v.snippet}"`);
+  console.log(`   💡 Solução: ${v.suggestion}\n`);
+});
+
+if (score < 85) {
+  console.log('🚨 ATENÇÃO: O Score Mobile ficou abaixo de 85/100.');
+  console.log('Recomenda-se corrigir as pendências acima antes de considerar a tela adaptada.\n');
+  if (isStrict) {
+    process.exit(1);
+  }
+} else {
+  console.log('🎉 Score satisfatório (≥ 85/100). Interface com excelente ergonomia mobile.\n');
+}

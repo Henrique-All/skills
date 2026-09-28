@@ -7,7 +7,7 @@
 
 ## 🧭 O Ciclo de Engenharia Integrado
 
-As cinco skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
+As seis skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
 
 ```mermaid
 flowchart TD
@@ -15,6 +15,7 @@ flowchart TD
         RC["🗺️ repo-cartographer<br/><b>Mapeamento 360°</b>"]
         RG["🛡️ route-guard<br/><b>Blast Radius & Schemas</b>"]
         FC["🎨 frontend-craftsman<br/><b>Design Engineering</b>"]
+        MC["📱 mobile-converter<br/><b>Adaptação & Ergonomia Mobile</b>"]
     end
 
     subgraph FASE2 ["2. Núcleo de Governança e Execução Cirúrgica"]
@@ -29,7 +30,8 @@ flowchart TD
     RC -->|"Handshake 360°"| HO
     RG -->|"Trava de Contrato"| HO
     RG <-->|"Validação Zod/DTO"| FC
-    FC <-->|"DESIGN_SPEC.md"| HO
+    FC <-->|"Molas & Paleta"| MC
+    MC <-->|"DESIGN_SPEC.md"| HO
 
     HO -->|"Diff Atômico + Falsifier"| SA
     SA -->|"Exit Code 0 (Aprovado)"| Deploy
@@ -48,8 +50,9 @@ flowchart TD
         RG["🛡️ route-guard<br/>Blast Radius & Schemas"]
     end
 
-    subgraph C2 ["Camada 2: Design e Validação Visual"]
+    subgraph C2 ["Camada 2: Design e Mobile Engineering"]
         FC["🎨 frontend-craftsman<br/>Anti-AI Slop • Molas • Spec"]
+        MC["📱 mobile-converter<br/>Bottom Sheets • Tab Bar • dvh"]
     end
 
     subgraph C3 ["Camada 3: Governança e Execução"]
@@ -65,9 +68,11 @@ flowchart TD
     RC -. "Resolve aliases" .-> RG
     RG -- "2. Blast Radius" --> HO
     RG -- "Validação Schemas" --> FC
-    FC -- "3. DESIGN_SPEC.md" --> HO
-    HO -- "4. craft-audit.js" --> FC
-    HO -- "5. audit.js" --> SA
+    FC -- "3. DESIGN_SPEC.md" --> MC
+    MC -- "4. Specs Mobile" --> HO
+    HO -- "5. craft-audit.js" --> FC
+    HO -- "6. mobile-audit.js" --> MC
+    HO -- "7. audit.js" --> SA
     SA -- "Exit Code 0 ou 1" --> HO
 ```
 
@@ -77,7 +82,9 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **`repo-cartographer`** | **`hybrid-orchestrator`** | `.code-map/handshake.json` *(Schema tipado)* | O Orchestrator lê os nós `confirmed`, `inferred` e `unknown` na **Seção 3.1 (Análise de Impacto)**, eliminando leituras repetitivas e economizando até **90% dos tokens** de exploração. |
 | **`route-guard`** | **`hybrid-orchestrator`** | Relatório de Impacto de Rota (`analyze-route.js`) | Se a rota alterada já existir e tiver chamadores no front-end, o Orchestrator aciona a **Trava de Retrocompatibilidade no Q1 da Sabatina** e impede edições até aprovação expressa do usuário. |
-| **`frontend-craftsman`** | **`hybrid-orchestrator`** | `DESIGN_SPEC.md` + `.craft/preview.html` | O Craftsman entrega o design validado (paleta, fontes, molas Framer Motion e wireframe). O Orchestrator usa essa especificação para **preencher o Q3 da Sabatina** e conduzir o Builder. |
+| **`frontend-craftsman`** | **`mobile-converter`** | Tokens de Paleta, Tipografia e Molas | O Mobile Converter herda as molas do Framer Motion e paleta refinada para aplicar em Bottom Sheets e Tab Bars. |
+| **`mobile-converter`** | **`hybrid-orchestrator`** | Especificação Mobile & Metamorfoses | Fornece componentes adaptados (Tabela ➔ Cards, Bottom Sheets) para alimentar o **Q3 da Sabatina**. |
+| **`hybrid-orchestrator`** | **`mobile-converter`** | Pipeline 7.3 (`mobile-audit.js`) | Ao finalizar telas responsivas, o Orchestrator roda a auditoria mobile. Só aprova se o **Mobile Readiness Score for ≥ 90/100**. |
 | **`hybrid-orchestrator`** | **`frontend-craftsman`** | Pipeline 7.2 (`craft-audit.js`) | Ao finalizar a implementação de qualquer tela, o Orchestrator roda a auditoria visual pós-execução. A entrega só é aprovada se o **Craftsmanship Score for ≥ 90/100**. |
 | **`hybrid-orchestrator`** | **`security-audit`** | Pipeline 7.1 (`audit.js --pilares=X,Y`) | Sempre que o Orchestrator toca em autenticação, senhas, uploads, rotas ou cookies, ele dispara o auditor. Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e aciona o Builder para correção**. |
 | **`route-guard`** | **`frontend-craftsman`** | Contratos de Endpoint (Zod/DTOs) | Ao desenhar interfaces que submetem formulários, o Craftsman consulta os schemas validados pelo Route Guard, evitando disparidades entre frontend e backend. |
@@ -89,16 +96,17 @@ flowchart TD
 #### Cenário 1: Criando uma Funcionalidade Fullstack com UI (Ex: "Central de Cobranças")
 1. **Cartografia Inicial (`repo-cartographer`):** O desenvolvedor pede a feature. O cartógrafo rastreia os modelos de dados e serviços existentes, gerando `.code-map/handshake.json`.
 2. **Verificação de Rota (`route-guard`):** Avalia se a rota `/api/cobrancas` já existe ou se é nova. Se for nova, define os schemas Zero-Trust de entrada.
-3. **Artesanato Visual (`frontend-craftsman`):** Gera o `DESIGN_SPEC.md` com a paleta refinada (ex: `stripe-clean-light`), configura as molas do Framer Motion e abre o preview local com `node scripts/preview-spec.js`.
+3. **Artesanato Visual & Adaptação Mobile (`frontend-craftsman` + `mobile-converter`):** Gera o `DESIGN_SPEC.md` com a paleta refinada, tabela que vira cards no mobile e Bottom Sheet para detalhes.
 4. **Validação do Usuário:** O desenvolvedor vê a tela interativa no navegador e responde **"OK"**.
 5. **Governança & Execução (`hybrid-orchestrator`):**
    - Cria o snapshot atômico de segurança (`git stash create`);
-   - Preenche os 4 quadrantes (Q1: Contrato verificado, Q2: Idempotência de pagamento, Q3: UI do spec, Q4: Auth do tenant);
+   - Preenche os 4 quadrantes (Q1: Contrato verificado, Q2: Idempotência de pagamento, Q3: UI do spec + Mobile, Q4: Auth do tenant);
    - O **Builder** implementa componentes táteis e rotas;
    - O **Falsifier** tenta quebrar a tela simulando falhas de rede, cliques duplos e campos vazios.
-6. **Pipeline Duplo de Verificação Pós-Execução:**
+6. **Pipeline Triplo de Verificação Pós-Execução:**
    - **Visual:** `node scripts/craft-audit.js` valida ausência de vícios de IA (Score: 100/100);
-   - **Segurança:** `node scripts/audit.js --pilares=2,5,10` garante que a rota de cobrança exige autenticação e não expõe dados sensíveis.
+   - **Mobile:** `node scripts/mobile-audit.js` valida ausência de bugs de viewport e touch targets de 44px+ (Score: 100/100);
+   - **Segurança:** `node scripts/audit.js --pilares=2,5,10` garante autenticação e integridade.
 7. **Entrega Pronta:** O código vai para commit limpo, robusto e testado.
 
 #### Cenário 2: Refatoração de Rota Crítica (Ex: "Alterar retorno de GET /api/pedidos")
@@ -106,10 +114,10 @@ flowchart TD
 2. **Trava no Orchestrator (`hybrid-orchestrator`):** O Orchestrator entra em Rota B, lista as 3 telas no Turno 1 e **não toca em nenhum arquivo** até o desenvolvedor confirmar a quebra.
 3. **Auditoria Final (`security-audit`):** Ao concluir, o auditor valida se nenhuma brecha de IDOR ou vazamento de segredos foi inserido.
 
-#### Cenário 3: Redesign de Interface Premium (Sem mexer no Backend)
-1. **Design Engineering (`frontend-craftsman`):** Analisa o componente legado via `craft-audit.js` (detecta gradiente roxo e falta de micro-interações).
-2. **Especificação & Preview:** Gera o `DESIGN_SPEC.md` com `AnimatedTabs` e `SpotlightCard`, exibindo o preview local no navegador.
-3. **Handoff Cirúrgico (`hybrid-orchestrator --fast`):** Aplica os diffs atômicos via Rota A, valida build/lint e garante score ≥ 90.
+#### Cenário 3: Redesign e Adaptação Mobile de Interface Legada
+1. **Design & Mobile Engineering (`frontend-craftsman` + `mobile-converter`):** Analisa a tela legada via `craft-audit.js` e `mobile-audit.js` (detecta tabela quebrada e fonte de input < 16px).
+2. **Metamorfose:** Converte a tabela em `ResponsiveTableToCards` e o modal flutuante em `BottomSheet` com puxador tátil.
+3. **Handoff Cirúrgico (`hybrid-orchestrator --fast`):** Aplica os diffs atômicos via Rota A, valida build/lint e garante score mobile ≥ 90.
 
 ---
 
@@ -119,9 +127,10 @@ flowchart TD
 | :--- | :---: | :--- | :--- |
 | **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-9810)** | **`9.8` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot atômico (`git stash`) + Falsifier adversário com estresse. |
 | **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme), Skeletons Content-Aware e elo simbiótico. |
-| **[`security-audit`](#3--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
-| **[`repo-cartographer`](#4--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
-| **[`route-guard`](#5--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
+| **[`mobile-converter`](#3--mobile-converter--nota-9810)** | **`9.8` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav Bar, Touch Targets 44px+ e CLI `mobile-audit.js`. |
+| **[`security-audit`](#4--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
+| **[`repo-cartographer`](#5--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
+| **[`route-guard`](#6--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
 | **Infra do Monorepo** | **`10.0` / 10** | **Automação & CI/CD** | Instalador unificado em 1 comando, test-runner automático e **GitHub Actions CI** em Node 18, 20 e 22. |
 
 ---
@@ -262,7 +271,46 @@ flowchart TD
 
 ---
 
-### 3. 🗺️ `repo-cartographer` — Nota: 9.6/10
+### 3. 📱 `mobile-converter` — Nota: 9.8/10
+> **Engenharia de Adaptação Mobile de Alta Fidelidade: Anti-Mobile Slop, Bottom Sheets & Viewport dvh.**
+
+#### 🛑 O Problema que Resolve:
+Modelos de IA adaptam interfaces para celulares simplesmente espremendo colunas desktop, gerando o **Mobile Slop**: tabelas com 6 colunas que quebram o layout com scroll horizontal impossível de ler, botões minúsculos (< 30px), menus superiores inacessíveis pelo polegar, rodapés cobertos pela barra de navegação do iPhone e auto-zoom indesejado no iOS Safari.
+
+#### 💡 O que ela faz:
+1. **Os 7 Pilares Anti-Mobile Slop:** Regras de ouro para touch targets mínimos de 44×44px, safe-areas de hardware (`env(safe-area-inset-bottom)`) e eliminação de sticky hover.
+2. **Viewport Dinâmico Real:** Erradica o bug clássico de `100vh`/`h-screen` adotando `100dvh` / `min-h-dvh` para telas móveis.
+3. **Metamorfose de Componentes:**
+   - **Tabelas ➔ Feed de Cards:** Transforma tabelas ilegíveis em pilhas verticais de cards táteis com badges e ações rápidas (`ResponsiveTableToCards.tsx`).
+   - **Navegação Desktop ➔ Mobile Bottom Nav:** Converte headers e sidebars densos em uma **Tab Bar inferior** estilo iOS ao alcance do polegar (`MobileBottomNav.tsx`).
+   - **Modais ➔ Swipeable Bottom Sheets:** Modais centralizados viram gavetas deslizantes com puxador e gesto de arrastar para baixo para fechar (`BottomSheet.tsx`).
+4. **Prevenção de Auto-Zoom no iOS:** Força `font-size: 16px` (`text-base md:text-sm`) em inputs para impedir que o Safari amplie a tela ao focar.
+5. **Motor Determinístico de Auditoria (`mobile-audit.js`):** Varre os componentes e pontua o **Mobile Readiness Score (0–100)**, identificando linhas com falhas de safe area ou alvos de toque pequenos.
+6. **Gerador de Receita de Adaptação (`adapt-screen.js`):** Analisa qualquer componente desktop e gera o plano passo a passo de conversão para smartphone.
+
+#### 🚀 Vantagens de Usar:
+- **Interfaces com sensação de aplicativo nativo:** Telas responsivas que parecem desenvolvidas sob medida para iOS e Android (estilo Nubank e Airbnb).
+- **Zero scroll horizontal acidental:** Seus layouts nunca mais quebram em telas de 375px ou 390px.
+- **Ergonomia real do polegar:** Elementos essenciais posicionados na Thumb Zone natural do usuário.
+
+#### 💻 Comandos e Ferramentas (CLI):
+```bash
+# 1. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
+node mobile-converter/scripts/mobile-audit.js src/
+
+# 2. Auditar um arquivo isolado:
+node mobile-converter/scripts/mobile-audit.js src/pages/Checkout.tsx
+
+# 3. Gerar receita de adaptação para um componente:
+node mobile-converter/scripts/adapt-screen.js src/components/OrderTable.tsx
+
+# 4. Testar integridade da skill:
+cd mobile-converter && npm test
+```
+
+---
+
+### 4. 🗺️ `repo-cartographer` — Nota: 9.6/10
 > **Motor de Cartografia Arquitetural e Contexto 360° Orientado por Evidência.**
 
 #### 🛑 O Problema que Resolve:
@@ -299,7 +347,7 @@ node repo-cartographer/scripts/cartographer.js init
 
 ---
 
-### 4. 🛡️ `route-guard` — Nota: 9.6/10
+### 5. 🛡️ `route-guard` — Nota: 9.6/10
 > **Guardião de Contratos de API, Blast Radius e Zero-Trust.**
 
 #### 🛑 O Problema que Resolve:
@@ -331,7 +379,7 @@ cd route-guard && npm test
 
 ---
 
-### 5. 🔒 `security-audit` — Nota: 9.7/10
+### 6. 🔒 `security-audit` — Nota: 9.7/10
 > **Motor DevSecOps com os 18 Pilares de Segurança e Conformidade OWASP.**
 
 #### 🛑 O Problema que Resolve:
@@ -401,6 +449,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 | Slash Command / Atalho | Objetivo | Exemplo de Uso no Chat |
 | :--- | :--- | :--- |
 | **`/frontend-craftsman`** | Gerar interface artesanal sem cara de IA (Framer Motion) | `/frontend-craftsman Crie a interface da Central de Clientes com paleta Linear` |
+| **`/mobile-converter`** | Converter tela desktop para mobile tátil (Bottom Sheets / dvh) | `/mobile-converter Adapte a tela de Checkout para mobile com Bottom Sheet` |
 | **`/hybrid-orchestrator`** | Desenvolver feature com governança e Falsifier | `/hybrid-orchestrator Implemente o recálculo de frete na tela de checkout` |
 | **`/hybrid-orchestrator --fast`** | Correção cirúrgica direta (Rota A sem travas) | `/hybrid-orchestrator --fast Ajuste a tipagem de retorno do UserService` |
 | **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° sem gastar tokens | `/repo-cartographer Mapeie o fluxo completo da tela de Checkout` |
@@ -408,7 +457,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 | **`/security-audit`** | Auditoria DevSecOps completa pré-deploy (18 pilares) | `/security-audit Execute a auditoria de segurança pré-deploy` |
 | **`/security-audit --pilares=2,5`** | Auditoria seletiva (ex: Auth e JWT) | `/security-audit --pilares=2,5 Audite as alterações no login` |
 
-> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@frontend-craftsman`, `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
+> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@frontend-craftsman`, `@mobile-converter`, `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
 
 ---
 
@@ -417,6 +466,7 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 ```
 skills/
 ├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
+├── mobile-converter/      # Adaptação mobile tátil, Bottom Sheets, Tab Bar e dvh
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
 ├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust

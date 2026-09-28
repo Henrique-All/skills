@@ -15,7 +15,11 @@
     "claude-code",
     "cursor-rules",
     "hybrid-orchestrator",
-    "repo-cartographer"
+    "frontend-craftsman",
+    "mobile-converter",
+    "repo-cartographer",
+    "route-guard",
+    "security-audit"
   ],
   "author": "Henrique Alves",
   "license": "MIT"

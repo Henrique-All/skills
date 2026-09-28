@@ -1,0 +1,25 @@
+{
+  "name": "mobile-converter-skill",
+  "version": "1.0.0",
+  "description": "Engenharia de Adaptação e Responsividade Mobile de Alta Fidelidade (Anti-Mobile Slop)",
+  "main": "scripts/mobile-audit.js",
+  "scripts": {
+    "test": "node test/validate.js",
+    "audit": "node scripts/mobile-audit.js",
+    "adapt": "node scripts/adapt-screen.js"
+  },
+  "keywords": [
+    "mobile",
+    "responsive",
+    "antigravity",
+    "framer-motion",
+    "touch-targets",
+    "bottom-sheet",
+    "safe-area",
+    "dvh",
+    "claude-code",
+    "cursor"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}
