@@ -68,6 +68,19 @@ Agentes de IA convencionais sofrem de impulso destrutivo: começam a editar arqu
 - **Honestidade de testes:** distingue claramente entre `EXECUTADO` (com saída real de terminal) e `RACIOCINADO`.
 - **Prevenção de N+1:** checa ativamente consultas em loop assíncrono em ORMs.
 
+#### 💻 Comandos e Flags:
+```bash
+# Flags de acionamento no prompt do chat:
+# --fast ou --quick   -> Força Rota A (execução cirúrgica sem travas)
+# --deep ou --swarm   -> Força Rota B (sabatina completa + 3 iterações de Falsifier)
+
+# Testar integridade da skill:
+cd hybrid-orchestrator && npm test
+
+# Instalação isolada:
+node hybrid-orchestrator/install.js --global --target=all
+```
+
 ---
 
 ### 2. 🗺️ `repo-cartographer` — Nota: 9.6/10
@@ -90,6 +103,21 @@ Para entender onde fica um botão ou endpoint, agentes normais fazem dezenas de 
 - **Economia brutal de tokens:** reduz em até **90%** o consumo de leitura inicial de repositórios.
 - **Incerteza explícita:** se o cartógrafo não tiver certeza de uma dependência, ele documenta o motivo em vez de inventar conexões falsas.
 
+#### 💻 Comandos de Terminal (CLI):
+```bash
+# Rastreamento 360° determinístico a partir de uma tela/arquivo:
+node repo-cartographer/scripts/cartographer.js trace src/pages/Checkout.tsx
+
+# Checar se o cache (.code-map/graph.json) continua sincronizado com o disco:
+node repo-cartographer/scripts/cartographer.js check
+
+# Exportar grafo para o Obsidian (.canvas interativo e notas com [[wikilinks]]):
+node repo-cartographer/scripts/cartographer.js obsidian
+
+# Inicializar a pasta .code-map/ em um projeto novo:
+node repo-cartographer/scripts/cartographer.js init
+```
+
 ---
 
 ### 3. 🛡️ `route-guard` — Nota: 9.6/10
@@ -108,6 +136,19 @@ Ao ajustar uma rota no backend, a IA altera o formato de retorno ou os parâmetr
 #### 🚀 Vantagens de Usar:
 - **Fim das quebras silenciosas em APIs:** você sabe exatamente quais componentes da interface serão afetados antes de aprovar a mudança.
 - **Contratos seguros:** garante que toda nova rota já nasça com validação estrita de schema.
+
+#### 💻 Comandos de Terminal (CLI):
+```bash
+# Analisar impacto de um endpoint e listar consumidores HTTP no front:
+node route-guard/scripts/analyze-route.js POST /api/orders
+node route-guard/scripts/analyze-route.js GET /users/:id
+
+# Saída em JSON estruturado (ideal para automações de CI):
+node route-guard/scripts/analyze-route.js POST /auth/login --json
+
+# Teste de integridade da skill:
+cd route-guard && npm test
+```
 
 ---
 
@@ -131,6 +172,21 @@ Agentes de IA frequentemente introduzem falhas graves: deixam `JWT_SECRET || 'se
 #### 🚀 Vantagens de Usar:
 - **Segurança de esteira automatizada:** atua como um portão de qualidade (Quality Gate) antes de fazer deploy ou aprovar PRs.
 - **100% agnóstica:** funciona em qualquer projeto Node, TypeScript, Python ou fullstack sem dependências externas.
+
+#### 💻 Comandos de Terminal (CLI):
+```bash
+# Auditoria completa de segurança dos 18 pilares:
+node security-audit/scripts/audit.js
+
+# Auditoria seletiva por pilares de domínio (ex: auth, cookies, senhas):
+node security-audit/scripts/audit.js --pilares=2,3,5
+
+# Exportar relatório estruturado em JSON:
+node security-audit/scripts/audit.js --json
+
+# Teste de integridade da skill:
+cd security-audit && npm test
+```
 
 ---
 
