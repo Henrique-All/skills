@@ -3,6 +3,34 @@
 > **Ecossistema de Governança, Cartografia Arquitetural, Execução Adversária e DevSecOps para Agentes de IA.**
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**, **Aider**) em verdadeiros engenheiros de software seniores, eliminando alucinações, desperdício de tokens e quebras em produção.
 
+[![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
+[![CI Status](https://github.com/Henrique-All/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Henrique-All/skills/actions)
+[![Branch Protection](https://img.shields.io/badge/master%20branch-protected-success)](https://github.com/Henrique-All/skills/settings/branches)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](package.json)
+
+---
+
+## 📌 Referências & Navegação Rápida
+
+- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Comandos para Antigravity, Claude Code e Cursor
+- 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
+- 📊 [**Scorecard das Skills (Ecosistema 10.0)**](#-scorecard--notas-t%C3%A9cnicas-das-skills-ecosistema-100) — Tabela geral de notas
+- 🏆 [**O Motivo da Nota 10.0/10 de Cada Skill**](#-o-motivo-da-nota-10010-de-cada-skill) — Racional técnico e garantias
+- 🧭 [**O Ciclo de Engenharia Integrado**](#-o-ciclo-de-engenharia-integrado) — Diagrama de fluxo de trabalho
+- 🔗 [**Matriz de Comunicação Inter-Skills**](#-matriz-de-comunica%C3%A7%C3%A3o-inter-skills-como-elas-conversam) — Handshakes e dados trocados
+- 🔍 [**Detalhamento das 6 Skills**](#-o-que-cada-skill-faz--suas-vantagens-competitivas):
+  - ⚡ [`hybrid-orchestrator` (10.0)](#1--hybrid-orchestrator--nota-10010) — Governança, snapshots e Falsifier
+  - 🎨 [`frontend-craftsman` (10.0)](#2--frontend-craftsman--nota-10010) — Design Engineering, anti-AI slop e molas
+  - 📱 [`mobile-converter` (10.0)](#3--mobile-converter--nota-10010) — Adaptação mobile tátil e simulador
+  - 🗺️ [`repo-cartographer` (10.0)](#4--repo-cartographer--nota-10010) — Cartografia 360° e canvas web
+  - 🛡️ [`route-guard` (10.0)](#5--route-guard--nota-10010) — Contratos Zod/DTO e Mock Server
+  - 🔒 [`security-audit` (10.0)](#6--security-audit--nota-10010) — 18 pilares OWASP, Autofix e SARIF
+- 🤝 [**Contribuições & Governança**](#-contribui%C3%A7%C3%B5es--governan%C3%A7a) — Guia, templates e proteção da master
+- 📝 [**Changelog & Releases Oficiais**](#-changelog--releases) — Histórico de versões
+- 🏗️ [**Estrutura do Repositório**](#%EF%B8%8F-estrutura-do-reposit%C3%B3rio)
+- 📜 [**Licença**](#-licen%C3%A7a)
+
 ---
 
 ## 🧭 O Ciclo de Engenharia Integrado
@@ -553,6 +581,42 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 
 ---
 
+## 🤝 Contribuições & Governança
+
+Contribuições são muito bem-vindas! Este projeto segue padrões rígidos de qualidade de software open-source para garantir que nenhuma alteração comprometa a estabilidade dos agentes de IA em produção:
+
+- 📖 **Guia Completo de Contribuição:** Consulte o [**`CONTRIBUTING.md`**](CONTRIBUTING.md) para regras de branch, commits SemVer e diretrizes de desenvolvimento.
+- 📋 **Template de Pull Request:** Todos os PRs devem preencher o [**`PULL_REQUEST_TEMPLATE.md`**](.github/PULL_REQUEST_TEMPLATE.md), confirmando que a esteira `npm test` passou com 100% de sucesso.
+- 🐛 **Reportar um Bug:** Utilize o [**Template de Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md).
+- 💡 **Sugerir Funcionalidade:** Utilize o [**Template de Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md).
+- 🔒 **Política de Segurança:** Reporte vulnerabilidades de forma responsável conforme detalhado em [**`SECURITY.md`**](SECURITY.md).
+- 📜 **Código de Conduta:** Adotamos o [**Contributor Covenant v2.1**](CODE_OF_CONDUCT.md).
+
+### 🛡️ Regras de Proteção da Branch `master`
+A branch `master` é blindada contra quebras acidentais através das seguintes regras ativas no GitHub:
+1. **Pull Request Obrigatório:** Nenhum commit direto é permitido por terceiros;
+2. **Revisão Humana Exigida:** Requer no mínimo 1 aprovação de code review;
+3. **Invalidar Reviews Antigos:** Novos commits descartam aprovações anteriores;
+4. **CI Automatizado Obrigatório:** Status checks do GitHub Actions (Node 18, 20 e 22) devem estar 100% verdes;
+5. **Anti-Force-Push & Anti-Deletion:** Proibição estrita de force push (`git push -f`) e deleção da branch principal.
+
+---
+
+## 📝 Changelog & Releases
+
+O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**](CHANGELOG.md) conforme o padrão [Keep a Changelog](https://keepachangelog.com/).
+
+### 🏆 Releases Oficiais no GitHub
+- [**v2.0.0 — Ecossistema Pleno 10.0/10 (Ultimate Release)**](https://github.com/Henrique-All/skills/releases/tag/v2.0.0) — Todas as 6 skills com CLIs determinísticos e nota máxima.
+- [**v1.3.0 — Mobile Converter 10.0/10 & Simulador de Smartphone**](https://github.com/Henrique-All/skills/releases/tag/v1.3.0) — Metamorfoses táteis e molduras interativas.
+- [**v1.2.0 — Frontend Craftsman 10.0/10 & Matriz Inter-Skills**](https://github.com/Henrique-All/skills/releases/tag/v1.2.0) — Preview HTML vivo em 1s e Tailwind v4 `@theme`.
+- [**v1.1.0 — Lançamento do Frontend Craftsman (Design Engineering)**](https://github.com/Henrique-All/skills/releases/tag/v1.1.0) — Anti-AI slop e molas táteis.
+- [**v1.0.0 — Fundação do Ecossistema Enterprise AI Skills**](https://github.com/Henrique-All/skills/releases/tag/v1.0.0) — As 4 skills pioneiras e infraestrutura CI/CD.
+
+👉 Todas as releases podem ser acompanhadas na [**Página Oficial de Releases**](https://github.com/Henrique-All/skills/releases).
+
+---
+
 ## 🏗️ Estrutura do Repositório
 
 ```
@@ -564,9 +628,17 @@ skills/
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust
 ├── security-audit/        # Motor DevSecOps com os 18 pilares OWASP
 ├── scripts/
-│   └── test-all.js        # Test runner universal do monorepo
+│   ├── test-all.js        # Test runner universal do monorepo
+│   ├── protect-master.js  # Script de automação das regras da branch master
+│   └── create-github-releases.js # Publicador automático de releases
 ├── .github/
-│   └── workflows/ci.yml   # Pipeline CI multi-versão (Node 18, 20, 22)
+│   ├── workflows/ci.yml   # Pipeline CI multi-versão (Node 18, 20, 22)
+│   ├── ISSUE_TEMPLATE/    # Templates para bugs e novas features
+│   └── PULL_REQUEST_TEMPLATE.md # Template obrigatório para PRs
+├── CONTRIBUTING.md        # Guia oficial de contribuição
+├── CHANGELOG.md           # Histórico de versões e alterações
+├── SECURITY.md            # Política de segurança
+├── CODE_OF_CONDUCT.md     # Código de conduta internacional
 ├── install.js             # Instalador central do monorepo
 ├── package.json           # Scripts globais
 └── README.md              # Este manual completo
