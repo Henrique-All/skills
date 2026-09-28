@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RepoCartographerHandshake",
+  "description": "Contrato estruturado de passagem de contexto (Handshake) entre repo-cartographer e hybrid-orchestrator.",
+  "type": "object",
+  "required": ["version", "timestamp", "task", "mode", "entrypoint", "impact", "confidence", "unknowns"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Versão do schema do handshake"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "task": {
+      "type": "string",
+      "description": "Descrição clara da demanda do usuário"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["EXPLORE", "EXECUTE", "REFRESH"]
+    },
+    "entrypoint": {
+      "type": "object",
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["route", "file", "feature", "component"]
+        },
+        "value": { "type": "string" },
+        "resolvedPath": { "type": "string" }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "required": ["ui", "state", "api", "backend", "database", "infrastructure"],
+      "properties": {
+        "ui": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "state": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "api": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "backend": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "database": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "infrastructure": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["ui", "state", "api", "backend", "database"],
+      "properties": {
+        "ui": { "type": "number", "minimum": 0, "maximum": 1 },
+        "state": { "type": "number", "minimum": 0, "maximum": 1 },
+        "api": { "type": "number", "minimum": 0, "maximum": 1 },
+        "backend": { "type": "number", "minimum": 0, "maximum": 1 },
+        "database": { "type": "number", "minimum": 0, "maximum": 1 },
+        "infrastructure": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["relation", "status", "reason"],
+        "properties": {
+          "relation": { "type": "string" },
+          "item": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["inferred", "unknown"]
+          },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "suggestedRoute": {
+      "type": "string",
+      "enum": ["A", "B", "C"],
+      "description": "Sugestão preliminar de rota para o hybrid-orchestrator baseada no alcance e risco do impacto"
+    }
+  }
+}

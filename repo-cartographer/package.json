@@ -1,0 +1,26 @@
+{
+  "name": "repo-cartographer-skill",
+  "version": "1.0.0",
+  "description": "Cartógrafo de repositórios: mapeamento 360° em 6 camadas, Context IR incremental e handshake estruturado com hybrid-orchestrator",
+  "main": "scripts/cartographer.js",
+  "scripts": {
+    "test": "node test/validate.js",
+    "install:local": "node install.js",
+    "install:global": "node install.js --global --target=all",
+    "install:both": "node install.js --both",
+    "cartographer": "node scripts/cartographer.js"
+  },
+  "keywords": [
+    "antigravity",
+    "skills",
+    "cartographer",
+    "architecture-graph",
+    "obsidian",
+    "context-ir",
+    "hybrid-orchestrator",
+    "claude-code",
+    "cursor"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}

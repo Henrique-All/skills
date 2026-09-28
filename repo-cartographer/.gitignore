@@ -1,0 +1,5 @@
+node_modules/
+.code-map/
+*.log
+.DS_Store
+Thumbs.db

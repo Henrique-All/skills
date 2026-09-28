@@ -85,7 +85,7 @@ Em dúvida entre duas rotas, escolha a mais rigorosa.
 Antes de propor qualquer alteração, mapeie e declare:
 
 - **Arquivos afetados:** liste cada arquivo e se será criado, editado ou apenas lido.
-- **Grafo de dependências:** para cada consumidor identificado, indique se foi **encontrado por busca no código** ou se é **suposição** (sem evidência direta). Exemplo: *`OrderView.tsx` — encontrado por busca; `ReportService` — suposição, não verificado.*
+- **Grafo de dependências:** para cada consumidor identificado, indique se foi **encontrado por busca no código** ou se é **suposição** (sem evidência direta). Exemplo: *`OrderView.tsx` — encontrado por busca; `ReportService` — suposição, não verificado.* Se houver um handshake estruturado (`.code-map/handshake.json` gerado pelo `repo-cartographer`), consuma os nós mapeados (`confirmed`/`inferred`/`unknown`) como evidência direta, acelerando esta fase.
 - **Avaliação de risco:**
   - 🟢 **Baixo:** código novo e aditivo, sem impacto em contratos existentes.
   - 🟡 **Médio:** extensão de funcionalidade com poucas dependências afetadas.

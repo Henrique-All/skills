@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RepoCartographerGraph",
+  "description": "Representação Intermediária (Context IR) do grafo de dependências do repositório.",
+  "type": "object",
+  "required": ["version", "createdAt", "updatedAt", "nodes", "edges"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Versão do schema do grafo"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "type", "hash", "lastIndexed"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["ui", "state", "api", "backend", "database", "infra", "external"]
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "hash": { "type": "string" },
+          "mtime": { "type": "integer" },
+          "lastIndexed": { "type": "string" },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "relation", "status"],
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "relation": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["confirmed", "inferred", "unknown"]
+          },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-09-28T00:00:00.000Z",
+  "updatedAt": "2026-09-28T00:00:00.000Z",
+  "metadata": {
+    "generator": "repo-cartographer",
+    "description": "Grafo de contexto arquitetural incremental gerado para navegação e impacto."
+  },
+  "nodes": [],
+  "edges": []
+}
