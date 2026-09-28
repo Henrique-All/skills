@@ -1,0 +1,27 @@
+{
+  "name": "security-audit-skill",
+  "version": "1.0.0",
+  "description": "Motor de auditoria de segurança DevSecOps com 18 pilares universais (OWASP, supply chain, secrets, menor privilégio)",
+  "main": "scripts/audit.js",
+  "scripts": {
+    "test": "node test/validate.js",
+    "audit": "node scripts/audit.js",
+    "audit:json": "node scripts/audit.js --json",
+    "install:local": "node install.js",
+    "install:global": "node install.js --global --target=all",
+    "install:both": "node install.js --both"
+  },
+  "keywords": [
+    "antigravity",
+    "skills",
+    "security-audit",
+    "devsecops",
+    "owasp",
+    "sast",
+    "supply-chain",
+    "claude-code",
+    "cursor-rules"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}

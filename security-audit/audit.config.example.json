@@ -1,0 +1,32 @@
+{
+  "projectType": "fullstack",
+  "backend": {
+    "dir": "src/backend",
+    "routes": "src/backend/routes",
+    "server": "src/backend/server.ts",
+    "authMiddleware": "src/backend/middlewares/auth.ts",
+    "publicRoutes": ["/login", "/register", "/health", "/auth/refresh"]
+  },
+  "frontend": {
+    "dir": "src/frontend",
+    "routes": "src/frontend/routes",
+    "apiClient": "src/frontend/services/api.ts"
+  },
+  "rules": {
+    "minBcryptRounds": 10,
+    "requireCsrf": true,
+    "requireRateLimit": true,
+    "requireStrictCors": true,
+    "forbiddenOrigins": ["*"],
+    "secretsScan": {
+      "ignorePaths": ["node_modules", ".git", "dist", "build"],
+      "regexPatterns": [
+        "AKIA[0-9A-Z]{16}",
+        "AIza[0-9A-Za-z\\-_]{35}",
+        "-----BEGIN (?:RSA |EC )?PRIVATE KEY-----",
+        "ghp_[0-9a-zA-Z]{36}"
+      ]
+    }
+  },
+  "exceptionsFile": ".audit-exceptions.json"
+}

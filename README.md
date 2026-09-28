@@ -10,6 +10,7 @@
 | :--- | :--- | :--- |
 | **[`hybrid-orchestrator`](./hybrid-orchestrator)** | **Governança & Execução de Código** | Roteamento A/B/C, Sabatina em 4 Quadrantes, Trava de Permissão em 2 Turnos, Falsifier Adversário com Testes de Estresse, Snapshot Atômico (`git stash`) e Rollback Limpo. |
 | **[`repo-cartographer`](./repo-cartographer)** | **Contexto & Cartografia 360°** | Varredura em 6 camadas (UI ➔ Estado ➔ Rede ➔ Backend ➔ DB ➔ Infra), resolução de Path Aliases (`tsconfig.json`), dynamic imports, detecção de ciclos e Handshake tipado em JSON Schema. |
+| **[`security-audit`](./security-audit)** | **DevSecOps & 18 Pilares de Segurança** | Auditoria estática somente-leitura, OWASP Top 10, scanner de segredos no git, validação de tokens/cookies/CORS, supply chain e menor privilégio de banco. |
 
 ---
 

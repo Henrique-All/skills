@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SecurityAuditReport",
+  "description": "Contrato estruturado do relatório de auditoria de segurança DevSecOps.",
+  "type": "object",
+  "required": ["version", "timestamp", "summary", "findings"],
+  "properties": {
+    "version": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "required": ["totalFindings", "critical", "high", "medium", "low", "status"],
+      "properties": {
+        "totalFindings": { "type": "integer" },
+        "critical": { "type": "integer" },
+        "high": { "type": "integer" },
+        "medium": { "type": "integer" },
+        "low": { "type": "integer" },
+        "status": {
+          "type": "string",
+          "enum": ["APROVADO", "BLOQUEADO", "AVISOS"]
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "pilar", "severity", "file", "message"],
+        "properties": {
+          "id": { "type": "string" },
+          "pilar": { "type": "integer", "minimum": 1, "maximum": 18 },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+          },
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "message": { "type": "string" },
+          "evidence": { "type": "string" },
+          "remediation": { "type": "string" }
+        }
+      }
+    }
+  }
+}

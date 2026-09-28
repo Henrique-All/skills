@@ -240,15 +240,15 @@ Nas Rotas B e C, antes de aplicar o primeiro diff:
 | Java / Kotlin | `pom.xml`, `build.gradle` | `mvn compile`, `./gradlew classes` | `mvn test`, `./gradlew test` |
 | PHP | `composer.json` | `composer validate`, `phpstan analyse` | `./vendor/bin/phpunit` |
 
-### 7.1 Auditoria de segurança (`gid-security-audit`)
+### 7.1 Auditoria de segurança (`security-audit`)
 
 Se o domínio tocado pela demanda envolver autenticação, rotas/middlewares, cookies/CORS, uploads, senhas ou dependências de pacotes, acrescente à etapa de verificação — independentemente da rota (A, B ou C):
 
 ```bash
-node .agents/skills/gid-security-audit/scripts/full-audit.js --pilares <pilares do domínio>
+node .agents/skills/security-audit/scripts/audit.js --pilares=<pilares do domínio>
 ```
 
-Exemplos de `--pilares`: `zero-trust`, `cookies`, `uploads`, `dependencias`, `cors`.
+Exemplos de `--pilares`: `2,5,10` (auth), `3,12` (cookies/cors), `7,15` (uploads/owasp), `16` (segredos/git), `17` (cves).
 
 > Mudanças cosméticas (cor, label, tipografia) ou de UI pura sem toque em lógica de segurança **não** acionam esta etapa.
 
