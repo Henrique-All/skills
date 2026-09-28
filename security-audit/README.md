@@ -31,14 +31,23 @@
 ## 🚀 Como Executar
 
 ```bash
-# Auditoria completa
+# 1. Auditoria completa dos 18 pilares
 node scripts/audit.js
 
-# Auditoria seletiva por pilares
+# 2. Correção automática de vulnerabilidades triviais (Autofix):
+node scripts/audit.js --fix
+
+# 3. Exportação no padrão SARIF 2.1.0 (compatível com GitHub Code Scanning):
+node scripts/audit.js --sarif
+
+# 4. Auditoria seletiva por pilares
 node scripts/audit.js --pilares=2,3,5
 
-# Exportação JSON estruturada
+# 5. Exportação JSON estruturada
 node scripts/audit.js --json
+
+# 6. Instalar Git Pre-Commit Hook para blindar commits:
+node scripts/install-hook.js
 ```
 
 ---

@@ -441,6 +441,80 @@ function exportToObsidian(projectDir) {
   console.log(`   - 1 arquivo graph.canvas visual gerado`);
 }
 
+// 7. Gerar Diagrama Mermaid Direto
+function exportMermaid(entrypoint, projectDir) {
+  const result = traceDependencies(entrypoint, projectDir);
+  const nodes = result.nodes;
+  const edges = result.edges;
+
+  console.log('\n===============================================================');
+  console.log('🗺️  MERMAID FLOWCHART (TD)');
+  console.log('===============================================================\n');
+
+  let mm = '```mermaid\nflowchart TD\n';
+  nodes.forEach((n, idx) => {
+    const cleanId = `N${idx}_${n.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    const label = `${n.type}: ${path.basename(n.path || n.id)}<br/>Layer ${n.layer} (${n.status})`;
+    mm += `    ${cleanId}["${label}"]\n`;
+  });
+  mm += '\n';
+
+  edges.forEach((e) => {
+    const srcIdx = nodes.findIndex((n) => n.id === e.source);
+    const tgtIdx = nodes.findIndex((n) => n.id === e.target);
+    if (srcIdx >= 0 && tgtIdx >= 0) {
+      const srcId = `N${srcIdx}_${nodes[srcIdx].id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+      const tgtId = `N${tgtIdx}_${nodes[tgtIdx].id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+      mm += `    ${srcId} -->|"${e.relation}"| ${tgtId}\n`;
+    }
+  });
+
+  mm += '```\n';
+  console.log(mm);
+  return mm;
+}
+
+// 8. Rastreamento Reverso (Quem consome este arquivo?)
+function traceCallers(targetFile, projectDir) {
+  console.log('===============================================================');
+  console.log(`🔍 CARTOGRAPHER REVERSE TRACE — QUEM CHAMA [${path.basename(targetFile)}]?`);
+  console.log('===============================================================\n');
+
+  const baseName = path.basename(targetFile, path.extname(targetFile));
+  const callers = [];
+
+  function scanDir(dir) {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const ent of entries) {
+      if (ent.name === 'node_modules' || ent.name.startsWith('.') || ent.name === 'dist') continue;
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        scanDir(full);
+      } else if (/\.(ts|tsx|js|jsx)$/.test(ent.name)) {
+        try {
+          const content = fs.readFileSync(full, 'utf-8');
+          if (content.includes(baseName) && full !== path.resolve(projectDir, targetFile)) {
+            callers.push({ file: path.relative(projectDir, full), type: ent.name.endsWith('x') ? 'UI / View' : 'Service / Logic' });
+          }
+        } catch {}
+      }
+    }
+  }
+
+  scanDir(projectDir);
+
+  if (callers.length === 0) {
+    console.log('ℹ️  Nenhum chamador direto encontrado para este arquivo.');
+  } else {
+    console.log(`🚨 ${callers.length} consumidor(es) afetados (Blast Radius):\n`);
+    callers.forEach((c, idx) => {
+      console.log(`  ${idx + 1}. [${c.type}] ${c.file}`);
+    });
+    console.log('\n💡 Alterações neste arquivo podem quebrar os componentes acima.');
+  }
+}
+
 // CLI Runner
 const args = process.argv.slice(2);
 const command = args[0] || 'check';
@@ -461,9 +535,25 @@ switch (command) {
     }
     traceDependencies(entrypoint, targetDir);
     break;
+  case 'mermaid':
+    const mmEntry = args[1];
+    if (!mmEntry) {
+      console.error('❌ Informe o ponto de entrada. Ex: node cartographer.js mermaid src/pages/Checkout.tsx');
+      process.exit(1);
+    }
+    exportMermaid(mmEntry, targetDir);
+    break;
+  case 'callers':
+    const callerTarget = args[1];
+    if (!callerTarget) {
+      console.error('❌ Informe o arquivo alvo. Ex: node cartographer.js callers src/models/User.ts');
+      process.exit(1);
+    }
+    traceCallers(callerTarget, targetDir);
+    break;
   case 'obsidian':
     exportToObsidian(targetDir);
     break;
   default:
-    console.log(`Uso: node cartographer.js [init|check|trace <entrypoint>|obsidian] [diretório]`);
+    console.log(`Uso: node cartographer.js [init|check|trace <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
 }

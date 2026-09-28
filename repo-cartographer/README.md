@@ -83,9 +83,34 @@ repo-cartographer/
 ├── templates/
 │   └── graph.template.json  # Template base do grafo
 ├── scripts/
-│   └── cartographer.js      # Utilitário CLI (init, check, obsidian)
+│   ├── cartographer.js      # Utilitário CLI (init, check, trace, mermaid, callers, obsidian)
+│   └── preview-graph.js     # Visualizador interativo de Canvas 360° no navegador
 └── test/
     └── validate.js          # Validador de integridade da skill
+```
+
+---
+
+## 🛠️ Ferramentas de Linha de Comando (CLI)
+
+```bash
+# 1. Abrir o Canvas visual interativo 360° no navegador (1 segundo):
+node scripts/preview-graph.js
+
+# 2. Gerar diagrama Mermaid pronto para colar em PRs ou docs:
+node scripts/cartographer.js mermaid src/pages/Checkout.tsx
+
+# 3. Rastreamento reverso (Blast Radius: quais telas e rotas chamam este arquivo?):
+node scripts/cartographer.js callers src/models/User.ts
+
+# 4. Rastreamento 360° a partir de uma tela/arquivo:
+node scripts/cartographer.js trace src/pages/Checkout.tsx
+
+# 5. Checar integridade e sincronia do cache incremental:
+node scripts/cartographer.js check
+
+# 6. Exportar mapa para o Obsidian (.canvas e notas com [[wikilinks]]):
+node scripts/cartographer.js obsidian
 ```
 
 ---

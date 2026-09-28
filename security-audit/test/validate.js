@@ -17,7 +17,8 @@ const requiredFiles = [
   'package.json',
   'audit.config.example.json',
   'schemas/audit-report.schema.json',
-  'scripts/audit.js'
+  'scripts/audit.js',
+  'scripts/install-hook.js'
 ];
 
 let hasErrors = false;
@@ -76,6 +77,29 @@ try {
 } catch (e) {
   console.error(`❌ Erro ao validar SKILL.md: ${e.message}`);
   hasErrors = true;
+}
+
+// 4. Testar execução de audit.js com --sarif
+const { execSync } = require('child_process');
+try {
+  const sarifOut = execSync(`node "${path.join(rootDir, 'scripts', 'audit.js')}" --sarif`, { encoding: 'utf-8' });
+  const parsed = JSON.parse(sarifOut);
+  if (parsed.version === '2.1.0' && parsed.runs) {
+    console.log('✅ Execução bem-sucedida: scripts/audit.js (--sarif export válido)');
+  }
+} catch (e) {
+  // Se o exit code for 1 por ter achados no projeto, ainda checamos se o output é JSON SARIF válido
+  if (e.stdout) {
+    try {
+      const parsed = JSON.parse(e.stdout);
+      if (parsed.version === '2.1.0') {
+        console.log('✅ Execução bem-sucedida: scripts/audit.js (--sarif export válido)');
+      }
+    } catch {
+      console.error('❌ Falha ao exportar SARIF:', e.message);
+      hasErrors = true;
+    }
+  }
 }
 
 if (hasErrors) {

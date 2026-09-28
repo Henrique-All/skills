@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 console.log('🧪 Validando arquivos da skill route-guard...\n');
 
@@ -16,7 +17,9 @@ const requiredFiles = [
   'README.md',
   'package.json',
   'route-guard.config.example.json',
-  'scripts/analyze-route.js'
+  'scripts/analyze-route.js',
+  'scripts/generate-contract.js',
+  'scripts/mock-route.js'
 ];
 
 let hasErrors = false;
@@ -73,6 +76,34 @@ try {
   }
 } catch (e) {
   console.error(`❌ Erro ao validar SKILL.md: ${e.message}`);
+  hasErrors = true;
+}
+
+// 4. Teste Funcional: analyze-route.js
+try {
+  const output = execSync('node scripts/analyze-route.js GET /api/test-route', { cwd: rootDir, encoding: 'utf-8' });
+  if (output.includes('ROUTE GUARD') && output.includes('ROTA NOVA')) {
+    console.log('✅ analyze-route.js: Análise de rota executada com sucesso.');
+  } else {
+    console.error('❌ analyze-route.js: Saída inesperada.');
+    hasErrors = true;
+  }
+} catch (e) {
+  console.error(`❌ Falha ao rodar analyze-route.js: ${e.message}`);
+  hasErrors = true;
+}
+
+// 5. Teste Funcional: generate-contract.js
+try {
+  const contractOut = execSync('node scripts/generate-contract.js POST /api/orders --fields "amount:number,item:string"', { cwd: rootDir, encoding: 'utf-8' });
+  if (contractOut.includes('CreateOrderSchema') && contractOut.includes('OrderResponseSchema') && contractOut.includes('OrderContract')) {
+    console.log('✅ generate-contract.js: Contrato Zod & DTOs TypeScript gerados com sucesso.');
+  } else {
+    console.error('❌ generate-contract.js: Saída inesperada.');
+    hasErrors = true;
+  }
+} catch (e) {
+  console.error(`❌ Falha ao rodar generate-contract.js: ${e.message}`);
   hasErrors = true;
 }
 

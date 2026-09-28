@@ -10,7 +10,10 @@
     "install:claude": "node install.js --global --target=claude",
     "install:cursor": "node install.js --global --target=cursor",
     "install:both": "node install.js --both",
-    "test": "node test/validate.js"
+    "test": "node test/validate.js",
+    "snapshot": "node scripts/snapshot.js",
+    "falsify": "node scripts/falsify.js",
+    "preview": "node scripts/preview-plan.js"
   },
   "keywords": [
     "ai-agent",

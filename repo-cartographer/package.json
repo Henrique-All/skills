@@ -8,7 +8,10 @@
     "install:local": "node install.js",
     "install:global": "node install.js --global --target=all",
     "install:both": "node install.js --both",
-    "cartographer": "node scripts/cartographer.js"
+    "cartographer": "node scripts/cartographer.js",
+    "preview": "node scripts/preview-graph.js",
+    "mermaid": "node scripts/cartographer.js mermaid",
+    "callers": "node scripts/cartographer.js callers"
   },
   "keywords": [
     "antigravity",

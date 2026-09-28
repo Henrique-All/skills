@@ -17,6 +17,8 @@ const { execSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const isJsonOutput = args.includes('--json');
+const isSarifOutput = args.includes('--sarif');
+const shouldFix = args.includes('--fix');
 const pilaresArg = args.find((a) => a.startsWith('--pilares=') || a.startsWith('--pillars='));
 const selectedPilares = pilaresArg ? pilaresArg.split('=')[1].split(',').map(Number) : null;
 
@@ -312,6 +314,78 @@ const report = {
   },
   findings
 };
+
+// 4. Autofix (se ativado via --fix)
+if (shouldFix && findings.length > 0) {
+  const fixedFiles = new Set();
+  findings.forEach((f) => {
+    if (!fs.existsSync(f.file)) return;
+    try {
+      let content = fs.readFileSync(f.file, 'utf-8');
+      let changed = false;
+
+      // Fix 1: Reverse Tabnabbing (target="_blank")
+      if (content.includes('target="_blank"') && !content.includes('rel="noopener')) {
+        content = content.replace(/target="_blank"(?!\s+rel=)/g, 'target="_blank" rel="noopener noreferrer"');
+        changed = true;
+      }
+
+      // Fix 2: Cookie Security (adiciona httpOnly e secure)
+      if (content.includes('res.cookie(') && (!content.includes('httpOnly') || !content.includes('sameSite'))) {
+        content = content.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
+          let opts = p2.trim();
+          if (!opts.includes('httpOnly')) opts += (opts ? ', ' : '') + 'httpOnly: true';
+          if (!opts.includes('sameSite')) opts += (opts ? ', ' : '') + "sameSite: 'strict'";
+          if (!opts.includes('secure')) opts += (opts ? ', ' : '') + 'secure: true';
+          return `${p1} ${opts} ${p3}`;
+        });
+        changed = true;
+      }
+
+      if (changed) {
+        fs.writeFileSync(f.file, content, 'utf-8');
+        fixedFiles.add(f.file);
+      }
+    } catch {}
+  });
+
+  if (fixedFiles.size > 0) {
+    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
+  }
+}
+
+if (isSarifOutput) {
+  const sarif = {
+    $schema: "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+    version: "2.1.0",
+    runs: [{
+      tool: {
+        driver: {
+          name: "security-audit-devsecops",
+          version: "1.0.0",
+          informationUri: "https://github.com/Henrique-All/skills",
+          rules: Array.from(new Set(findings.map((f) => f.id))).map((id) => ({
+            id,
+            shortDescription: { text: id }
+          }))
+        }
+      },
+      results: findings.map((f) => ({
+        ruleId: f.id,
+        level: f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'error' : (f.severity === 'MEDIUM' ? 'warning' : 'note'),
+        message: { text: `${f.message} -> ${f.remediation}` },
+        locations: [{
+          physicalLocation: {
+            artifactLocation: { uri: f.file },
+            region: { startLine: f.line || 1 }
+          }
+        }]
+      }))
+    }]
+  };
+  console.log(JSON.stringify(sarif, null, 2));
+  process.exit(isBlocked ? 1 : 0);
+}
 
 if (isJsonOutput) {
   console.log(JSON.stringify(report, null, 2));

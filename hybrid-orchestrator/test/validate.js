@@ -10,7 +10,10 @@ const filesToCheck = [
   'hybrid-orchestrator.mdc',
   'AGENTS.md',
   'README.md',
-  'package.json'
+  'package.json',
+  'scripts/snapshot.js',
+  'scripts/falsify.js',
+  'scripts/preview-plan.js'
 ];
 
 let errors = 0;
@@ -36,6 +39,32 @@ if (!skillContent.startsWith('---')) {
   errors++;
 } else {
   console.log('✅ SKILL.md: Frontmatter válido e nome correspondente.');
+}
+
+// Testar execução dos scripts
+const { execSync } = require('child_process');
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'snapshot.js')}" --status`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/snapshot.js');
+} catch (e) {
+  console.error('❌ Erro ao rodar snapshot.js:', e.message);
+  errors++;
+}
+
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'preview-plan.js')}" "Test Plan"`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/preview-plan.js');
+} catch (e) {
+  console.error('❌ Erro ao rodar preview-plan.js:', e.message);
+  errors++;
+}
+
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'falsify.js')}" "${path.join(rootDir, 'scripts')}"`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/falsify.js');
+} catch (e) {
+  console.error('❌ Erro ao rodar falsify.js:', e.message);
+  errors++;
 }
 
 if (errors > 0) {

@@ -19,6 +19,7 @@ const requiredFiles = [
   'schemas/handshake.schema.json',
   'templates/graph.template.json',
   'scripts/cartographer.js',
+  'scripts/preview-graph.js'
 ];
 
 let hasErrors = false;
@@ -77,6 +78,24 @@ try {
   }
 } catch (e) {
   console.error(`❌ Erro ao validar SKILL.md: ${e.message}`);
+  hasErrors = true;
+}
+
+// 4. Testar execução dos scripts
+const { execSync } = require('child_process');
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'preview-graph.js')}" --no-open`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/preview-graph.js (--no-open)');
+} catch (e) {
+  console.error('❌ Falha ao rodar preview-graph.js:', e.message);
+  hasErrors = true;
+}
+
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'cartographer.js')}" callers "${path.join(rootDir, 'scripts', 'cartographer.js')}"`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/cartographer.js (callers)');
+} catch (e) {
+  console.error('❌ Falha ao rodar cartographer.js callers:', e.message);
   hasErrors = true;
 }
 

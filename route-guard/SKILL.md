@@ -54,6 +54,18 @@ node scripts/analyze-route.js <MÉTODO> <ENDPOINT>
 - `node scripts/analyze-route.js POST /api/v1/orders`
 - `node scripts/analyze-route.js GET /users/:id`
 
+### Passo 1.1: Geração Automática de Contrato Zod & TypeScript DTOs
+Para blindar a comunicação ou acelerar a tipagem entre front e back:
+```bash
+node scripts/generate-contract.js POST /api/orders --fields "productId:string,quantity:number,coupon:string?" --out src/contracts/order.contract.ts
+```
+
+### Passo 1.2: Servidor Mock HTTP em 1 Segundo (Desenvolvimento Paralelo)
+Permite que o frontend construa e teste interfaces antes do backend estar pronto:
+```bash
+node scripts/mock-route.js --port 3333 --delay 150
+```
+
 ---
 
 ### Passo 2: Avaliação de Cenário & Trava de Permissão

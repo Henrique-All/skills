@@ -6,6 +6,8 @@
   "scripts": {
     "test": "node test/validate.js",
     "analyze": "node scripts/analyze-route.js",
+    "contract": "node scripts/generate-contract.js",
+    "mock": "node scripts/mock-route.js",
     "install:local": "node install.js",
     "install:global": "node install.js --global --target=all",
     "install:both": "node install.js --both"

@@ -37,8 +37,33 @@ hybrid-orchestrator/
 ├── install.js               # Instalador multiplataforma
 ├── README.md                # Este arquivo
 ├── package.json             # Metadados e scripts de instalação
+├── scripts/
+│   ├── snapshot.js          # Gestor de snapshots atômicos e rollback seguro
+│   ├── falsify.js           # Runner de estresse adversário (N+1, timeouts, transações)
+│   └── preview-plan.js      # Painel visual dos 4 Quadrantes e Trava de Permissão
 ├── LICENSE                  # MIT
 └── test/validate.js         # Validador de integridade
+```
+
+---
+
+## 🛠️ Ferramentas de Linha de Comando (CLI)
+
+```bash
+# 1. Criar snapshot atômico antes de autorizar modificações:
+node scripts/snapshot.js --save "feature-cobranca"
+
+# 2. Executar rollback seguro restaurando o repositório limpo:
+node scripts/snapshot.js --rollback
+
+# 3. Rodar o Falsifier adversário contra 5 vetores de estresse (N+1, timeouts, transações):
+node scripts/falsify.js src/
+
+# 4. Visualizar os 4 Quadrantes e a Trava de Permissão do Turno 1:
+node scripts/preview-plan.js "Central de Cobranças"
+
+# 5. Testar a integridade da skill:
+npm test
 ```
 
 ---

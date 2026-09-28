@@ -6,7 +6,10 @@
   "scripts": {
     "test": "node test/validate.js",
     "audit": "node scripts/audit.js",
+    "audit:fix": "node scripts/audit.js --fix",
+    "audit:sarif": "node scripts/audit.js --sarif",
     "audit:json": "node scripts/audit.js --json",
+    "hook:install": "node scripts/install-hook.js",
     "install:local": "node install.js",
     "install:global": "node install.js --global --target=all",
     "install:both": "node install.js --both"
