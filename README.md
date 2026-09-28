@@ -45,7 +45,7 @@ flowchart LR
 | Skill | Nota | Foco Principal | Maior Diferencial Prático |
 | :--- | :---: | :--- | :--- |
 | **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-9810)** | **`9.8` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot atômico (`git stash`) + Falsifier adversário com estresse. |
-| **[`frontend-craftsman`](#2--frontend-craftsman--nota-9810)** | **`9.8` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA' (roxos clichê, blur), física de molas (Framer Motion, `layoutId`), `DESIGN_SPEC.md` e elo simbiótico. |
+| **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme), Skeletons Content-Aware e elo simbiótico. |
 | **[`security-audit`](#3--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
 | **[`repo-cartographer`](#4--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
 | **[`route-guard`](#5--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
@@ -98,27 +98,29 @@ node hybrid-orchestrator/install.js --global --target=all
 
 ---
 
-### 2. 🎨 `frontend-craftsman` — Nota: 9.8/10
-> **Design Engineering de Alta Fidelidade: Erradicação do "AI Slop UI" & Física de Molas.**
+### 2. 🎨 `frontend-craftsman` — Nota: 10.0/10
+> **Design Engineering de Alta Fidelidade: Erradicação do "AI Slop UI", Física de Molas & Preview Instantâneo.**
 
 #### 🛑 O Problema que Resolve:
 Quando modelos de linguagem geram interfaces por conta própria, caem no visual clichê de IA: fundos com gradientes roxos/índigo (`from-purple-600 to-indigo-600`), `backdrop-blur` desregulado em todos os cards, botões estáticos sem feedback tátil de press, ausência de física de molas (ou transições lineares duras `duration-300`) e textos artificiais ("Unleash next-gen AI...").
 
 #### 💡 O que ela faz:
-1. **Os 7 Pilares Anti-AI Slop:** Regras estritas que proíbem gradientes roxos genéricos e impõem paletas profundas calibradas (Zinc, Slate, Obsidian) com apenas **1 cor de acento cirúrgica** (< 5% da área visual).
+1. **Os 7 Pilares Anti-AI Slop:** Regras estritas que proíbem gradientes roxos genéricos e impõem paletas profundas calibradas (Dark & Light) com apenas **1 cor de acento cirúrgica** (< 5% da área visual).
 2. **Framer Motion com Física de Molas Real (Spring Physics):**
    - Micro-interações rápidas e responsivas (`stiffness: 450, damping: 30`);
    - Abas deslizantes fluidas com `layoutId="active-pill"` estilo macOS/Linear sem pulo visual;
    - Modais com `AnimatePresence mode="wait"`;
    - Respeito obrigatório a `prefers-reduced-motion`.
-3. **Superfícies de Hardware Físico:** Substitui blur embaçado por camadas opacas estruturadas, bordas ultrafinas de 1px com opacidade precisa (`border-white/[0.08]`) e **inner highlights** superiores (`shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]`).
+3. **Superfícies de Hardware Físico:** Substitui blur embaçado por camadas opacas estruturadas, bordas ultrafinas de 1px com opacidade precisa (`border-white/[0.08]` em dark / `border-black/[0.06]` em light) e **inner highlights** superiores.
 4. **Gerador de Especificação Visual (`DESIGN_SPEC.md`):** Cria um documento visual com tabela de cores, tipografia com `tracking-tight`, escala modular, bibliotecas e wireframe ASCII para validação do usuário antes de codificar.
-5. **Motor Determinístico de Auditoria (`craft-audit.js`):** Analisa a base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e calcula o **Craftsmanship Score (0–100)**, apontando linhas exatas e sugestões de polimento.
-6. **Catálogo de Componentes Prontos (`templates/`):** Templates de alta fidelidade para `AnimatedTabs`, `SpotlightCard`, `MagneticButton` e `SmoothAccordion`.
+5. **Preview Visual Instantâneo no Navegador (`preview-spec.js`):** Abre localmente em 1 segundo uma página HTML interativa com os componentes vivos (spotlight, tabs e botões táteis) antes de aprovar a execução!
+6. **Suporte Nativo a Tailwind CSS v4:** Exporta tokens tanto no formato clássico (`tailwind.config.js`) quanto na nova diretiva `@theme` CSS-first do Tailwind v4.
+7. **Motor Determinístico de Auditoria (`craft-audit.js`):** Analisa a base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e calcula o **Craftsmanship Score (0–100)**, apontando linhas exatas e sugestões de polimento.
+8. **Catálogo de Componentes Prontos (`templates/`):** Templates de alta fidelidade para `AnimatedTabs`, `SpotlightCard`, `MagneticButton`, `SmoothAccordion` e `ContentSkeleton` (zero CLS).
 
 #### 🚀 Vantagens de Usar:
 - **Acabamento nível Linear, Apple, Stripe e Raycast:** Suas interfaces deixam de parecer "projeto de IA gerado em 10 segundos" e ganham aspecto de software de alta engenharia.
-- **Validação visual prévia:** Você aprova paleta, fontes e estrutura antes que qualquer linha de código seja gerada.
+- **Validação visual prévia & Preview Interativo:** Você vê e interage com os botões e cores no seu navegador antes que qualquer linha de código de produção seja escrita.
 - **Micro-interações táteis nativas:** Todo botão e card responde fisicamente ao ponteiro e ao clique.
 
 #### 💻 Comandos e Ferramentas:
@@ -126,13 +128,16 @@ Quando modelos de linguagem geram interfaces por conta própria, caem no visual 
 # 1. Gerar documento de especificação visual (DESIGN_SPEC.md):
 node frontend-craftsman/scripts/generate-spec.js "Dashboard de Vendas" --preset=linear-dark
 
-# 2. Auditar qualidade artesanal da interface (detecta vícios de IA):
+# 2. Abrir preview interativo no navegador em 1 segundo:
+node frontend-craftsman/scripts/preview-spec.js DESIGN_SPEC.md
+
+# 3. Auditar qualidade artesanal da interface (detecta vícios de IA):
 node frontend-craftsman/scripts/craft-audit.js src/
 
-# 3. Exportar tokens de paleta refinada para Tailwind ou CSS:
-node frontend-craftsman/scripts/craft-palette.js supabase-emerald --format=css
+# 4. Exportar tokens de paleta (Tailwind v3, Tailwind v4 ou CSS):
+node frontend-craftsman/scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
 
-# 4. Testar integridade da skill:
+# 5. Testar integridade da skill:
 cd frontend-craftsman && npm test
 ```
 

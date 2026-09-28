@@ -111,14 +111,18 @@ Para dar acabamento de hardware físico (estilo Apple e Linear):
 
 ## 🎨 3. Paletas de Cores de Elite (Regra 60-30-10)
 
-1. **60% (Canvas Base):** Zinc escuro (`bg-[#09090b]`) ou off-white refinado (`bg-[#fafafa]`).
-2. **30% (Superfícies & Estrutura):** Tons neutros com passos graduais (`zinc-900`, `zinc-800`, bordas `white/[0.08]`).
-3. **10% (Tipografia & Alto Contraste):** Títulos em `text-zinc-100`, textos de apoio em `text-zinc-400`.
+1. **60% (Canvas Base):**
+   - **Dark Mode:** Zinc escuro (`bg-[#09090b]`) ou Obsidian (`bg-[#0a0a0c]`). Nunca use preto puro `#000000` (que quebra sombras de elevação).
+   - **Light Mode:** Canvas cerâmico/off-white (`bg-[#f8fafc]` ou `bg-[#f5f5f7]`). Evite branco puro no canvas para permitir destaque aos cards.
+2. **30% (Superfícies & Estrutura):** Tons neutros com passos graduais (`zinc-900`, `zinc-800`, bordas `white/[0.08]` em dark; `bg-white`, bordas `black/[0.06]` em light).
+3. **10% (Tipografia & Alto Contraste):** Títulos em `text-zinc-100` (dark) ou `text-slate-900` (light), textos de apoio em `text-zinc-400` / `text-slate-600`.
 4. **< 5% (Cor de Acento - Escolha APENAS UMA):**
    - **Amber Linear:** `amber-500` / `amber-400`
    - **Emerald FinTech:** `emerald-500` / `emerald-400`
    - **Electric Cobalt:** `blue-500` / `blue-400`
    - **Crimson Pro:** `rose-500` / `rose-400`
+   - **Stripe Royal Blue (Light):** `#0048e5` (contraste perfeito sobre branco)
+   - **Apple Pure Blue (Light):** `#0071e3`
 
 > ⚠️ **PROIBIDO:** Usar gradientes arco-íris ou combinar roxo com rosa neon sem justificativa formal de marca.
 
@@ -132,13 +136,14 @@ Quando ambas as skills estão presentes no repositório ou no perfil global do u
 flowchart TD
     subgraph "Fluxo Design-First (Iniciado no Craftsman)"
         D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
-        D2 --> D3{"Usuário Aprova o Design?"}
-        D3 -- NÃO --> D4["Ajustar Paleta / Tipografia / Wireframe"]
-        D4 --> D2
-        D3 -- SIM (OK) --> D5{"Hybrid Orchestrator Presente?"}
-        D5 -- SIM --> D6["Handoff para Hybrid Orchestrator (Rota B/C)"]
-        D6 --> D7["Snapshot git stash + Sabatina Q1-Q4 + Falsifier"]
-        D5 -- NÃO --> D8["Craftsman implementa diretamente"]
+        D2 --> D3["Preview Instantâneo no Navegador (preview-spec.js)"]
+        D3 --> D4{"Usuário Aprova o Design?"}
+        D4 -- NÃO --> D5["Ajustar Paleta / Tipografia / Wireframe"]
+        D5 --> D2
+        D4 -- SIM (OK) --> D6{"Hybrid Orchestrator Presente?"}
+        D6 -- SIM --> D7["Handoff para Hybrid Orchestrator (Rota B/C)"]
+        D7 --> D8["Snapshot git stash + Sabatina Q1-Q4 + Falsifier"]
+        D6 -- NÃO --> D9["Craftsman implementa diretamente"]
     end
 
     subgraph "Fluxo Engineering-First (Iniciado no Hybrid)"
@@ -160,6 +165,7 @@ flowchart TD
    - Se existir, **NUNCA** comece a codificar interfaces sem antes apresentar o `DESIGN_SPEC.md` visual.
 2. **O Documento `DESIGN_SPEC.md`:**
    - Cria o arquivo na raiz do projeto contendo paleta (hex, contrastes, 1 accent), fontes, bibliotecas (`framer-motion`, `radix-ui`), física de molas e wireframe ASCII.
+   - Oferece ou abre o preview interativo local com `node scripts/preview-spec.js`.
    - Pede a validação visual do usuário.
 3. **Pós-Execução Blindada:**
    - Ao final da implementação técnica conduzida pelo `hybrid-orchestrator`, ele executa obrigatoriamente:
@@ -172,32 +178,46 @@ flowchart TD
 
 ## 🛠️ Ferramentas da Skill
 
-### 1. Gerador de Especificação Visual (`generate-spec.js`)
+### 1. Preview Visual Instantâneo (`preview-spec.js`)
+Gera e abre no navegador uma página HTML interativa com os botões táteis, cards com spotlight e a paleta real:
+```bash
+node scripts/preview-spec.js DESIGN_SPEC.md
+```
+
+### 2. Gerador de Especificação Visual (`generate-spec.js`)
 Gera o `DESIGN_SPEC.md` formatado pronto para apresentar ao usuário:
 ```bash
 node scripts/generate-spec.js "Nome da Tela / Módulo" --preset=linear-dark
 ```
-*Presets disponíveis:* `linear-dark`, `supabase-emerald`, `raycast-obsidian`, `apple-neutral`.
+*Presets disponíveis:* `linear-dark`, `supabase-emerald`, `raycast-obsidian`, `apple-neutral`, `stripe-clean-light`, `apple-pure-light`.
 
-### 2. Auditoria de Artesanato Visual (`craft-audit.js`)
+### 3. Auditoria de Artesanato Visual (`craft-audit.js`)
 Analisa os arquivos do frontend e aponta os vícios de IA:
 ```bash
 node scripts/craft-audit.js src/
 ```
 *Gera o Craftsmanship Score (0-100) com lista de linhas a corrigir.*
 
-### 3. Gerador de Tokens de Paleta (`craft-palette.js`)
-Exporta tokens refinados para Tailwind ou CSS Modules:
+### 4. Gerador de Tokens de Paleta (`craft-palette.js`)
+Exporta tokens refinados para Tailwind CSS v3, Tailwind CSS v4 (`@theme`) ou CSS Modules:
 ```bash
+# Tailwind v3
 node scripts/craft-palette.js linear-dark
+
+# Tailwind v4 (@theme CSS-First)
+node scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
+
+# CSS Custom Properties (:root)
+node scripts/craft-palette.js supabase-emerald --format=css
 ```
 
-### 4. Catálogo de Componentes Artesanais (`templates/`)
+### 5. Catálogo de Componentes Artesanais (`templates/`)
 A skill inclui templates prontos para copiar e colar:
 - `AnimatedTabs.tsx`: Navegação com pílula deslizante `layoutId`.
 - `SpotlightCard.tsx`: Card escuro com iluminação radial sensível ao ponteiro.
 - `MagneticButton.tsx`: Botão com atração elástica e clique tátil.
 - `SmoothAccordion.tsx`: Sanfona sem saltos de altura usando Framer Motion.
+- `ContentSkeleton.tsx`: Skeletons content-aware com shimmer fluido (zero layout shift).
 
 ---
 
@@ -210,5 +230,5 @@ Antes de considerar qualquer tela pronta:
 - [ ] Abas e seletores de visualização utilizam `layoutId` para movimento contínuo.
 - [ ] Cards possuem bordas sutis de 1px com opacidade precisa e inner highlight superior.
 - [ ] Textos de títulos utilizam `tracking-tight` com peso tipográfico ponderado.
-- [ ] Estados vazios e de carregamento possuem layouts dedicados (Skeletons content-aware).
+- [ ] Estados vazios e de carregamento possuem layouts dedicados (Skeletons content-aware com `ContentSkeleton.tsx`).
 - [ ] `craft-audit.js` executado com score **>= 90/100**.

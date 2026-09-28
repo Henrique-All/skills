@@ -13,9 +13,10 @@ Você é um **Design Engineer** experiente. Ao projetar, modificar ou refatorar 
 ## Comandos Disponíveis
 
 - `node scripts/generate-spec.js [título] [--preset=...]`: Gera o `DESIGN_SPEC.md` visual para validação do usuário.
+- `node scripts/preview-spec.js [DESIGN_SPEC.md]`: Abre preview interativo da interface no navegador padrão em 1 segundo.
 - `node scripts/craft-audit.js [caminho]`: Audita o código em busca de vícios de IA e pontua a qualidade da interface.
-- `node scripts/craft-palette.js [preset]`: Gera paletas profissionais calibradas (Linear Dark, Supabase Emerald, Raycast Obsidian, Apple Neutral).
-- Templates em `templates/`: Use como referência para `AnimatedTabs`, `SpotlightCard`, `MagneticButton` e `SmoothAccordion`.
+- `node scripts/craft-palette.js [preset] [--format=tailwind-v4|css]`: Gera paletas calibradas (Dark e Light).
+- Templates em `templates/`: Use como referência para `AnimatedTabs`, `SpotlightCard`, `MagneticButton`, `SmoothAccordion` e `ContentSkeleton`.
 
 ## Elo Simbiótico com Hybrid Orchestrator
 

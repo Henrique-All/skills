@@ -36,33 +36,47 @@ O **Frontend Craftsman** estabelece um padrão rigoroso de **Design Engineering*
 
 ## 🛠️ Ferramentas Inclusas
 
-### 1. Auditoria de Artesanato Visual (`craft-audit.js`)
-Varre sua base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e detecta anti-patterns de IA, calculando o **Craftsmanship Score (0-100)**:
+### 1. Preview Visual Instantâneo (`preview-spec.js`)
+Gera e abre no navegador uma interface interativa com os componentes vivos e a paleta real:
+```bash
+node scripts/preview-spec.js DESIGN_SPEC.md
+```
 
+### 2. Gerador de Especificação de Design (`generate-spec.js`)
+Cria o `DESIGN_SPEC.md` completo com cores, fontes, molas e wireframe ASCII:
+```bash
+# Dark Mode (padrão)
+node scripts/generate-spec.js "Central de Clientes" --preset=linear-dark
+
+# Light Mode de Alta Fidelidade (Stripe Style)
+node scripts/generate-spec.js "Checkout Transparente" --preset=stripe-clean-light
+```
+
+### 3. Auditoria de Artesanato Visual (`craft-audit.js`)
+Varre sua base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e detecta anti-patterns de IA, calculando o **Craftsmanship Score (0-100)**:
 ```bash
 node scripts/craft-audit.js src/
 ```
 
-*Saída detalhada no terminal com linha, penalidade de pontos e sugestão exata de refatoração.*
-
-### 2. Gerador de Tokens de Paleta (`craft-palette.js`)
-Gera tokens refinados para Tailwind ou CSS Modules para paletas de alto nível:
-
+### 4. Gerador de Tokens de Paleta (`craft-palette.js`)
+Gera tokens para Tailwind v3, Tailwind v4 (`@theme`) e CSS Custom Properties:
 ```bash
-# Paleta Linear Dark (padrão)
+# Tailwind CSS v4 (@theme CSS-First)
+node scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
+
+# Tailwind CSS v3 (tailwind.config.js)
 node scripts/craft-palette.js linear-dark
 
-# Paleta Supabase Emerald exportada para CSS Variables
+# CSS Variables (:root)
 node scripts/craft-palette.js supabase-emerald --format=css
-
-# Outras opções: raycast-obsidian, apple-neutral
 ```
 
-### 3. Templates de Componentes Prontos (`templates/`)
+### 5. Templates de Componentes Prontos (`templates/`)
 - `AnimatedTabs.tsx`: Seletor de abas com física de mola e indicador deslizante `layoutId`.
 - `SpotlightCard.tsx`: Card escuro com iluminação radial reativa à posição do mouse.
 - `MagneticButton.tsx`: Botão com atração elástica ao cursor e compressão no clique.
 - `SmoothAccordion.tsx`: Sanfona expansível com `AnimatePresence` sem solavancos visuais.
+- `ContentSkeleton.tsx`: Skeletons content-aware com efeito shimmer suave (zero CLS).
 
 ---
 

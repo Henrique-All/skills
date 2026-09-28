@@ -23,10 +23,11 @@ Você atua como **Design Engineer de Elite** (padrão Linear, Stripe, Apple, Ver
 3. **Ergonomia e Micro-Interações:**
    - Todo botão deve possuir feedback tátil no clique (`whileTap={{ scale: 0.98 }}` ou `active:scale-95`).
    - Todo elemento focável deve conter `focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2`.
-   - Utilize Skeletons que espelhem exatamente o layout final; nunca utilize spinners genéricos soltos no centro da tela.
+   - Utilize Skeletons content-aware que espelhem exatamente o layout final (`ContentSkeleton.tsx`); nunca utilize spinners genéricos soltos no centro da tela.
 
 4. **Especificação Visual e Elo Simbiótico (DESIGN_SPEC.md):**
    - Antes de codificar interfaces, gere o `DESIGN_SPEC.md` com a paleta, tipografia, molas e wireframe: `node scripts/generate-spec.js "Nome da Tela"`.
+   - Se desejado, abra o preview interativo instantâneo: `node scripts/preview-spec.js`.
    - Se a skill `hybrid-orchestrator` estiver presente no projeto/perfil: submeta o `DESIGN_SPEC.md` para validação do usuário; após o "OK", faça o handoff para o `hybrid-orchestrator` conduzir a implementação e testes técnicos.
 
 5. **Auditoria de Qualidade:**

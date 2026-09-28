@@ -70,6 +70,34 @@ const PRESETS = {
     accent: '#2997ff',
     accentHover: '#0077ed',
     innerHighlight: 'rgba(255, 255, 255, 0.12)'
+  },
+  'stripe-clean-light': {
+    name: 'Stripe Clean Light (Canvas Off-White + Azul Royal Crisp)',
+    bgCanvas: '#f8fafc',
+    bgSurface: '#ffffff',
+    bgElevated: '#ffffff',
+    borderSubtle: 'rgba(0, 0, 0, 0.08)',
+    borderHover: 'rgba(0, 0, 0, 0.16)',
+    textPrimary: '#0f172a',
+    textSecondary: '#475569',
+    textMuted: '#94a3b8',
+    accent: '#0048e5',
+    accentHover: '#0038b8',
+    innerHighlight: 'rgba(0, 0, 0, 0.03)'
+  },
+  'apple-pure-light': {
+    name: 'Apple Pure Light (Cinza Cerâmica + Azul Apple Tátil)',
+    bgCanvas: '#f5f5f7',
+    bgSurface: '#ffffff',
+    bgElevated: '#ffffff',
+    borderSubtle: 'rgba(0, 0, 0, 0.06)',
+    borderHover: 'rgba(0, 0, 0, 0.14)',
+    textPrimary: '#1d1d1f',
+    textSecondary: '#6e6e73',
+    textMuted: '#86868b',
+    accent: '#0071e3',
+    accentHover: '#0058b0',
+    innerHighlight: 'rgba(0, 0, 0, 0.02)'
   }
 };
 
@@ -94,8 +122,21 @@ if (format === 'css') {
   --craft-accent-hover: ${selected.accentHover};
   --craft-inner-highlight: inset 0 1px 0 0 ${selected.innerHighlight};
 }`);
+} else if (format === 'tailwind-v4') {
+  console.log(`/* Configuração Nativa para Tailwind CSS v4 (@theme CSS-First) */
+@theme {
+  --color-canvas: ${selected.bgCanvas};
+  --color-surface: ${selected.bgSurface};
+  --color-surface-elevated: ${selected.bgElevated};
+  --color-accent: ${selected.accent};
+  --color-accent-hover: ${selected.accentHover};
+  --border-color-subtle: ${selected.borderSubtle};
+  --border-color-hover: ${selected.borderHover};
+  --shadow-craft-inner: inset 0 1px 0 0 ${selected.innerHighlight};
+  --shadow-craft-glow: 0 0 20px -5px ${selected.accent};
+}`);
 } else {
-  console.log(`// Configuração para tailwind.config.js (theme.extend)
+  console.log(`// Configuração para tailwind.config.js (theme.extend - Tailwind v3)
 module.exports = {
   theme: {
     extend: {

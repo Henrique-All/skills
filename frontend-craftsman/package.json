@@ -8,6 +8,7 @@
     "audit": "node scripts/craft-audit.js",
     "palette": "node scripts/craft-palette.js",
     "spec": "node scripts/generate-spec.js",
+    "preview": "node scripts/preview-spec.js",
     "install:local": "node install.js",
     "install:global": "node install.js --global --target=all",
     "install:both": "node install.js --both"

@@ -19,10 +19,12 @@ const requiredFiles = [
   'scripts/craft-audit.js',
   'scripts/craft-palette.js',
   'scripts/generate-spec.js',
+  'scripts/preview-spec.js',
   'templates/AnimatedTabs.tsx',
   'templates/SpotlightCard.tsx',
   'templates/MagneticButton.tsx',
-  'templates/SmoothAccordion.tsx'
+  'templates/SmoothAccordion.tsx',
+  'templates/ContentSkeleton.tsx'
 ];
 
 let hasErrors = false;
@@ -119,7 +121,36 @@ try {
   hasErrors = true;
 }
 
-// 6. Testar execução de craft-audit.js nos próprios templates (deve passar com louvor)
+// 6. Testar execução de craft-palette.js com Tailwind v4 e preset Light
+try {
+  const v4Output = execSync('node scripts/craft-palette.js stripe-clean-light --format=tailwind-v4', { cwd: rootDir, encoding: 'utf-8' });
+  if (v4Output.includes('@theme') && v4Output.includes('Stripe Clean Light')) {
+    console.log('✅ Execução bem-sucedida: Tailwind v4 (@theme) & Stripe Light');
+  } else {
+    console.error('❌ Falha ao gerar saída Tailwind v4');
+    hasErrors = true;
+  }
+} catch (err) {
+  console.error(`❌ Erro ao testar Tailwind v4: ${err.message}`);
+  hasErrors = true;
+}
+
+// 7. Testar execução de preview-spec.js
+try {
+  const previewOutput = execSync('node scripts/preview-spec.js --preset=stripe-clean-light --no-open', { cwd: rootDir, encoding: 'utf-8' });
+  const previewPath = path.join(rootDir, '.craft', 'preview.html');
+  if (fs.existsSync(previewPath) && previewOutput.includes('PREVIEW VISUAL INSTANTÂNEO')) {
+    console.log('✅ Execução bem-sucedida: scripts/preview-spec.js');
+  } else {
+    console.error('❌ Falha ao gerar preview.html');
+    hasErrors = true;
+  }
+} catch (err) {
+  console.error(`❌ Erro ao executar preview-spec.js: ${err.message}`);
+  hasErrors = true;
+}
+
+// 8. Testar execução de craft-audit.js nos próprios templates (deve passar com louvor)
 try {
   const auditOutput = execSync('node scripts/craft-audit.js templates/ --json', { cwd: rootDir, encoding: 'utf-8' });
   const parsed = JSON.parse(auditOutput);
