@@ -31,12 +31,95 @@ flowchart LR
         SA["🔒 security-audit"]
     end
 
-    RC -->|"Handshake 360°"| HO
-    RG -->|"Contrato & Quebras"| HO
-    FC <-->|"DESIGN_SPEC.md + craft-audit"| HO
-    HO -->|"Diff + Falsifier"| SA
-    SA -->|"Exit Code 0 / 1"| Deploy["🚀 Produção"]
+    RC -->|"Handshake 360° (.code-map/handshake.json)"| HO
+    RG -->|"Trava de Contrato & Blast Radius"| HO
+    FC <-->|"DESIGN_SPEC.md + craft-audit (Score >= 90)"| HO
+    RG <-->|"Validação de Payload/Schema"| FC
+    HO -->|"Diff Atômico + Falsifier"| SA
+    SA -->|"Exit Code 0 / 1 (Quality Gate)"| Deploy["🚀 Produção"]
 ```
+
+---
+
+## 🔗 Matriz de Comunicação Inter-Skills: Como Elas Conversam
+
+Nenhuma skill opera como uma ilha isolada. Quando instaladas juntas no workspace (`.agents/skills/*`) ou no perfil global, elas trocam dados estruturados via **arquivos de handshake tipados, travas de permissão e pipelines cruzados**:
+
+```mermaid
+flowchart TD
+    subgraph "Camada de Descoberta & Contratos"
+        RC["🗺️ repo-cartographer"]
+        RG["🛡️ route-guard"]
+    end
+
+    subgraph "Camada de Design & Validação Visual"
+        FC["🎨 frontend-craftsman"]
+    end
+
+    subgraph "Núcleo de Governança & Execução"
+        HO["⚡ hybrid-orchestrator"]
+    end
+
+    subgraph "Portão de Qualidade & DevSecOps"
+        SA["🔒 security-audit"]
+    end
+
+    %% Ligações do Cartógrafo
+    RC -- "1. handshake.json (Nós 360°)" --> HO
+    RC -. "Resolve caminhos/aliases" .-> RG
+
+    %% Ligações do Route Guard
+    RG -- "2. Blast Radius & Alerta de Quebra" --> HO
+    RG -- "Validação de Schemas/Payload" --> FC
+
+    %% Ligações do Frontend Craftsman
+    FC -- "3. DESIGN_SPEC.md (Alimenta Q3)" --> HO
+    HO -- "4. Pipeline 7.2: craft-audit.js" --> FC
+
+    %% Ligações da Hybrid com Security
+    HO -- "5. Pipeline 7.1: audit.js --pilares" --> SA
+    SA -- "Exit Code 0 (Aprova) / 1 (Bloqueia)" --> HO
+```
+
+### 📋 Tabela de Handshakes e Protocolos de Conversa
+
+| Origem | Destino | Artefato / Mecanismo de Troca | Como a Informação é Consumida na Prática |
+| :--- | :--- | :--- | :--- |
+| **`repo-cartographer`** | **`hybrid-orchestrator`** | `.code-map/handshake.json` *(Schema tipado)* | O Orchestrator lê os nós `confirmed`, `inferred` e `unknown` na **Seção 3.1 (Análise de Impacto)**, eliminando leituras repetitivas e economizando até **90% dos tokens** de exploração. |
+| **`route-guard`** | **`hybrid-orchestrator`** | Relatório de Impacto de Rota (`analyze-route.js`) | Se a rota alterada já existir e tiver chamadores no front-end, o Orchestrator aciona a **Trava de Retrocompatibilidade no Q1 da Sabatina** e impede edições até aprovação expressa do usuário. |
+| **`frontend-craftsman`** | **`hybrid-orchestrator`** | `DESIGN_SPEC.md` + `.craft/preview.html` | O Craftsman entrega o design validado (paleta, fontes, molas Framer Motion e wireframe). O Orchestrator usa essa especificação para **preencher o Q3 da Sabatina** e conduzir o Builder. |
+| **`hybrid-orchestrator`** | **`frontend-craftsman`** | Pipeline 7.2 (`craft-audit.js`) | Ao finalizar a implementação de qualquer tela, o Orchestrator roda a auditoria visual pós-execução. A entrega só é aprovada se o **Craftsmanship Score for ≥ 90/100**. |
+| **`hybrid-orchestrator`** | **`security-audit`** | Pipeline 7.1 (`audit.js --pilares=X,Y`) | Sempre que o Orchestrator toca em autenticação, senhas, uploads, rotas ou cookies, ele dispara o auditor. Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e aciona o Builder para correção**. |
+| **`route-guard`** | **`frontend-craftsman`** | Contratos de Endpoint (Zod/DTOs) | Ao desenhar interfaces que submetem formulários, o Craftsman consulta os schemas validados pelo Route Guard, evitando disparidades entre frontend e backend. |
+
+---
+
+### 🎬 Cenários Práticos de Fluxo Completo (Ponta a Ponta)
+
+#### Cenário 1: Criando uma Funcionalidade Fullstack com UI (Ex: "Central de Cobranças")
+1. **Cartografia Inicial (`repo-cartographer`):** O desenvolvedor pede a feature. O cartógrafo rastreia os modelos de dados e serviços existentes, gerando `.code-map/handshake.json`.
+2. **Verificação de Rota (`route-guard`):** Avalia se a rota `/api/cobrancas` já existe ou se é nova. Se for nova, define os schemas Zero-Trust de entrada.
+3. **Artesanato Visual (`frontend-craftsman`):** Gera o `DESIGN_SPEC.md` com a paleta refinada (ex: `stripe-clean-light`), configura as molas do Framer Motion e abre o preview local com `node scripts/preview-spec.js`.
+4. **Validação do Usuário:** O desenvolvedor vê a tela interativa no navegador e responde **"OK"**.
+5. **Governança & Execução (`hybrid-orchestrator`):**
+   - Cria o snapshot atômico de segurança (`git stash create`);
+   - Preenche os 4 quadrantes (Q1: Contrato verificado, Q2: Idempotência de pagamento, Q3: UI do spec, Q4: Auth do tenant);
+   - O **Builder** implementa componentes táteis e rotas;
+   - O **Falsifier** tenta quebrar a tela simulando falhas de rede, cliques duplos e campos vazios.
+6. **Pipeline Duplo de Verificação Pós-Execução:**
+   - **Visual:** `node scripts/craft-audit.js` valida ausência de vícios de IA (Score: 100/100);
+   - **Segurança:** `node scripts/audit.js --pilares=2,5,10` garante que a rota de cobrança exige autenticação e não expõe dados sensíveis.
+7. **Entrega Pronta:** O código vai para commit limpo, robusto e testado.
+
+#### Cenário 2: Refatoração de Rota Crítica (Ex: "Alterar retorno de GET /api/pedidos")
+1. **Bloqueio de Quebra (`route-guard`):** O script `analyze-route.js` detecta que a rota é consumida por 3 telas (`Dashboard.tsx`, `OrderList.tsx`, `ReceiptModal.tsx`).
+2. **Trava no Orchestrator (`hybrid-orchestrator`):** O Orchestrator entra em Rota B, lista as 3 telas no Turno 1 e **não toca em nenhum arquivo** até o desenvolvedor confirmar a quebra.
+3. **Auditoria Final (`security-audit`):** Ao concluir, o auditor valida se nenhuma brecha de IDOR ou vazamento de segredos foi inserido.
+
+#### Cenário 3: Redesign de Interface Premium (Sem mexer no Backend)
+1. **Design Engineering (`frontend-craftsman`):** Analisa o componente legado via `craft-audit.js` (detecta gradiente roxo e falta de micro-interações).
+2. **Especificação & Preview:** Gera o `DESIGN_SPEC.md` com `AnimatedTabs` e `SpotlightCard`, exibindo o preview local no navegador.
+3. **Handoff Cirúrgico (`hybrid-orchestrator --fast`):** Aplica os diffs atômicos via Rota A, valida build/lint e garante score ≥ 90.
 
 ---
 
