@@ -1,0 +1,28 @@
+{
+  "name": "hybrid-orchestrator-skill",
+  "version": "1.0.0",
+  "description": "Orquestrador adaptativo de desenvolvimento de software (Plandex & Teamwork Pattern) para qualquer projeto e qualquer agente de IA.",
+  "main": "install.js",
+  "scripts": {
+    "install:global": "node install.js --global --target=all",
+    "install:workspace": "node install.js",
+    "install:gemini": "node install.js --global --target=gemini",
+    "install:claude": "node install.js --global --target=claude",
+    "install:cursor": "node install.js --global --target=cursor",
+    "install:both": "node install.js --both",
+    "test": "node test/validate.js"
+  },
+  "keywords": [
+    "ai-agent",
+    "antigravity",
+    "gemini",
+    "claude-code",
+    "cursor",
+    "orchestrator",
+    "plandex",
+    "teamwork",
+    "adversarial-testing"
+  ],
+  "author": "",
+  "license": "MIT"
+}
