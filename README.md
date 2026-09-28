@@ -11,32 +11,32 @@ As cinco skills trabalham de forma coordenada, cobrindo o ciclo de vida completo
 
 ```mermaid
 flowchart LR
-    subgraph 1. Descoberta & Contexto
+    subgraph S1 ["1. Descoberta e Contexto"]
         RC["🗺️ repo-cartographer"]
     end
 
-    subgraph 2. Contratos & Impacto
+    subgraph S2 ["2. Contratos e Impacto"]
         RG["🛡️ route-guard"]
     end
 
-    subgraph 3. Design Engineering (Anti-AI Slop)
+    subgraph S3 ["3. Design Engineering - Anti-AI Slop"]
         FC["🎨 frontend-craftsman"]
     end
 
-    subgraph 4. Governança & Execução
+    subgraph S4 ["4. Governança e Execução"]
         HO["⚡ hybrid-orchestrator"]
     end
 
-    subgraph 5. Conformidade & CI/CD
+    subgraph S5 ["5. Conformidade e CI/CD"]
         SA["🔒 security-audit"]
     end
 
-    RC -->|"Handshake 360° (.code-map/handshake.json)"| HO
-    RG -->|"Trava de Contrato & Blast Radius"| HO
-    FC <-->|"DESIGN_SPEC.md + craft-audit (Score >= 90)"| HO
-    RG <-->|"Validação de Payload/Schema"| FC
+    RC -->|"Handshake 360°"| HO
+    RG -->|"Trava de Contrato e Blast Radius"| HO
+    FC <-->|"DESIGN_SPEC.md e craft-audit"| HO
+    RG <-->|"Validação de Schemas"| FC
     HO -->|"Diff Atômico + Falsifier"| SA
-    SA -->|"Exit Code 0 / 1 (Quality Gate)"| Deploy["🚀 Produção"]
+    SA -->|"Exit Code 0 ou 1"| Deploy["🚀 Produção"]
 ```
 
 ---
@@ -47,38 +47,38 @@ Nenhuma skill opera como uma ilha isolada. Quando instaladas juntas no workspace
 
 ```mermaid
 flowchart TD
-    subgraph "Camada de Descoberta & Contratos"
+    subgraph C1 ["Camada de Descoberta e Contratos"]
         RC["🗺️ repo-cartographer"]
         RG["🛡️ route-guard"]
     end
 
-    subgraph "Camada de Design & Validação Visual"
+    subgraph C2 ["Camada de Design e Validação Visual"]
         FC["🎨 frontend-craftsman"]
     end
 
-    subgraph "Núcleo de Governança & Execução"
+    subgraph C3 ["Núcleo de Governança e Execução"]
         HO["⚡ hybrid-orchestrator"]
     end
 
-    subgraph "Portão de Qualidade & DevSecOps"
+    subgraph C4 ["Portão de Qualidade e DevSecOps"]
         SA["🔒 security-audit"]
     end
 
     %% Ligações do Cartógrafo
     RC -- "1. handshake.json (Nós 360°)" --> HO
-    RC -. "Resolve caminhos/aliases" .-> RG
+    RC -. "Resolve caminhos e aliases" .-> RG
 
     %% Ligações do Route Guard
-    RG -- "2. Blast Radius & Alerta de Quebra" --> HO
-    RG -- "Validação de Schemas/Payload" --> FC
+    RG -- "2. Blast Radius e Alerta de Quebra" --> HO
+    RG -- "Validação de Schemas" --> FC
 
     %% Ligações do Frontend Craftsman
     FC -- "3. DESIGN_SPEC.md (Alimenta Q3)" --> HO
     HO -- "4. Pipeline 7.2: craft-audit.js" --> FC
 
     %% Ligações da Hybrid com Security
-    HO -- "5. Pipeline 7.1: audit.js --pilares" --> SA
-    SA -- "Exit Code 0 (Aprova) / 1 (Bloqueia)" --> HO
+    HO -- "5. Pipeline 7.1: audit.js" --> SA
+    SA -- "Exit Code 0 ou 1" --> HO
 ```
 
 ### 📋 Tabela de Handshakes e Protocolos de Conversa
@@ -232,7 +232,7 @@ Quando você possui ambas as skills instaladas, elas se conectam automaticamente
 
 ```mermaid
 flowchart TD
-    subgraph "Fluxo 1: Design-First (Iniciado no Craftsman)"
+    subgraph F1 ["Fluxo 1: Design-First - Iniciado no Craftsman"]
         D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
         D2 --> D3{"Usuário Aprova o Design?"}
         D3 -- NÃO --> D4["Ajustar Paleta / Tipografia / Wireframe"]
@@ -241,13 +241,13 @@ flowchart TD
         D5 --> D6["Snapshot git stash + Sabatina Q1-Q4 + Falsifier + Testes"]
     end
 
-    subgraph "Fluxo 2: Engineering-First (Iniciado no Hybrid)"
+    subgraph F2 ["Fluxo 2: Engineering-First - Iniciado no Hybrid"]
         H1["Usuário solicita Feature no Hybrid"] --> H2{"Demanda toca em UI / Telas?"}
         H2 -- SIM --> H3["Hybrid aciona Craftsman para gerar DESIGN_SPEC.md"]
         H3 --> H4["DESIGN_SPEC.md anexado ao Turno 1 (Trava Obrigatória)"]
         H4 --> H5{"Usuário Aprova Turno 1?"}
         H5 -- SIM --> H6["Turno 2: Implementação com Molas e Radix"]
-        H6 --> H7["Pipeline 7.2: craft-audit.js (Score >= 90 Obrigatório)"]
+        H6 --> H7["Pipeline 7.2: craft-audit.js (Score >= 90)"]
     end
 ```
 

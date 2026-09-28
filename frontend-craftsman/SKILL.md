@@ -134,9 +134,9 @@ Quando ambas as skills estão presentes no repositório ou no perfil global do u
 
 ```mermaid
 flowchart TD
-    subgraph "Fluxo Design-First (Iniciado no Craftsman)"
+    subgraph F1 ["Fluxo 1: Design-First - Iniciado no Craftsman"]
         D1["Usuário solicita Front-end / UI"] --> D2["Craftsman gera DESIGN_SPEC.md"]
-        D2 --> D3["Preview Instantâneo no Navegador (preview-spec.js)"]
+        D2 --> D3["Preview Instantâneo no Navegador"]
         D3 --> D4{"Usuário Aprova o Design?"}
         D4 -- NÃO --> D5["Ajustar Paleta / Tipografia / Wireframe"]
         D5 --> D2
@@ -146,7 +146,7 @@ flowchart TD
         D6 -- NÃO --> D9["Craftsman implementa diretamente"]
     end
 
-    subgraph "Fluxo Engineering-First (Iniciado no Hybrid)"
+    subgraph F2 ["Fluxo 2: Engineering-First - Iniciado no Hybrid"]
         H1["Usuário solicita Feature no Hybrid"] --> H2{"Demanda toca em UI / Telas?"}
         H2 -- SIM --> H3{"Frontend Craftsman Presente?"}
         H3 -- SIM --> H4["Hybrid aciona Craftsman para gerar DESIGN_SPEC.md"]
