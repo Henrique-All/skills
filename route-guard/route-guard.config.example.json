@@ -1,0 +1,16 @@
+{
+  "apiPrefix": "/api",
+  "backend": {
+    "routesDir": "src/routes",
+    "controllersDir": "src/controllers"
+  },
+  "frontend": {
+    "srcDir": "src",
+    "servicesDir": "src/services"
+  },
+  "rules": {
+    "requireAuthByDefault": true,
+    "authMiddlewares": ["auth", "verifyToken", "authenticate", "requireAuth"],
+    "warnOnExistingRouteBreak": true
+  }
+}

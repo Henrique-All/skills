@@ -1,0 +1,24 @@
+{
+  "name": "route-guard-skill",
+  "version": "1.0.0",
+  "description": "Guardião de contratos de rotas/endpoints, análise de impacto e blindagem Zero-Trust",
+  "main": "scripts/analyze-route.js",
+  "scripts": {
+    "test": "node test/validate.js",
+    "analyze": "node scripts/analyze-route.js",
+    "install:local": "node install.js",
+    "install:global": "node install.js --global --target=all",
+    "install:both": "node install.js --both"
+  },
+  "keywords": [
+    "antigravity",
+    "skills",
+    "route-guard",
+    "api-contracts",
+    "zero-trust",
+    "claude-code",
+    "cursor-rules"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}
