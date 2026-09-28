@@ -94,12 +94,33 @@ Modais centralizados no meio da tela no celular parecem desktop mal dimensionado
 No mobile, `:hover` causa o vício do **"sticky hover"** (o botão fica com a cor de foco mesmo após soltar o dedo).
 - Use `whileTap={{ scale: 0.96 }}` do Framer Motion ou classes `:active:scale-95` no lugar de efeitos puramente baseados em hover.
 
+### e) Metamorfose 5: Ações em Lista ➔ Swipeable Rows (Gesto Lateral)
+Em listas de dados móveis, expor múltiplos botões consome espaço vertical.
+- Adicione ações reveladas por arrasto horizontal para a esquerda (ex: Arquivar e Excluir estilo iOS/WhatsApp).
+- Use o template oficial [templates/SwipeableRow.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/SwipeableRow.tsx).
+
 ---
 
 ## 🚫 5. A Armadilha do Auto-Zoom no iOS Safari
 Se qualquer `<input>`, `<select>` ou `<textarea>` tiver tamanho de fonte **menor que 16px**, o iOS Safari aplica zoom automático na tela ao receber foco, quebrando o layout da aplicação.
 - **Regra Estrita:** Em telas mobile, inputs devem ter `font-size: 16px` (`text-base`).
 - Use Tailwind responsivo: `text-base md:text-sm` (16px no mobile, 14px no desktop).
+
+---
+
+## 📱 6. Simulador Visual de Telas no Navegador (`preview-mobile.js`)
+
+A skill inclui um simulador local instantâneo que abre no navegador uma **moldura realista de iPhone 15 Pro / Galaxy**, permitindo alternar tamanhos de tela e testar os gestos interativamente antes de aprovar código:
+
+```bash
+# Abrir simulador no navegador em 1 segundo:
+node mobile-converter/scripts/preview-mobile.js
+
+# Simular em dispositivo específico:
+node mobile-converter/scripts/preview-mobile.js --device=iphone15
+node mobile-converter/scripts/preview-mobile.js --device=iphonese
+node mobile-converter/scripts/preview-mobile.js --device=galaxy
+```
 
 ---
 
@@ -113,16 +134,19 @@ node mobile-converter/scripts/mobile-audit.js src/pages/Checkout.tsx
 
 # Auditar uma pasta inteira:
 node mobile-converter/scripts/mobile-audit.js src/components/
+
+# Aplicar correções automáticas (Autofix):
+node mobile-converter/scripts/mobile-audit.js src/ --fix
 ```
 
 ### O que o auditor analisa:
-1. `h-screen` / `100vh` sem tratamento de `100dvh`;
-2. Elementos fixos no rodapé (`bottom-0`) sem padding de safe area;
-3. Inputs com `text-xs` ou `text-sm` sem proteção de 16px (`text-base`);
-4. Tags `<table>` sem contêiner de overflow ou fallback mobile;
-5. Botões e links com padding inferior a 40px de área de toque;
-6. Classes de largura fixa (`w-[600px]`, `min-w-[500px]`) que quebram o viewport de 390px;
-7. Estados hover puros sem feedback tátil de toque.
+1. `viewport-fit=cover` na meta tag HTML (essencial para ativar `env(safe-area-inset-*)` no iOS Safari);
+2. `h-screen` / `100vh` sem tratamento de `100dvh`;
+3. Elementos fixos no rodapé (`bottom-0`) sem padding de safe area;
+4. Inputs com `text-xs` ou `text-sm` sem proteção de 16px (`text-base`);
+5. Tags `<table>` sem contêiner de overflow ou fallback mobile;
+6. Botões e links com padding inferior a 40px de área de toque;
+7. Classes de largura fixa (`w-[600px]`, `min-w-[500px]`) que quebram o viewport de 390px.
 
 ---
 

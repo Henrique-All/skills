@@ -33,16 +33,21 @@ O **`mobile-converter`** implementa os padrões de engenharia móvel da Apple (H
 ## 🛠️ Comandos e Ferramentas
 
 ```bash
-# 1. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
+# 1. Abrir simulador visual interativo de smartphone no navegador (1s):
+node scripts/preview-mobile.js
+node scripts/preview-mobile.js --device=iphone15
+node scripts/preview-mobile.js --device=galaxy
+
+# 2. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
 node scripts/mobile-audit.js src/
 
-# 2. Auditar um arquivo isolado:
-node scripts/mobile-audit.js src/pages/Checkout.tsx
+# 3. Aplicar correções automáticas de viewport e safe-areas (Autofix):
+node scripts/mobile-audit.js src/ --fix
 
-# 3. Gerar receita cirúrgica de adaptação para um componente:
+# 4. Gerar receita cirúrgica de adaptação para um componente:
 node scripts/adapt-screen.js src/components/OrderTable.tsx
 
-# 4. Testar a integridade da skill:
+# 5. Testar a integridade da skill:
 npm test
 ```
 
@@ -53,6 +58,7 @@ npm test
 - **`templates/BottomSheet.tsx`:** Gaveta móvel com física de molas, arrasto para fechar (`drag="y"`), puxador tátil e padding de safe area.
 - **`templates/MobileBottomNav.tsx`:** Tab Bar inferior estilo iOS com indicador ativo deslizante (`layoutId`), haptic tap e safe area.
 - **`templates/ResponsiveTableToCards.tsx`:** Tabela clássica no desktop que se metamorfoseia automaticamente em cards empilhados no mobile.
+- **`templates/SwipeableRow.tsx`:** Linha de lista móvel com gesto de arrasto horizontal estilo iOS/WhatsApp para revelar ações (Arquivar / Excluir).
 
 ---
 

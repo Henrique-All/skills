@@ -127,7 +127,7 @@ flowchart TD
 | :--- | :---: | :--- | :--- |
 | **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-9810)** | **`9.8` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot atômico (`git stash`) + Falsifier adversário com estresse. |
 | **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme), Skeletons Content-Aware e elo simbiótico. |
-| **[`mobile-converter`](#3--mobile-converter--nota-9810)** | **`9.8` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav Bar, Touch Targets 44px+ e CLI `mobile-audit.js`. |
+| **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, Swipeable Rows, simulador `preview-mobile.js` e auditoria com Autofix (`--fix`). |
 | **[`security-audit`](#4--security-audit--nota-9710)** | **`9.7` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, exit codes bloqueantes para CI e suporte a `.audit-exceptions.json`. |
 | **[`repo-cartographer`](#5--repo-cartographer--nota-9610)** | **`9.6` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels recursivos, detecção de ciclos e Handshake tipado em JSON Schema. |
 | **[`route-guard`](#6--route-guard--nota-9610)** | **`9.6` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no frontend/serviços, trava de retrocompatibilidade para endpoints existentes e validação estrita de schemas. |
@@ -271,40 +271,48 @@ flowchart TD
 
 ---
 
-### 3. 📱 `mobile-converter` — Nota: 9.8/10
-> **Engenharia de Adaptação Mobile de Alta Fidelidade: Anti-Mobile Slop, Bottom Sheets & Viewport dvh.**
+### 3. 📱 `mobile-converter` — Nota: 10.0/10
+> **Engenharia de Adaptação Mobile de Alta Fidelidade: Anti-Mobile Slop, Bottom Sheets, Simulador & Autofix.**
 
 #### 🛑 O Problema que Resolve:
 Modelos de IA adaptam interfaces para celulares simplesmente espremendo colunas desktop, gerando o **Mobile Slop**: tabelas com 6 colunas que quebram o layout com scroll horizontal impossível de ler, botões minúsculos (< 30px), menus superiores inacessíveis pelo polegar, rodapés cobertos pela barra de navegação do iPhone e auto-zoom indesejado no iOS Safari.
 
 #### 💡 O que ela faz:
-1. **Os 7 Pilares Anti-Mobile Slop:** Regras de ouro para touch targets mínimos de 44×44px, safe-areas de hardware (`env(safe-area-inset-bottom)`) e eliminação de sticky hover.
+1. **Os 7 Pilares Anti-Mobile Slop:** Regras de ouro para touch targets mínimos de 44×44px, safe-areas de hardware (`env(safe-area-inset-bottom)`), checagem obrigatória de `viewport-fit=cover` e eliminação de sticky hover.
 2. **Viewport Dinâmico Real:** Erradica o bug clássico de `100vh`/`h-screen` adotando `100dvh` / `min-h-dvh` para telas móveis.
-3. **Metamorfose de Componentes:**
+3. **Simulador de Smartphone no Navegador (`preview-mobile.js`):** Abre localmente em 1s uma moldura realista (iPhone 15 Pro, SE e Galaxy) com Dynamic Island e Home Bar para testar os gestos interativamente!
+4. **Metamorfose de Componentes:**
    - **Tabelas ➔ Feed de Cards:** Transforma tabelas ilegíveis em pilhas verticais de cards táteis com badges e ações rápidas (`ResponsiveTableToCards.tsx`).
    - **Navegação Desktop ➔ Mobile Bottom Nav:** Converte headers e sidebars densos em uma **Tab Bar inferior** estilo iOS ao alcance do polegar (`MobileBottomNav.tsx`).
    - **Modais ➔ Swipeable Bottom Sheets:** Modais centralizados viram gavetas deslizantes com puxador e gesto de arrastar para baixo para fechar (`BottomSheet.tsx`).
-4. **Prevenção de Auto-Zoom no iOS:** Força `font-size: 16px` (`text-base md:text-sm`) em inputs para impedir que o Safari amplie a tela ao focar.
-5. **Motor Determinístico de Auditoria (`mobile-audit.js`):** Varre os componentes e pontua o **Mobile Readiness Score (0–100)**, identificando linhas com falhas de safe area ou alvos de toque pequenos.
-6. **Gerador de Receita de Adaptação (`adapt-screen.js`):** Analisa qualquer componente desktop e gera o plano passo a passo de conversão para smartphone.
+   - **Listas ➔ Swipeable Rows:** Linhas com gesto lateral estilo WhatsApp/iOS Mail para ações rápidas (`SwipeableRow.tsx`).
+5. **Prevenção de Auto-Zoom no iOS:** Força `font-size: 16px` (`text-base md:text-sm`) em inputs para impedir que o Safari amplie a tela ao focar.
+6. **Motor Determinístico com Autofix (`mobile-audit.js --fix`):** Varre os componentes, pontua o **Mobile Readiness Score (0–100)** e corrige automaticamente falhas de viewport e safe-areas!
+7. **Gerador de Receita de Adaptação (`adapt-screen.js`):** Analisa qualquer componente desktop e gera o plano passo a passo de conversão para smartphone.
 
 #### 🚀 Vantagens de Usar:
 - **Interfaces com sensação de aplicativo nativo:** Telas responsivas que parecem desenvolvidas sob medida para iOS e Android (estilo Nubank e Airbnb).
+- **Validação visual com simulador de bolso:** Veja e interaja com os componentes móveis antes de enviar para produção.
 - **Zero scroll horizontal acidental:** Seus layouts nunca mais quebram em telas de 375px ou 390px.
 - **Ergonomia real do polegar:** Elementos essenciais posicionados na Thumb Zone natural do usuário.
 
 #### 💻 Comandos e Ferramentas (CLI):
 ```bash
-# 1. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
+# 1. Abrir simulador visual interativo de smartphone no navegador (1s):
+node mobile-converter/scripts/preview-mobile.js
+node mobile-converter/scripts/preview-mobile.js --device=iphone15
+node mobile-converter/scripts/preview-mobile.js --device=galaxy
+
+# 2. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
 node mobile-converter/scripts/mobile-audit.js src/
 
-# 2. Auditar um arquivo isolado:
-node mobile-converter/scripts/mobile-audit.js src/pages/Checkout.tsx
+# 3. Aplicar correções automáticas de viewport e safe-areas (Autofix):
+node mobile-converter/scripts/mobile-audit.js src/ --fix
 
-# 3. Gerar receita de adaptação para um componente:
+# 4. Gerar receita de adaptação para um componente:
 node mobile-converter/scripts/adapt-screen.js src/components/OrderTable.tsx
 
-# 4. Testar integridade da skill:
+# 5. Testar integridade da skill:
 cd mobile-converter && npm test
 ```
 

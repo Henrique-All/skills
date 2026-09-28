@@ -18,9 +18,11 @@ const requiredFiles = [
   'package.json',
   'scripts/mobile-audit.js',
   'scripts/adapt-screen.js',
+  'scripts/preview-mobile.js',
   'templates/BottomSheet.tsx',
   'templates/MobileBottomNav.tsx',
-  'templates/ResponsiveTableToCards.tsx'
+  'templates/ResponsiveTableToCards.tsx',
+  'templates/SwipeableRow.tsx'
 ];
 
 let hasErrors = false;
@@ -105,6 +107,17 @@ try {
   console.log('✅ Execução bem-sucedida: scripts/adapt-screen.js');
 } catch (err) {
   console.error(`❌ Erro ao executar scripts/adapt-screen.js: ${err.message}`);
+  hasErrors = true;
+}
+
+// 6. Executar scripts/preview-mobile.js (--no-open)
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'preview-mobile.js')}" --no-open`, {
+    encoding: 'utf-8'
+  });
+  console.log('✅ Execução bem-sucedida: scripts/preview-mobile.js (--no-open)');
+} catch (err) {
+  console.error(`❌ Erro ao executar scripts/preview-mobile.js: ${err.message}`);
   hasErrors = true;
 }
 

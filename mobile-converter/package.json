@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node test/validate.js",
     "audit": "node scripts/mobile-audit.js",
-    "adapt": "node scripts/adapt-screen.js"
+    "adapt": "node scripts/adapt-screen.js",
+    "preview": "node scripts/preview-mobile.js"
   },
   "keywords": [
     "mobile",
