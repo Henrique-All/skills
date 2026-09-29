@@ -296,8 +296,11 @@ Exija **Craftsmanship Score >= 90/100** para aprovação final. Se encontrar ví
 ### Rota A
 
 ```markdown
-[ORCHESTRATOR: ROTA A | EXECUÇÃO DIRETA]
-**Motivo:** [justificativa em uma linha]
+[ORCHESTRATOR: ROTA A | EXECUÇÃO DIRETA CIRÚRGICA]
+⚡ **Decisão de Rota:** Rota A (Ajuste cirúrgico pontual ou `--fast` em demanda não crítica)
+🔨 **Papel Ativo:** [ROLE: BUILDER CIRÚRGICO]
+> "Aplicando modificação atômica diretamente sem burocracia de planejamento formal..."
+
 **Arquivos:** [lista]
 
 [diff]
@@ -314,6 +317,9 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
 ````markdown
 <!-- TURNO 1 — enviado antes de qualquer código -->
 [ORCHESTRATOR: ROTA B | TURNO 1 - TRAVA OBRIGATÓRIA]
+
+### 🎭 Papel Ativo: [ROLE: LEAD — Arquiteto de Software]
+> "Mapeando o ecossistema, analisando impacto transversal e estruturando a governança..."
 
 ### Estratégia
 - **Rota:** [B ou C] | **Justificativa:** [flag, criticidade ou nº de arquivos]
@@ -349,30 +355,40 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
 <!-- TURNO 2 — somente após aprovação da Trava -->
 [ORCHESTRATOR: ROTA B | TURNO 2 - EXECUÇÃO AUTORIZADA]
 
-### Critérios de aceite
-[lista curta e mensurável]
+---
+### 🎭 FASE 1: [ROLE: LEAD — Arquiteto de Software]
+> "Congelando escopo, critérios de aceite mensuráveis e snapshot de segurança..."
+- **Critérios de Aceite:** [critérios mensuráveis]
+- **Suposições Confirmadas:** [suposições aprovadas pelo usuário]
+- **Snapshot Git:** `node scripts/snapshot.js create "demanda"` [EXECUTADO]
 
-### Suposições adotadas
-[suposições confirmadas ou ajustadas pelo usuário]
-
-### Relatório de falsificação
-| # | Categoria | Ataque tentado | Status | Resultado |
-| :- | :-------- | :------------- | :----- | :-------- |
-| 1 | [cat] | [ataque concreto] | EXECUTADO / RACIOCINADO | [resultado] |
-
-- **Blindagens aplicadas:** [...]
-- **Riscos residuais:** [...]
-
-### Diff
+---
+### 🔨 FASE 2: [ROLE: BUILDER — Engenheiro de Implementação]
+> "Escrevendo código limpo, tipos estritos e implementação do caminho feliz..."
+- **Arquivos Implementados:** [lista]
+- **Diff Cirúrgico:**
+```diff
 [git diff ou patch]
-
-### Verificação
-```bash
-[build + tipos + lint]
-[testes incluindo os novos]
-# Se domínio de segurança (auth, rotas, cookies, uploads):
-node .agents/skills/gid-security-audit/scripts/full-audit.js --pilares <pilares>
 ```
+
+---
+### ⚔️ FASE 3: [ROLE: FALSIFIER — Engenheiro Adversário & QA de Estresse]
+> "Atacando ativamente a solução do Builder para encontrar falhas antes da produção..."
+| # | Categoria | Ataque Concreto Tentado | Status | Resultado |
+| :- | :-------- | :---------------------- | :----- | :-------- |
+| 1 | Concorrência | [ataque de race condition/duplo envio] | EXECUTADO / RACIOCINADO | [mitigado via Idempotency-Key] |
+| 2 | Dependência | [falha de timeout / rede] | EXECUTADO / RACIOCINADO | [fallback seguro implementado] |
+| 3 | Input Hostil | [payload vazio / malformado] | EXECUTADO / RACIOCINADO | [rejeitado por Zod schema] |
+
+- **Blindagens Aplicadas:** [...]
+- **Riscos Residuais:** [...]
+
+---
+### 🏆 FASE 4: [ROLE: AUDITOR — Portão DevSecOps Pós-Execução]
+> "Verificação automatizada do ecossistema e integridade..."
+- **Auditoria DevSecOps:** `node scripts/audit.js --pilares=...` ➔ Exit Code 0 ✅
+- **Auditoria de UI (se aplicável):** `node scripts/craft-audit.js` ➔ Score ≥ 90/100 ✅
+- **Build & Tipos:** `npx tsc --noEmit` & testes do projeto ✅
 ````
 
 ---
