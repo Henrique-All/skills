@@ -223,12 +223,15 @@ Todas as skills do ecossistema foram elevadas a ferramentas de engenharia de ní
 Agentes de IA convencionais sofrem de impulso destrutivo: começam a editar arquivos no primeiro segundo, alteram coisas fora do escopo, alucinam testes que "passaram" sem ter rodado nada e quebram o repositório sem possibilidade de rollback.
 
 #### 💡 O que ela faz:
-1. **Classificação Tripla:** Separa automaticamente em **Rota A** (cirúrgica, ≤3 arquivos), **Rota C** (híbrida, 2–3 arquivos interdependentes) ou **Rota B** (adversária, crítica/complexa).
-2. **Sabatina em 4 Quadrantes:** Preenche suposições estruturadas em Q1 (Contratos), Q2 (Dados & Concorrência com locks e idempotência), Q3 (UI) e Q4 (Segurança).
-3. **Trava de Permissão em 2 Turnos:** Nenhum arquivo é tocado sem autorização explícita do desenvolvedor.
-4. **Âncoras de Atenção Anti-Prompt-Drift:** Selos visuais como `[ORCHESTRATOR: ROTA B | TURNO 1]` ancoram os pesos da LLM, impedindo que ela esqueça regras em chats com 50+ mensagens.
-5. **Ciclo Adversário (Lead / Builder / Falsifier):** O Falsifier tenta quebrar ativamente a solução simulando race conditions, inputs maliciosos, timeouts e memory leaks.
-6. **Snapshot Atômico & Rollback Seguro:** Registra um snapshot git antes da edição. Se o Falsifier falhar, executa `git restore` e deixa o repositório limpo.
+1. **Maestro Regente Automático:** Aciona compulsoriamente todo o ecossistema (`repo-cartographer` para arquitetura 360°, `route-guard` para contratos de rotas, `frontend-craftsman` para UI, e `security-audit` pós-execução) sem o usuário precisar digitar as 6 skills no prompt.
+2. **Governança Ativa por Padrão (Rota B Soberana):** Sem flags, ativa a **Rota B (Governança Completa com Trava no Turno 1)**. Para execução direta cirúrgica sem travas, use `--fast` ou `--quick`.
+3. **Princípio da Tangibilidade Absoluta:** Proibição de arquivos fantasmas no chat (`[CRIADO]`). Geração física obrigatória no disco (`.code-map/handshake.json`, `DESIGN_SPEC.md`) no Turno 1.
+4. **Painel Visual de Governança no Navegador (`preview-plan.js`):** Gera `.plan/plan.html` interativo no navegador com os 4 Quadrantes, checklist com checkboxes interativos persistidos e botões táteis de cópia da Trava.
+5. **Sabatina em 4 Quadrantes:** Preenche suposições estruturadas em Q1 (Contratos), Q2 (Dados & Concorrência com locks e idempotência), Q3 (UI) e Q4 (Segurança).
+6. **Trava de Permissão em 2 Turnos:** Bloqueio rígido no Turno 1. Nenhum arquivo de código é tocado sem autorização explícita do desenvolvedor ("OK").
+7. **Âncoras de Atenção Anti-Prompt-Drift:** Selos visuais como `[ORCHESTRATOR: ROTA B | TURNO 1]` ancoram os pesos da LLM, impedindo que ela esqueça regras em chats longos.
+8. **Ciclo Adversário (Lead / Builder / Falsifier):** O Falsifier tenta quebrar ativamente a solução simulando race conditions, inputs maliciosos, timeouts e memory leaks.
+9. **Snapshot Atômico & Rollback Seguro:** Registra um snapshot git antes da edição. Se o Falsifier falhar, executa `git restore` e deixa o repositório limpo.
 
 #### 🎭 Como Executa: Modo Plandex (Cirúrgico) vs. Modo Teamwork (Multi-Agente)
 O orchestrator adapta a inteligência ao ambiente e à complexidade da demanda:
@@ -607,6 +610,7 @@ A branch `master` é blindada contra quebras acidentais através das seguintes r
 O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**](CHANGELOG.md) conforme o padrão [Keep a Changelog](https://keepachangelog.com/).
 
 ### 🏆 Releases Oficiais no GitHub
+- [**v2.1.0 — Maestro Regente do Ecossistema & Tangibilidade Visual Total**](https://github.com/Henrique-All/skills/releases/tag/v2.1.0) — Governança ativa por padrão, preview visual do plano e acionamento automático inter-skills.
 - [**v2.0.0 — Ecossistema Pleno 10.0/10 (Ultimate Release)**](https://github.com/Henrique-All/skills/releases/tag/v2.0.0) — Todas as 6 skills com CLIs determinísticos e nota máxima.
 - [**v1.3.0 — Mobile Converter 10.0/10 & Simulador de Smartphone**](https://github.com/Henrique-All/skills/releases/tag/v1.3.0) — Metamorfoses táteis e molduras interativas.
 - [**v1.2.0 — Frontend Craftsman 10.0/10 & Matriz Inter-Skills**](https://github.com/Henrique-All/skills/releases/tag/v1.2.0) — Preview HTML vivo em 1s e Tailwind v4 `@theme`.

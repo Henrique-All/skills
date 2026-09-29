@@ -159,6 +159,42 @@ A **Release Definitiva**! Todas as 6 skills do monorepo foram elevadas à **Nota
 - Histórico completo documentado no \`CHANGELOG.md\`.`,
     draft: false,
     prerelease: false
+  },
+  {
+    tag_name: 'v2.1.0',
+    name: 'v2.1.0 — ⚡ Maestro Regente do Ecossistema & Tangibilidade Visual Total',
+    body: `# ⚡ Enterprise AI Skills v2.1.0 — Maestro Regente do Ecossistema & Tangibilidade Visual Total
+
+Esta release consolida a **harmonia automática entre as 6 skills** e resolve definitivamente o isolamento de contexto de IA através da **Tangibilidade Visual Absoluta**.
+
+---
+
+### ✨ Destaques da Release
+
+1. **⚡ \`hybrid-orchestrator\` como Maestro Regente Automático:**
+   - O Orchestrator agora detecta e engatilha automaticamente as skills irmãs conforme a demanda:
+     - **Arquitetura & Múltiplos Arquivos:** Dispara \`repo-cartographer\` (gera \`.code-map/handshake.json\` físico e canvas 360°).
+     - **Rotas & Endpoints:** Dispara compulsoriamente \`route-guard\` (\`analyze-route.js\`) para calcular o Blast Radius.
+     - **UI & Telas:** Dispara compulsoriamente \`frontend-craftsman\` (gera \`DESIGN_SPEC.md\` físico e preview visual).
+     - **Portão DevSecOps:** No Turno 2 pós-execução, dispara compulsoriamente \`security-audit\` (\`audit.js --pilares=...\`) e \`craft-audit.js\`.
+   - O desenvolvedor não precisa mais listar manualmente as 6 skills no prompt.
+
+2. **🌐 Dashboard Visual de Governança no Navegador (\`scripts/preview-plan.js\`):**
+   - Transforma o planejamento do Turno 1 em um dashboard HTML completo (\`.plan/plan.html\`) com estética moderna dark mode.
+   - Status em tempo real das 4 frentes com links diretos para abrir o Grafo 360° e o Preview de UI.
+   - Cards visuais dos **4 Quadrantes (Q1 Contratos, Q2 Banco, Q3 UI, Q4 Segurança)**.
+   - Checklist interativo de execução com checkboxes persistidos em \`localStorage\`.
+   - Botões táteis de 1 clique para copiar as respostas de autorização (\`OK - Executar Tudo\`, \`OK - Passo a Passo\`, \`Ajustes\`).
+   - Abertura automática no navegador padrão do usuário (\`start\` / \`open\`).
+
+3. **🚨 Princípio da Tangibilidade Absoluta (Anti-Alucinação de Chat):**
+   - Proibição estrita de simular artefatos (\`[CRIADO]\`) em texto solto no chat sem gravá-los fisicamente no disco com ferramentas de arquivo.
+   - Obrigatoriedade de fornecer links clicáveis locais (\`file:///...\`) no chat para visualização humana imediata.
+
+4. **🛑 Governança com Trava no Turno 1 por Padrão:**
+   - Chamadas a \`@hybrid-orchestrator\` sem flag caem compulsoriamente na Rota B com freio de mão que impede qualquer edição de código antes do "OK" explícito.`,
+    draft: false,
+    prerelease: false
   }
 ];
 
@@ -184,6 +220,9 @@ function createRelease(rel) {
           const json = JSON.parse(data);
           console.log(`✅ Release [${rel.tag_name}] criada com sucesso! URL: ${json.html_url}`);
           resolve(json);
+        } else if (res.statusCode === 422) {
+          console.log(`ℹ️  Release [${rel.tag_name}] já existe no GitHub. Mantida.`);
+          resolve(null);
         } else {
           console.error(`❌ Falha ao criar release [${rel.tag_name}]: HTTP ${res.statusCode}`);
           console.error(data);

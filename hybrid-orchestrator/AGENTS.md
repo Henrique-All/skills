@@ -14,6 +14,7 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 4. **Criticality overrides speed:** Auth, payments, concurrency, DB transactions/migrations, public API contracts, network resilience → Route B, even with `--fast`.
 5. **Additive-only database changes:** Never generate `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `migrate reset`, or equivalent. Only safe, additive migrations.
 6. **Validation honesty:** **EXECUTADO** (command ran + output shown) or **RACIOCINADO** (reasoned without execution). Never claim a scenario "passed" without evidence.
+7. **Silent detection & zero hunting:** If a sibling skill is not installed in the workspace/global catalog, do not hunt on disk. Perform the function natively as REASONED.
 
 ---
 
@@ -86,41 +87,37 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 
 ### Route A
 ```
-[ORCHESTRATOR: ROUTE A | DIRECT EXECUTION]
-Reason: [reason in one line]
+[ORCHESTRATOR: ROUTE A | DIRECT SURGICAL EXECUTION]
+⚡ Decision: Route A (Local fix / --fast)
+🔨 [ROLE: SURGICAL BUILDER]
 Files: [list]
-
 [diff]
-
 Verify: `[command]`
 ```
 
 ### Routes B & C
 ```
 [ORCHESTRATOR: ROUTE B | TURN 1 - MANDATORY GATE]
-### Planning
-[impact analysis + 4Q review + visual map + checklist]
+🎭 [ROLE: LEAD — Software Architect]
+[impact analysis + 4Q review + visual map + checklist + links to HTML previews]
 🛑 GATE: Awaiting explicit approval before writing code...
 
 --- (only after approval) ---
 
 [ORCHESTRATOR: ROUTE B | TURN 2 - EXECUTION AUTHORIZED]
-### 1. Strategy & Git Snapshot
-Route: [B/C] | Snapshot recorded (`git stash create`) | Acceptance criteria: [...]
+🎭 [ROLE: LEAD — Software Architect]
+Acceptance criteria: [...] | Git Snapshot recorded
 
-### 2. Falsification Report
-| # | Category | Attack | Status | Result |
-| 1 | [category] | [concrete attack] | EXECUTADO/RACIOCINADO | [result] |
-Safeguards: [...] | Residual risks: [...]
+🔨 [ROLE: BUILDER — Software Engineer]
+[clean typed implementation + surgical diff]
 
-### 3. Diff & Rollback Plan
-[git diff or unified patch reversibility]
+⚔️ [ROLE: FALSIFIER — Adversarial Hacker & Stress QA]
+| # | Category | Concrete Attack Attempted | Status | Result |
+| 1 | [cat] | [attack scenario] | EXECUTED/REASONED | [mitigated] |
+Hardening applied: [...]
 
-### 4. Verification (Local & Monorepo Blast Radius)
-```bash
-[build + lint + types]
-[tests locally + cross-package tests if shared dependencies touched]
-```
+🏆 [ROLE: AUDITOR — DevSecOps & Craftsmanship Gate]
+- UI Craft Score ≥ 90 | Security Audit Exit Code 0 | Build & Types OK
 ```
 
 ---
