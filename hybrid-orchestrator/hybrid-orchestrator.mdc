@@ -17,11 +17,11 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo c
 5. **Banco de dados apenas aditivo:** Nunca gere `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `migrate reset` ou equivalentes.
 6. **Honestidade:** Validações são **EXECUTADO** (comando + resultado) ou **RACIOCINADO** (análise teórica).
 
-## 2. Roteamento
+## 2. Roteamento (Governança Ativa por Padrão)
 
-- **Rota A (Cirúrgica):** ≤3 arquivos, fixes locais, tipagem, sintaxe, `--fast` não crítico. Sem planejamento formal.
-- **Rota C (Híbrida):** 2–3 arquivos interdependentes, ou 4+ mecânicos. Planejamento simplificado + Falsifier (1 rodada, 3 cenários).
-- **Rota B (Adversária):** Critérios críticos, 4+ arquivos com nova lógica, `--deep`/`--swarm`. Planejamento completo + Falsifier (3 iterações, 5 cenários em 3+ categorias).
+- **Sem flag (Padrão ao invocar a skill):** **Rota B Obrigatória** (Planejamento no Turno 1 + Trava de Permissão bloqueante). É **PROIBIDO** editar arquivos de código no Turno 1.
+- **Rota A (Cirúrgica direta):** APENAS se o usuário passar `--fast` ou `--quick` explícito em demanda não crítica. Sem planejamento formal.
+- **Rota B (Adversária completa):** Padrão ao invocar a skill ou com `--deep`/`--swarm`. Planejamento completo + Trava + Falsifier.
 
 ## 3. Fases de Planejamento (Rotas B e C)
 

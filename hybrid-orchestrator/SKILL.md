@@ -40,27 +40,26 @@ Uma demanda é **crítica** se envolver qualquer um destes:
 - Chamadas de rede, integrações externas, retries, timeouts, resiliência
 - Tratamento de dados sensíveis ou entrada não confiável (upload, parsing, SQL/shell/HTML dinâmico)
 
-### 2.3 Flags e precedência
+### 2.3 Flags e Precedência (Governança Ativa por Padrão)
+
+**Regra Suprema:** Se o usuário invocou explicitamente `@hybrid-orchestrator`, a presunção mandatória é **GOVERNANÇA COM PLANEJAMENTO E TRAVA NO TURNO 1 (Rota B por padrão)**. A IA só tem autorização para executar código direto sem pedir permissão (Rota A) se o usuário tiver passado a flag explícita `--fast` ou `--quick`.
 
 | Situação | Resultado |
 | :--- | :--- |
-| `--deep`, `--teamwork` ou `--swarm` | Rota B |
-| `--fast` ou `--quick`, demanda não crítica | Rota A |
-| `--fast` ou `--quick`, demanda crítica | Rota B com Falsifier obrigatório e planejamento reduzido (análise de impacto + checklist; Trava somente se risco for Alto). Aviso ao usuário: *"Demanda crítica: usando validação adversária apesar de --fast."* |
-| `--fast` e `--deep` juntas | Rota B (o rigor prevalece) |
-| Sem flag | Heurística abaixo |
+| `--fast` ou `--quick`, demanda não crítica | **Rota A (Cirúrgica direta)** — sem sabatina, sem trava no Turno 1. |
+| `--fast` ou `--quick`, demanda crítica | **Rota B com Falsifier obrigatório** e planejamento reduzido (análise de impacto + checklist; Trava somente se risco for Alto). |
+| **Sem flag (Padrão ao invocar a skill)** | **Rota B (Governança Completa com Sabatina e Trava Obrigatória no Turno 1)**. |
+| `--deep`, `--teamwork` ou `--swarm` | **Rota B (Governança Completa + 3 iterações completas do Falsifier)**. |
 
-### 2.4 Heurística sem flag
+### 2.4 Regra Inviolável de Parada (STOP no Turno 1)
 
-Aplique na ordem e pare no primeiro resultado:
+1. **Ao receber qualquer demanda com `@hybrid-orchestrator` sem `--fast`:**
+   - Execute a **Fase de Planejamento (Seção 3)**: Análise de Impacto, Sabatina Q1–Q4 e Trava de Permissão.
+2. 🚨 **REGRA DE PARADA MANDATÓRIA (STOP IN TURN 1):**
+   - Ao apresentar o plano e a Trava de Permissão no Turno 1, **VOCÊ DEVE PARAR DE CHAMAR FERRAMENTAS IMEDIATAMENTE** e encerrar a sua resposta no chat.
+   - ⛔ **PROIBIÇÃO EXPRESSA:** É **ESTRITAMENTE PROIBIDO** chamar ferramentas de modificação de código (`replace_file_content`, `write_to_file`, `multi_replace_file_content`) no Turno 1!
+   - Aguarde a mensagem de resposta do usuário contendo **"OK"** para iniciar o Turno 2 (Execução).
 
-1. Critério de criticidade presente → **Rota B**.
-2. 4 ou mais arquivos com lógica nova ou alterada → **Rota B**.
-3. 4 ou mais arquivos com mudança puramente mecânica (renomear, formatar, mover) → **Rota C**.
-4. 2 a 3 arquivos com regra de negócio interdependente → **Rota C**.
-5. Até 3 arquivos, mudança local (tipagem, sintaxe, CRUD simples, ajuste cosmético) → **Rota A**.
-
-Em dúvida entre duas rotas, escolha a mais rigorosa.
 
 ### 2.5 O que distingue cada rota
 
@@ -156,7 +155,10 @@ graph LR
 > - **"OK - Passo a Passo"** → executa uma tarefa, para e aguarda validação antes de continuar.
 > - **"Ajustes"** → descreva o que mudar; o planejamento é revisado antes de qualquer código.
 
-**Nenhum arquivo é modificado antes da resposta a esta trava.**
+🚨 **REGRA DE BLOQUEIO ABSOLUTO DO TURNO 1:**
+- **Nenhum arquivo de código é modificado, criado ou deletado antes da resposta a esta trava.**
+- **Pare de chamar ferramentas imediatamente** após apresentar esta mensagem no chat.
+- Somente no Turno 2 (após o usuário enviar "OK", "pode ir", "manda ver"), inicie criando o snapshot git (`node scripts/snapshot.js create`) e executando as tarefas do plano.
 
 **Ambiente não interativo (background, CI, modo sem resposta do usuário):** entregar o plano e parar. Seguir adiante com as suposições declaradas apenas se o risco for Baixo.
 

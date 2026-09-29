@@ -17,13 +17,12 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 
 ---
 
-## Routing
+## Routing (Active Governance by Default)
 
-| Route | Trigger | Planning Required |
+| Route | Trigger | Planning & Gate Required |
 | :--- | :--- | :--- |
-| **A (Surgical)** | ≤3 files, local fix, `--fast` non-critical | No |
-| **C (Hybrid)** | 2–3 interdependent files, or 4+ mechanical changes | Simplified |
-| **B (Adversarial)** | Critical domain, 4+ logic files, `--deep`/`--swarm` | Full |
+| **A (Surgical direct)** | Explicit `--fast` or `--quick` (non-critical) | No |
+| **B (Default / Governance)** | Invoking `@hybrid-orchestrator` (default without flag) or `--deep`/`--swarm` | **Full Planning + Mandatory Approval Gate (STOP in Turn 1)** |
 
 ---
 
@@ -48,11 +47,11 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 - ASCII wireframe (mandatory for new screens/cards)
 - Numbered task checklist
 
-### 4. Approval Gate
+### 4. Approval Gate (Strict Turn 1 Stop)
 > 🛑 **Does the plan above meet your needs?**
 > Reply: **"OK - Run All"**, **"OK - Step by Step"**, or **"Adjustments"**
->
-> No file is modified before this response.
+
+🚨 **STOP CALLING TOOLS IMMEDIATELY:** No file is created, edited, or deleted before the user explicitly replies with "OK" in Turn 2. End your turn now.
 
 ---
 
