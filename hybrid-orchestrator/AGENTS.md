@@ -47,11 +47,18 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 - ASCII wireframe (mandatory for new screens/cards)
 - Numbered task checklist
 
-### 4. Approval Gate (Strict Turn 1 Stop)
+### 4. Interactive Previews & Tangibility (Turn 1 Requirement)
+- 🌐 **Write real files & open visual previews in browser:**
+  - If architecture: generate `.code-map/graph.html` via `preview-graph.js`
+  - If UI: write `DESIGN_SPEC.md` and generate `.craft/preview.html` via `preview-spec.js`
+  - If Plan: generate `.plan/plan.html` via `preview-plan.js`
+- Provide direct clickable links (`file:///...`) in the chat response. Never fake `[CRIADO]` in plain text.
+
+### 5. Approval Gate (Strict Turn 1 Stop)
 > 🛑 **Does the plan above meet your needs?**
 > Reply: **"OK - Run All"**, **"OK - Step by Step"**, or **"Adjustments"**
 
-🚨 **STOP CALLING TOOLS IMMEDIATELY:** No file is created, edited, or deleted before the user explicitly replies with "OK" in Turn 2. End your turn now.
+🚨 **STOP CALLING TOOLS IMMEDIATELY:** No code file is created, edited, or deleted before the user explicitly replies with "OK" in Turn 2. End your turn now.
 
 ---
 

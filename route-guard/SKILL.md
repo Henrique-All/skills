@@ -17,6 +17,7 @@ Ative e siga este protocolo sempre que:
 3. For editar contratos de comunicação entre o Front-end e o Back-end.
 4. For alterar regras de permissão (RBAC), middlewares de autenticação ou filtros de tenant.
 5. Antes de aprovar pull requests envolvendo comunicação HTTP.
+6. **Acionamento Automático pelo `hybrid-orchestrator`:** Sempre que qualquer demanda gerenciada pelo Orchestrator tocar em arquivos de rotas, controllers ou endpoints de API, o Orchestrator dispara o Route Guard compulsoriamente para calcular o Blast Radius antes de editar código.
 
 ---
 

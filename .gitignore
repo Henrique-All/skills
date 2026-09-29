@@ -1,5 +1,7 @@
 node_modules/
 .mobile-preview/
 .craft/
+.plan/
+.code-map/
 .DS_Store
 Thumbs.db

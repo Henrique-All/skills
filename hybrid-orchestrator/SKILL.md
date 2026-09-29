@@ -20,6 +20,23 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo d
 7. **Use as ferramentas do projeto.** Descubra como o projeto compila, testa e lida com lint antes de sugerir comandos (seção 7).
 8. **Pergunte só o essencial.** Se faltar informação crítica, faça no máximo 2 perguntas antes de começar. Caso contrário, declare a suposição em uma linha e siga.
 
+### 1.1 O Maestro Regente do Ecossistema (Harmonia Automática das 6 Skills)
+
+O `hybrid-orchestrator` atua como o **Maestro Regente** de todo o ecossistema. O desenvolvedor **não precisa digitar o nome de todas as 6 skills no prompt**. O Orchestrator analisa a demanda e aciona compulsoriamente os especialistas necessários:
+
+- 🗺️ **Se a demanda envolve fluxo, múltiplos arquivos ou arquitetura:** Dispara o `repo-cartographer`. Salva `.code-map/handshake.json` no disco e roda `node scripts/preview-graph.js`, gerando `.code-map/graph.html` e abrindo no navegador.
+- 🛡️ **Se a demanda toca em rotas, endpoints, controllers ou APIs:** Dispara compulsoriamente o `route-guard`. Executa `node scripts/analyze-route.js <método> <rota>` para calcular o Blast Radius (quantas telas front-end quebram) e travar no Q1 da Sabatina.
+- 🎨 **Se a demanda toca em interface, telas, modais ou front-end:** Dispara compulsoriamente o `frontend-craftsman` (e `mobile-converter`). Salva o arquivo real `DESIGN_SPEC.md` no disco e roda `node scripts/preview-spec.js DESIGN_SPEC.md`, gerando `.craft/preview.html` e abrindo no navegador.
+- ⚡ **Painel Unificado de Governança no Turno 1:** Roda `node scripts/preview-plan.js` gerando `.plan/plan.html` com o dashboard interativo (Grafo 360°, Design Preview, Sabatina dos 4 Quadrantes e Checklist) e abrindo no navegador.
+- 🔒 **Turno 2 — Portões DevSecOps Pós-Execução Invioláveis:**
+  - Se tocou em backend, rotas, auth, cookies, senhas, banco ou dependências: roda compulsoriamente `node scripts/audit.js` do `security-audit`. Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e exige correção imediata**.
+  - Se tocou em UI: roda compulsoriamente `node scripts/craft-audit.js` e `node scripts/mobile-audit.js` (Score >= 90).
+
+### 1.2 Princípio da Tangibilidade Absoluta (Anti-Alucinação de Chat)
+
+1. 🚨 **PROIBIÇÃO DE ARTEFATOS FANTASMAS:** É terminantemente **proibido** declarar no chat que arquivos foram `[CRIADO]` (ex: `.code-map/handshake.json`, `DESIGN_SPEC.md`, `.plan/plan.html`) sem criá-los fisicamente no disco usando as ferramentas do agente (`write_to_file`).
+2. 🌐 **PREVIEWS VISUAIS REAIS NO NAVEGADOR:** Sempre que uma skill possuir visualizador HTML (`preview-graph.js`, `preview-spec.js`, `preview-plan.js`), o agente DEVE executar o comando para abrir no navegador padrão do usuário e fornecer os links diretos clicáveis (`file:///...`) no chat. O usuário **nunca** deve receber apenas um paredão de texto no chat; ele deve ver seus painéis visuais abrindo na tela!
+
 ---
 
 ## 2. Classificação
@@ -320,6 +337,11 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
 
 ### Mapa Visual *(Rota B)*
 [árvore de arquivos + mermaid + wireframe se houver UI]
+
+### Previews Visuais Interativos Gerados (Abra no Navegador):
+- 🌐 [Abrir Grafo de Arquitetura 360°](file:///[caminho-absoluto-do-projeto]/.code-map/graph.html) *(Repo Cartographer)*
+- 🎨 [Abrir Preview Visual da Interface](file:///[caminho-absoluto-do-projeto]/.craft/preview.html) *(Frontend Craftsman)*
+- ⚡ [Abrir Painel de Governança](file:///[caminho-absoluto-do-projeto]/.plan/plan.html) *(Hybrid Orchestrator)*
 
 🛑 TRAVA: O plano acima atende? Responda "OK - Executar Tudo", "OK - Passo a Passo" ou "Ajustes".
      Lembrete: migrações de banco exigem confirmação separada, mesmo após "OK - Executar Tudo".

@@ -81,10 +81,11 @@ O agente deve identificar o modo de operação a partir da intenção do usuári
 
 ### 3.2 Modo EXECUTE (Preparação para Execução)
 - **Gatilho:** Solicitações de novas features, correções de bug ou refatorações que tocam telas/fluxos.
-- **Comportamento:**
+- **Comportamento & Tangibilidade:**
   1. Constrói a árvore de impacto nas 6 camadas.
-  2. Gera ou atualiza `.code-map/handshake.json` (respeitando `schemas/handshake.schema.json`).
-  3. **Handshake Automático:** Se o `hybrid-orchestrator` estiver disponível no ambiente, passa o bastão diretamente para ele, preenchendo a **Fase 3.1 (Análise de Impacto)** e indicando a rota sugerida (A, B ou C).
+  2. 🚨 **Gravação Física Obrigatória:** Grava o arquivo físico `.code-map/handshake.json` no workspace usando a ferramenta `write_to_file`. É **proibido** apenas declarar `[CRIADO]` em texto no chat.
+  3. 🌐 **Canvas 360° Visual no Navegador:** Executa `node scripts/preview-graph.js` para gerar `.code-map/graph.html` e abrir a visualização interativa no navegador do usuário, fornecendo o link direto clicável no chat: `[Abrir Grafo 360°](file:///.../.code-map/graph.html)`.
+  4. **Handshake Automático:** Passa o bastão diretamente para o `hybrid-orchestrator`, preenchendo a **Fase 3.1 (Análise de Impacto)** e indicando a rota sugerida (A, B ou C).
 
 ### 3.3 Modo REFRESH (Atualização de Cache)
 - **Gatilho:** Flag `--refresh`, alteração detectada em nós conhecidos ou cache desatualizado.

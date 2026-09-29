@@ -16,6 +16,8 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo c
 4. **Criticidade sobrescreve velocidade:** Auth, pagamentos, concorrência, banco, APIs públicas, resiliência de rede — forçam Rota B mesmo com `--fast`.
 5. **Banco de dados apenas aditivo:** Nunca gere `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `migrate reset` ou equivalentes.
 6. **Honestidade:** Validações são **EXECUTADO** (comando + resultado) ou **RACIOCINADO** (análise teórica).
+7. **Maestro de 6 Skills:** O Orchestrator aciona automaticamente: `repo-cartographer` (arquitetura/360°), `route-guard` (rotas/blast radius), `frontend-craftsman` (UI/design), e no Turno 2 pós-execução compulsoriamente `security-audit` (OWASP) e `craft-audit.js`.
+8. **Tangibilidade Absoluta:** Proibido simular artefatos (`[CRIADO]`) apenas em texto. Crie os arquivos reais com ferramentas e abra os previews visuais (`preview-graph.js`, `preview-spec.js`, `preview-plan.js`) no navegador, fornecendo links clicáveis `file:///...` no chat.
 
 ## 2. Roteamento (Governança Ativa por Padrão)
 

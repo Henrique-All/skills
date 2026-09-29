@@ -179,10 +179,10 @@ flowchart TD
 1. **Detecção Silenciosa & Sem Atrito:**
    - O agente verifica se `hybrid-orchestrator` existe em `.agents/skills/hybrid-orchestrator` ou no catálogo global (`~/.gemini/config/skills/`, `~/.claude/skills/`).
 
-2. **Geração do `DESIGN_SPEC.md` & PARE IMEDIATAMENTE (Turno 1):**
-   - Cria/atualiza o arquivo `DESIGN_SPEC.md` na raiz do projeto contendo paleta (hex, contrastes, 1 accent), fontes, bibliotecas (`framer-motion`, `radix-ui`), física de molas e wireframe ASCII.
-   - Apresenta o resumo do design e oferece o preview local interativo (`node scripts/preview-spec.js DESIGN_SPEC.md`).
-   - 🚨 **REGRA DE PARADA MANDATÓRIA (STOP):** Ao concluir a escrita do `DESIGN_SPEC.md`, você **DEVE PARAR DE CHAMAR FERRAMENTAS IMEDIATAMENTE** e encerrar a sua resposta no chat.
+2. **Geração Física do `DESIGN_SPEC.md` & Preview no Navegador (Turno 1):**
+   - 🚨 **GRAVAÇÃO FÍSICA OBRIGATÓRIA:** Cria/atualiza o arquivo real `DESIGN_SPEC.md` na raiz do projeto usando a ferramenta `write_to_file`. É **terminantemente proibido** apenas simular o spec em texto no chat.
+   - 🌐 **PREVIEW VISUAL NO NAVEGADOR:** Executa `node scripts/preview-spec.js DESIGN_SPEC.md` para gerar `.craft/preview.html` e abrir no navegador padrão do usuário, fornecendo o link direto clicável no chat: `[Abrir Preview Visual da UI](file:///.../.craft/preview.html)`.
+   - 🚨 **REGRA DE PARADA MANDATÓRIA (STOP):** Ao concluir a escrita do `DESIGN_SPEC.md` e gerar o preview, você **DEVE PARAR DE CHAMAR FERRAMENTAS IMEDIATAMENTE** e encerrar a sua resposta no chat.
    - ⛔ **PROIBIÇÃO EXPRESSA:** É **ESTRITAMENTE PROIBIDO** criar, editar ou alterar arquivos de código (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`, etc.) no mesmo turno em que o `DESIGN_SPEC.md` foi gerado!
 
 3. **Handoff Formal para o `hybrid-orchestrator`:**
