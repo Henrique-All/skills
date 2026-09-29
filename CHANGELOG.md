@@ -7,6 +7,31 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [2.1.0] - 2026-09-29 — ⚡ Maestro Regente do Ecossistema & Tangibilidade Visual Total
+
+### ✨ Adicionado & Aprimorado (Governança Ativa e Visual)
+- **⚡ `hybrid-orchestrator` como Maestro Regente Automático:**
+  - O Orchestrator agora atua como condutor universal das 6 skills, dispensando a necessidade de o usuário listar todas no prompt.
+  - Se a demanda toca em **arquitetura/múltiplos arquivos**, dispara o `repo-cartographer` (gera `.code-map/handshake.json` e abre o canvas 360° no navegador).
+  - Se a demanda toca em **rotas/endpoints/controllers**, dispara compulsoriamente o `route-guard` (`analyze-route.js`) para calcular o Blast Radius e travar no Q1.
+  - Se a demanda toca em **telas/UI/modais**, dispara compulsoriamente o `frontend-craftsman` (gera `DESIGN_SPEC.md` e abre o preview visual).
+  - No Turno 2 (pós-execução), dispara compulsoriamente o `security-audit` (`audit.js --pilares=...`) para rotas/auth/dados e `craft-audit.js` / `mobile-audit.js` para telas.
+- **🌐 Dashboard Visual de Governança no Navegador (`scripts/preview-plan.js`):**
+  - Transformado em gerador de dashboard HTML completo (`.plan/plan.html`) em tema escuro (Linear / Obsidian / Raycast).
+  - Status em tempo real das ferramentas do ecossistema com links diretos para abrir o Grafo 360° e o Preview de UI.
+  - Cards visuais dos **4 Quadrantes (Q1 Contratos, Q2 Banco, Q3 UI, Q4 Segurança)**.
+  - **Checklist interativo de execução** com checkboxes persistidos em `localStorage`.
+  - Botões táteis de 1 clique para copiar as respostas de autorização da trava (`OK - Executar Tudo`, `OK - Passo a Passo`, `Ajustes`).
+  - Abertura automática no navegador padrão (`start` no Windows, `open` no macOS).
+- **🚨 Princípio da Tangibilidade Absoluta (Anti-Alucinação de Chat):**
+  - Proibição estrita de simular artefatos (`[CRIADO]`) em texto solto no chat da IA sem gravá-los fisicamente no disco com `write_to_file`.
+  - Obrigatoriedade de fornecer links clicáveis locais (`file:///...`) no chat para visualização humana imediata.
+- **🛑 Regra de Bloqueio Rígido do Turno 1 (Stop Rule):**
+  - Governança com Rota B como padrão soberano ao acionar `@hybrid-orchestrator` sem `--fast`.
+  - Proibição absoluta de chamar ferramentas de modificação/criação de código no Turno 1 até resposta expressa "OK" do usuário no Turno 2.
+
+---
+
 ## [2.0.0] - 2026-09-28 — 🏆 Ecossistema Pleno 10.0/10 (Ultimate Release)
 
 ### ✨ Adicionado & Aprimorado (Todas as 6 Skills com Nota 10.0/10)
