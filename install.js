@@ -9,6 +9,8 @@
  *   node install.js --global --target=all -> Instala tudo em todos os ambientes
  *   node install.js --both                -> Instala local e globalmente
  *   node install.js --plugin-only         -> Instala exclusivamente o Plugin oficial do Antigravity
+ *   node install.js --version             -> Abre menu interativo para escolher e instalar versão do GitHub
+ *   node install.js --version=<tag>       -> Baixa e instala uma versão específica do GitHub (sem git clone)
  */
 
 const fs = require('fs');
@@ -16,14 +18,22 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
+const rawArgs = process.argv.slice(2);
+const hasVersionFlag = rawArgs.some(a => a.startsWith('--version') || a === '--switch');
+
+if (hasVersionFlag) {
+  // Delega diretamente para o seletor de versão remota
+  require('./scripts/switch-version.js');
+  return;
+}
+
 console.log('===============================================================');
-console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.0');
+console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.2.0');
 console.log('   (Plugin Oficial + Subagentes + Travas Reativas + Skills)');
 console.log('===============================================================\n');
 
 const rootDir = __dirname;
 const homeDir = os.homedir();
-const rawArgs = process.argv.slice(2);
 const args = rawArgs.join(' ');
 const isGlobal = rawArgs.includes('--global') || rawArgs.includes('-g');
 const isBoth = rawArgs.includes('--both') || rawArgs.includes('-b');
@@ -96,9 +106,11 @@ function deployAntigravityPlugin(targetDir, label) {
   }
 }
 
-// Executar instalação do plugin
+// 1. INSTALAÇÃO DO PLUGIN OFICIAL DO ANTIGRAVITY
+const targetWorkspace = process.env.TARGET_WORKSPACE || process.cwd();
+
 if (!isGlobal || isBoth) {
-  const localPluginDir = path.join(process.cwd(), '.agents', 'plugins', 'enterprise-ai-suite');
+  const localPluginDir = path.join(targetWorkspace, '.agents', 'plugins', 'enterprise-ai-suite');
   deployAntigravityPlugin(localPluginDir, 'Workspace Local (.agents/plugins/enterprise-ai-suite)');
 }
 
@@ -120,10 +132,10 @@ if (!isPluginOnly) {
     .map((e) => e.name);
 
   for (const skillName of skillsToInstall) {
-    const skillDir = path.join(rootDir, skillName);
+    const skillScript = path.join(rootDir, skillName, 'install.js');
     console.log(`⚡ Sincronizando skill: [${skillName}]...`);
     try {
-      execSync(`node install.js ${args}`, { cwd: skillDir, stdio: 'inherit' });
+      execSync(`node "${skillScript}" ${args}`, { cwd: rootDir, stdio: 'inherit' });
     } catch (err) {
       console.error(`❌ Falha ao instalar [${skillName}]: ${err.message}`);
     }
