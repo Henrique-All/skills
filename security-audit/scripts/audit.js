@@ -302,6 +302,52 @@ for (const file of codeFiles) {
           remediation: 'Configure um usuário de aplicação com princípio do menor privilégio (SELECT, INSERT, UPDATE, DELETE apenas).'
         });
       }
+
+      // Pilar 3: Ausência de Rate Limiting em rotas críticas de autenticação
+      if (/(?:\.post|\.put)\s*\(\s*['"]\/(?:api\/)?(?:auth|login|signin|register|reset-password)['"]/i.test(line)) {
+        if (!content.includes('rateLimit') && !content.includes('limiter') && !content.includes('throttle')) {
+          addFinding({
+            id: 'MISSING_RATE_LIMIT_ON_AUTH',
+            pilar: 3,
+            severity: 'HIGH',
+            file,
+            line: lineNum,
+            message: 'Rota de autenticação sensível sem middleware de limitação de taxa (Rate Limit) detectado.',
+            evidence: line,
+            remediation: 'Proteja contra ataques de força bruta adicionando middleware de rate-limiting (ex: express-rate-limit).'
+          });
+        }
+      }
+
+      // Pilar 12: Headers de Segurança / Helmet ausentes em servidores HTTP
+      if ((line.includes('express()') || line.includes('createServer(')) && !content.includes('helmet') && !content.includes('Content-Security-Policy')) {
+        addFinding({
+          id: 'MISSING_SECURITY_HEADERS_HELMET',
+          pilar: 12,
+          severity: 'MEDIUM',
+          file,
+          line: lineNum,
+          message: 'Servidor HTTP inicializado sem Helmet ou headers de segurança essenciais (CSP, HSTS, X-Content-Type-Options).',
+          evidence: line,
+          remediation: 'Instale e configure helmet(): app.use(helmet()) para aplicar CSP, HSTS e ocultar X-Powered-By.'
+        });
+      }
+
+      // Pilar 15: Detecção de potencial IDOR (Insecure Direct Object Reference)
+      if (/(?:prisma\.\w+\.(?:findUnique|update|delete)|findOneAndDelete|findByIdAndUpdate)\s*\(\s*\{\s*where:\s*\{\s*id:\s*req\.params\.id\s*\}\s*\}/.test(line)) {
+        if (!line.includes('userId') && !line.includes('tenantId') && !content.includes('tenantId') && !content.includes('ownerId')) {
+          addFinding({
+            id: 'POTENTIAL_IDOR_UNSCOPED_QUERY',
+            pilar: 15,
+            severity: 'MEDIUM',
+            file,
+            line: lineNum,
+            message: 'Acesso direto por ID (req.params.id) sem filtro explícito de usuário/inquilino (Risco de IDOR).',
+            evidence: line,
+            remediation: 'Garanta escopo multi-tenant ou verificação de propriedade: { id: req.params.id, userId: req.user.id }.'
+          });
+        }
+      }
     });
   } catch (e) {}
 }

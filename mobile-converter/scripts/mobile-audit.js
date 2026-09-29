@@ -164,6 +164,34 @@ const RULES = [
       }
       return null;
     }
+  },
+  {
+    id: 'PWA_THEME_COLOR',
+    penalty: 10,
+    name: 'HTML sem meta tag theme-color (Barra de status desarmônica)',
+    check: (line, content, ext) => {
+      if (ext === '.html' && line.includes('<head') && !content.includes('name="theme-color"')) {
+        return 'Adicione <meta name="theme-color" content="#09090b"> no <head> para colorir a barra de status no iOS e Android.';
+      }
+      return null;
+    },
+    fix: (line, ext) => {
+      if (ext === '.html' && line.includes('<head>')) {
+        return line + '\n    <meta name="theme-color" content="#09090b">';
+      }
+      return line;
+    }
+  },
+  {
+    id: 'PWA_IOS_CAPABLE',
+    penalty: 5,
+    name: 'HTML sem suporte a Web App standalone iOS (apple-mobile-web-app-capable)',
+    check: (line, content, ext) => {
+      if (ext === '.html' && line.includes('<head') && !content.includes('apple-mobile-web-app-capable')) {
+        return 'Adicione <meta name="apple-mobile-web-app-capable" content="yes"> para permitir execução full-screen no iOS.';
+      }
+      return null;
+    }
   }
 ];
 

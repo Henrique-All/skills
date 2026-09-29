@@ -18,9 +18,20 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   title,
   children
 }) => {
+  const triggerHaptic = (ms: number = 10) => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(ms);
+      } catch {
+        // Fallback silencioso em browsers que bloqueiam vibração
+      }
+    }
+  };
+
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Se arrastou mais de 100px para baixo ou com velocidade suficiente, fecha
+    // Se arrastou mais de 100px para baixo ou com velocidade suficiente, fecha com feedback tátil
     if (info.offset.y > 100 || info.velocity.y > 350) {
+      triggerHaptic(15);
       onClose();
     }
   };

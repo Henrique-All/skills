@@ -22,6 +22,21 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeTab,
   onChange,
 }) => {
+  const triggerHaptic = (ms: number = 8) => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(ms);
+      } catch {
+        // Fallback silencioso se não suportado
+      }
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    triggerHaptic(8);
+    onChange(id);
+  };
+
   return (
     <nav
       aria-label="Navegação mobile principal"
@@ -34,7 +49,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           return (
             <motion.button
               key={tab.id}
-              onClick={() => onChange(tab.id)}
+              onClick={() => handleSelect(tab.id)}
               whileTap={{ scale: 0.92 }}
               className="relative min-h-[48px] min-w-[56px] flex flex-col items-center justify-center gap-1 text-xs font-medium touch-manipulation focus:outline-none"
             >

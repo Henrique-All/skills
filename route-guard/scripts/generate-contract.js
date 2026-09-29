@@ -44,7 +44,8 @@ Opções:
   --fields "<f1:type,f2:type>"  Campos do payload (ex: "email:string,age:number,admin:boolean")
   --name <ResourceName>         Nome customizado da entidade (ex: Order, UserProfile)
   --out <caminho.ts>            Salva o contrato diretamente em arquivo
-  --json                        Retorna a especificação em JSON
+  --json                        Retorna a especificação intermediária em JSON
+  --openapi                     Exporta especificação compatível com OpenAPI 3.0 / Swagger JSON
 
 Exemplos:
   node generate-contract.js POST /api/auth/login --fields "email:string,password:string"
@@ -240,7 +241,141 @@ export const ${resourceName}Contract = {
 };
 `;
 
-if (flags.out) {
+function generateOpenApiSpec() {
+  const openApiPath = endpoint.replace(/:([a-zA-Z0-9_]+)/g, '{$1}');
+  const lowerMethod = method.toLowerCase();
+
+  const parameters = pathParams.map(p => ({
+    name: p,
+    in: 'path',
+    required: true,
+    schema: { type: 'string' },
+    description: `Parâmetro de rota ${p}`
+  }));
+
+  const properties = {};
+  parsedFields.forEach(f => {
+    let prop = { type: 'string' };
+    if (f.type === 'number') prop = { type: 'number' };
+    else if (f.type === 'boolean') prop = { type: 'boolean' };
+    else if (f.type === 'date') prop = { type: 'string', format: 'date-time' };
+    else if (f.type === 'array') prop = { type: 'array', items: { type: 'string' } };
+    else if (f.type.startsWith('enum(')) {
+      prop = {
+        type: 'string',
+        enum: f.type.slice(5, -1).split('|').map(v => v.trim())
+      };
+    }
+    properties[f.name] = prop;
+  });
+
+  const responseProperties = {
+    id: { type: 'string', format: 'uuid' },
+    ...properties,
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' }
+  };
+
+  const operation = {
+    summary: `${actionPrefix} ${resourceName}`,
+    description: `Endpoint ${method} ${endpoint} com contrato de blindagem Zero-Trust.`,
+    tags: [resourceName],
+    responses: {
+      '200': {
+        description: 'Operação bem-sucedida',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean', example: true },
+                data: {
+                  type: 'object',
+                  properties: responseProperties,
+                  required: ['id', 'createdAt', 'updatedAt']
+                },
+                timestamp: { type: 'string', format: 'date-time' }
+              },
+              required: ['success', 'data', 'timestamp']
+            }
+          }
+        }
+      },
+      '400': {
+        description: 'Erro de validação RFC 7807',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean', example: false },
+                error: {
+                  type: 'object',
+                  properties: {
+                    code: { type: 'string', example: 'VALIDATION_ERROR' },
+                    message: { type: 'string' },
+                    details: { type: 'object' }
+                  },
+                  required: ['code', 'message']
+                },
+                timestamp: { type: 'string', format: 'date-time' }
+              }
+            }
+          }
+        }
+      },
+      '401': {
+        description: 'Não autorizado ou token ausente/inválido'
+      }
+    }
+  };
+
+  if (parameters.length > 0) {
+    operation.parameters = parameters;
+  }
+
+  if (method !== 'GET' && method !== 'DELETE') {
+    operation.requestBody = {
+      description: `Payload de entrada para ${actionPrefix} ${resourceName}`,
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: parsedFields.filter(f => !f.optional).map(f => f.name),
+            properties
+          }
+        }
+      }
+    };
+  }
+
+  return {
+    openapi: '3.0.3',
+    info: {
+      title: `${resourceName} API Specification`,
+      version: '1.0.0',
+      description: `Especificação OpenAPI 3.0 gerada automaticamente pelo Route Guard (Antigravity).`
+    },
+    paths: {
+      [openApiPath]: {
+        [lowerMethod]: operation
+      }
+    }
+  };
+}
+
+if (flags.openapi) {
+  const openApiDoc = generateOpenApiSpec();
+  if (flags.out) {
+    const outPath = path.resolve(process.cwd(), flags.out);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, JSON.stringify(openApiDoc, null, 2), 'utf-8');
+    console.log(`\n✅ Especificação OpenAPI 3.0 salva com sucesso em: ${outPath}`);
+  } else {
+    console.log(JSON.stringify(openApiDoc, null, 2));
+  }
+} else if (flags.out) {
   const outPath = path.resolve(process.cwd(), flags.out);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, contractCode, 'utf-8');
@@ -257,3 +392,4 @@ if (flags.out) {
 } else {
   console.log(contractCode);
 }
+
