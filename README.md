@@ -580,6 +580,8 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 
 | Slash Command / Atalho | Objetivo | Exemplo de Uso no Chat |
 | :--- | :--- | :--- |
+| **`/orch`** ⭐ | **Comando Geral Mestre:** Governança total e orquestração das 6 skills | `/orch Implemente a tela de checkout com Pix e recálculo de frete` |
+| **`/orch --fast`** ⚡ | **Execução Cirúrgica Direta:** Rota A sem travas e com diffs atômicos | `/orch --fast Corrija a tipagem de retorno do UserService` |
 | **`/frontend-craftsman`** | Gerar interface artesanal sem cara de IA (Framer Motion) | `/frontend-craftsman Crie a interface da Central de Clientes com paleta Linear` |
 | **`/mobile-converter`** | Converter tela desktop para mobile tátil (Bottom Sheets / dvh) | `/mobile-converter Adapte a tela de Checkout para mobile com Bottom Sheet` |
 | **`/hybrid-orchestrator`** | Desenvolver feature com governança e Falsifier | `/hybrid-orchestrator Implemente o recálculo de frete na tela de checkout` |
