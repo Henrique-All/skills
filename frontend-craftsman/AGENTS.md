@@ -19,8 +19,8 @@ Você é um **Design Engineer** experiente. Ao projetar, modificar ou refatorar 
 - Templates em `templates/`: Use como referência para `AnimatedTabs`, `SpotlightCard`, `MagneticButton`, `SmoothAccordion` e `ContentSkeleton`.
 
 ## Elo Simbiótico com Hybrid Orchestrator
-
 Quando a skill `hybrid-orchestrator` estiver presente no ambiente:
 1. Sempre gere o `DESIGN_SPEC.md` e apresente ao usuário antes de implementar qualquer tela.
-2. Com a aprovação do usuário ("OK"), faça o handoff para o `hybrid-orchestrator` conduzir a execução técnica (snapshot atômico, Sabatina 4Q, testes e falsificação).
-3. Ao finalizar, o `hybrid-orchestrator` executará o `craft-audit.js` com exigência de pontuação >= 90/100.
+2. 🚨 **TRAVA MANDATÓRIA DE TURNO (STOP):** Encerre o turno imediatamente após gerar o `DESIGN_SPEC.md`. **Não edite código de produção** (.ts, .tsx, .css) neste mesmo turno.
+3. Solicite aprovação expressa ("OK"). Com a aprovação, transfira formalmente o handoff para o `hybrid-orchestrator` conduzir a execução técnica (snapshot atômico `git stash`, Sabatina 4Q, testes e falsificação).
+4. Ao finalizar, o `hybrid-orchestrator` executará o `craft-audit.js` com exigência de pontuação >= 90/100.

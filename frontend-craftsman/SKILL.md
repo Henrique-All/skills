@@ -174,20 +174,25 @@ flowchart TD
     H7 --> H8["🏆 Pipeline 7.2: craft-audit.js<br/>Score ≥ 90 Obrigatório"]
 ```
 
-### Regras do Acordo Simbiótico:
+### 🛑 Regras Rígidas do Acordo Simbiótico (Trava Obrigatória de Turno):
+
 1. **Detecção Silenciosa & Sem Atrito:**
    - O agente verifica se `hybrid-orchestrator` existe em `.agents/skills/hybrid-orchestrator` ou no catálogo global (`~/.gemini/config/skills/`, `~/.claude/skills/`).
-   - Se existir, **NUNCA** comece a codificar interfaces sem antes apresentar o `DESIGN_SPEC.md` visual.
-2. **O Documento `DESIGN_SPEC.md`:**
-   - Cria o arquivo na raiz do projeto contendo paleta (hex, contrastes, 1 accent), fontes, bibliotecas (`framer-motion`, `radix-ui`), física de molas e wireframe ASCII.
-   - Oferece ou abre o preview interativo local com `node scripts/preview-spec.js`.
-   - Pede a validação visual do usuário.
-3. **Pós-Execução Blindada:**
-   - Ao final da implementação técnica conduzida pelo `hybrid-orchestrator`, ele executa obrigatoriamente:
-     ```bash
-     node scripts/craft-audit.js [pasta-do-frontend]
-     ```
-     A aprovação final só é dada se o score for **>= 90/100**.
+
+2. **Geração do `DESIGN_SPEC.md` & PARE IMEDIATAMENTE (Turno 1):**
+   - Cria/atualiza o arquivo `DESIGN_SPEC.md` na raiz do projeto contendo paleta (hex, contrastes, 1 accent), fontes, bibliotecas (`framer-motion`, `radix-ui`), física de molas e wireframe ASCII.
+   - Apresenta o resumo do design e oferece o preview local interativo (`node scripts/preview-spec.js DESIGN_SPEC.md`).
+   - 🚨 **REGRA DE PARADA MANDATÓRIA (STOP):** Ao concluir a escrita do `DESIGN_SPEC.md`, você **DEVE PARAR DE CHAMAR FERRAMENTAS IMEDIATAMENTE** e encerrar a sua resposta no chat.
+   - ⛔ **PROIBIÇÃO EXPRESSA:** É **ESTRITAMENTE PROIBIDO** criar, editar ou alterar arquivos de código (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`, etc.) no mesmo turno em que o `DESIGN_SPEC.md` foi gerado!
+
+3. **Handoff Formal para o `hybrid-orchestrator`:**
+   - Se o `hybrid-orchestrator` estiver presente, encerre a mensagem do Turno 1 com a seguinte pergunta bloqueante:
+     > *"🎨 **Especificação visual gerada em `DESIGN_SPEC.md`!**  
+     > Você aprova as diretrizes visuais acima?  
+     > Responda **'OK'** (ou envie seus ajustes) para que o **`hybrid-orchestrator`** assuma a execução técnica no próximo turno (com snapshot atômico `git stash`, Sabatina Q1-Q4, implementação com física de molas e ataque Falsifier)."*
+   - **Somente após a confirmação expressa do usuário ("OK" / "Aprovo") no Turno 2:**
+     - O controle é transferido formalmente para o ciclo do `hybrid-orchestrator`.
+     - O Orchestrator cria o snapshot de segurança (`node scripts/snapshot.js create`), preenche o Q3 da Sabatina com o `DESIGN_SPEC.md`, aplica os diffs atômicos e roda o pipeline pós-execução (`node scripts/craft-audit.js` com Score >= 90).
 
 ---
 

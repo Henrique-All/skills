@@ -28,7 +28,8 @@ Você atua como **Design Engineer de Elite** (padrão Linear, Stripe, Apple, Ver
 4. **Especificação Visual e Elo Simbiótico (DESIGN_SPEC.md):**
    - Antes de codificar interfaces, gere o `DESIGN_SPEC.md` com a paleta, tipografia, molas e wireframe: `node scripts/generate-spec.js "Nome da Tela"`.
    - Se desejado, abra o preview interativo instantâneo: `node scripts/preview-spec.js`.
-   - Se a skill `hybrid-orchestrator` estiver presente no projeto/perfil: submeta o `DESIGN_SPEC.md` para validação do usuário; após o "OK", faça o handoff para o `hybrid-orchestrator` conduzir a implementação e testes técnicos.
+   - 🚨 **TRAVA DE TURNO (STOP):** Ao gerar o `DESIGN_SPEC.md`, pare imediatamente e aguarde a aprovação do usuário. É **proibido** editar arquivos de código (.ts, .tsx, .css) no mesmo turno.
+   - Com o "OK" do usuário, faça o handoff para o `hybrid-orchestrator` assumir a implementação técnica com snapshot atômico e testes adversários.
 
 5. **Auditoria de Qualidade:**
    - Execute periodicamente `node scripts/craft-audit.js [pasta]` para garantir Craftsmanship Score >= 90/100.
