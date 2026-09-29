@@ -52,13 +52,19 @@ try {
   const testDenyJson = JSON.parse(testDeny);
   if (testDenyJson.decision !== 'deny') throw new Error('Firewall falhou ao bloquear "DROP TABLE"!');
 
+  const testDenyForce = execSync(
+    `node "${preGuardPath}"`,
+    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin main --force' } } }), encoding: 'utf-8' }
+  );
+  if (JSON.parse(testDenyForce).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "git push --force"!');
+
   const testAllow = execSync(
     `node "${preGuardPath}"`,
     { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'npm test' } } }), encoding: 'utf-8' }
   );
   const testAllowJson = JSON.parse(testAllow);
   if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
-  console.log('   ✅ Firewall de segurança testado: Bloqueio estrito de DROP TABLE & aprovação de npm test');
+  console.log('   ✅ Firewall de segurança testado: Bloqueio estrito de DROP TABLE, git push --force & aprovação de npm test');
 
 } catch (err) {
   console.error(`   ❌ Falha na validação do Plugin: ${err.message}`);

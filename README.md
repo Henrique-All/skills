@@ -1,7 +1,7 @@
-# ⚡ Enterprise AI Skills Monorepo
+# ⚡ Enterprise AI Suite (v2.2.0)
 
-> **Ecossistema de Governança, Cartografia Arquitetural, Execução Adversária e DevSecOps para Agentes de IA.**
-> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**, **Aider**) em verdadeiros engenheiros de software seniores, eliminando alucinações, desperdício de tokens e quebras em produção.
+> **Plugin Oficial, Enxame de Subagentes Especialistas, Governança, Cartografia Arquitetural e DevSecOps para Agentes de IA.**
+> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**, **Aider**) em verdadeiros engenheiros de software seniores, eliminando alucinações, desperdício de tokens e quebras em produção com isolamento de contexto e travas ativas de ciclo de vida.
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
 [![CI Status](https://github.com/Henrique-All/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Henrique-All/skills/actions)
@@ -553,12 +553,21 @@ npm run install:all
 node install.js --global --target=all
 ```
 
-### 2. Instalação no Workspace do Projeto Atual:
+### 2. Instalação como Plugin Oficial do Antigravity (com Subagentes e Hooks):
+```bash
+# Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite):
+npm run install:plugin:global
+
+# Ou no Workspace Local (.agents/plugins/enterprise-ai-suite):
+npm run install:plugin
+```
+
+### 3. Instalação no Workspace Local (.agents/skills/*):
 ```bash
 npm run install:local
 ```
 
-### 3. Rodar Testes de Integridade do Monorepo:
+### 4. Rodar Testes de Integridade (Plugin + Subagentes + Skills):
 ```bash
 npm test
 ```
@@ -610,6 +619,7 @@ A branch `master` é blindada contra quebras acidentais através das seguintes r
 O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**](CHANGELOG.md) conforme o padrão [Keep a Changelog](https://keepachangelog.com/).
 
 ### 🏆 Releases Oficiais no GitHub
+- [**v2.2.0 — Enterprise AI Suite (Plugin Oficial + Enxame de Subagentes + Hooks Reativos)**](https://github.com/Henrique-All/skills/releases/tag/v2.2.0) — Transformação do monorepo em Plugin nativo do Antigravity com 5 subagentes especialistas de contexto limpo e firewall ativo no sistema operacional.
 - [**v2.1.0 — Maestro Regente do Ecossistema & Tangibilidade Visual Total**](https://github.com/Henrique-All/skills/releases/tag/v2.1.0) — Governança ativa por padrão, preview visual do plano e acionamento automático inter-skills.
 - [**v2.0.0 — Ecossistema Pleno 10.0/10 (Ultimate Release)**](https://github.com/Henrique-All/skills/releases/tag/v2.0.0) — Todas as 6 skills com CLIs determinísticos e nota máxima.
 - [**v1.3.0 — Mobile Converter 10.0/10 & Simulador de Smartphone**](https://github.com/Henrique-All/skills/releases/tag/v1.3.0) — Metamorfoses táteis e molduras interativas.
@@ -624,7 +634,18 @@ O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**]
 ## 🏗️ Estrutura do Repositório
 
 ```
-skills/
+enterprise-ai-suite/
+├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.2.0)
+├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
+├── agents/                # 🤖 Subagentes Especialistas (Contextos Isolados)
+│   ├── cartographer.agent.md   # Mapeamento 360° em modo estrito Read-Only
+│   ├── route-guard.agent.md    # Blast Radius e contratos Zod/DTO
+│   ├── ui-craftsman.agent.md   # Design Engineering anti-slop e física de molas
+│   ├── falsifier.agent.md      # Subagente adversário para estresse pré-código
+│   └── security-auditor.agent.md # Auditoria DevSecOps dos 18 pilares OWASP (SARIF)
+├── rules/                 # 📜 Regras Globais (Zero-Trust, Anti-AI Slop)
+│   ├── 01-zero-trust.md
+│   └── 02-anti-ai-slop.md
 ├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
 ├── mobile-converter/      # Adaptação mobile tátil, Bottom Sheets, Tab Bar e dvh
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
@@ -632,7 +653,10 @@ skills/
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust
 ├── security-audit/        # Motor DevSecOps com os 18 pilares OWASP
 ├── scripts/
-│   ├── test-all.js        # Test runner universal do monorepo
+│   ├── test-all.js        # Test runner universal (Plugin + Subagentes + Skills)
+│   ├── hooks/             # Scripts executados pelas travas reativas (hooks.json)
+│   │   ├── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos
+│   │   └── post-write-lint.js    # Checagem silenciosa pós-edição
 │   ├── protect-master.js  # Script de automação das regras da branch master
 │   └── create-github-releases.js # Publicador automático de releases
 ├── .github/
@@ -643,7 +667,7 @@ skills/
 ├── CHANGELOG.md           # Histórico de versões e alterações
 ├── SECURITY.md            # Política de segurança
 ├── CODE_OF_CONDUCT.md     # Código de conduta internacional
-├── install.js             # Instalador central do monorepo
+├── install.js             # Instalador central do monorepo e do plugin
 ├── package.json           # Scripts globais
 └── README.md              # Este manual completo
 ```

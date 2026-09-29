@@ -7,6 +7,29 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [2.2.0] - 2026-09-29 — 🚀 Enterprise AI Suite: Plugin Oficial, Subagentes & Hooks Reativos
+
+### ✨ Adicionado & Aprimorado (Arquitetura de Plugin e Enxame de Subagentes)
+- **📦 Manifesto Oficial do Plugin Antigravity (`plugin.json`):**
+  - O monorepo agora é empacotado como o plugin nativo **`enterprise-ai-suite`** (v2.2.0), permitindo instalação atômica em `.agents/plugins/` ou `~/.gemini/config/plugins/`.
+- **🤖 Enxame de Subagentes Especialistas com Contexto Isolado (`agents/`):**
+  - **`cartographer.agent.md`**: Especialista em cartografia 360° em modo estritamente *Read-Only*, economizando até 90% dos tokens da conversa principal.
+  - **`route-guard.agent.md`**: Guardião de contratos de API, DTOs e cálculo de Blast Radius.
+  - **`ui-craftsman.agent.md`**: Design Engineer anti-AI slop, molas do Framer Motion e ergonomia mobile tátil.
+  - **`falsifier.agent.md`**: Subagente adversário dedicado a quebrar o plano na fase pré-código (5 vetores de estresse).
+  - **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP com exportação SARIF e saída bloqueante.
+- **🛡️ Travas Reativas de Ciclo de Vida no Sistema Operacional (`hooks.json`):**
+  - **`safety-firewall` (`pre-command-guard.js`)**: Intercepta comandos de terminal e bloqueia operações destrutivas (`DROP TABLE`, `rm -rf /`, `git push --force`, `Remove-Item -Recurse -Force`, `prisma migrate reset`).
+  - **`code-quality-gate` (`post-write-lint.js`)**: Checagem silenciosa pós-escrita de arquivos.
+- **📜 Regras Globais do Sistema (`rules/`):**
+  - **`01-zero-trust.md`**: Governança obrigatória de rotas A/B/C e honestidade de evidência.
+  - **`02-anti-ai-slop.md`**: Diretrizes de estética premium, eliminação de clichês visuais e ergonomia mobile (44px+, dvh).
+- **🚀 Instalador Central v2.2.0 (`install.js`):**
+  - Novo comando `npm run install:plugin` / `npm run install:plugin:global` com empacotamento automatizado.
+  - Sincronização 100% retrocompatível mantida para Claude Code (`~/.claude/skills/`) e Cursor (`~/.cursor/rules/`).
+
+---
+
 ## [2.1.0] - 2026-09-29 — ⚡ Maestro Regente do Ecossistema & Tangibilidade Visual Total
 
 ### ✨ Adicionado & Aprimorado (Governança Ativa e Visual)

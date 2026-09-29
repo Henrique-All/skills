@@ -44,6 +44,7 @@ if (toolName === 'run_command' && args.CommandLine) {
     /rm\s+-rf\s+[\/\\]/i,
     /rm\s+-rf\s+~/i,
     /rmdir\s+\/s\s+\/q\s+[c-zC-Z]:\\/i,
+    /remove-item\s+.*-recurse.*-force\s+([c-zC-Z]:\\|\/|~)/i,
     /git\s+push\s+.*--force/i,
     /git\s+push\s+.*-f\b/i,
     /prisma\s+migrate\s+reset\s+--force/i,
