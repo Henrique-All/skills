@@ -14,6 +14,7 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 4. **Criticality overrides speed:** Auth, payments, concurrency, DB transactions/migrations, public API contracts, network resilience → Route B, even with `--fast`.
 5. **Additive-only database changes:** Never generate `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `migrate reset`, or equivalent. Only safe, additive migrations.
 6. **Validation honesty:** **EXECUTADO** (command ran + output shown) or **RACIOCINADO** (reasoned without execution). Never claim a scenario "passed" without evidence.
+7. **Silent detection & zero hunting:** If a sibling skill is not installed in the workspace/global catalog, do not hunt on disk. Perform the function natively as REASONED.
 
 ---
 

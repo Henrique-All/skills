@@ -37,6 +37,19 @@ O `hybrid-orchestrator` atua como o **Maestro Regente** de todo o ecossistema. O
 1. 🚨 **PROIBIÇÃO DE ARTEFATOS FANTASMAS:** É terminantemente **proibido** declarar no chat que arquivos foram `[CRIADO]` (ex: `.code-map/handshake.json`, `DESIGN_SPEC.md`, `.plan/plan.html`) sem criá-los fisicamente no disco usando as ferramentas do agente (`write_to_file`).
 2. 🌐 **PREVIEWS VISUAIS REAIS NO NAVEGADOR:** Sempre que uma skill possuir visualizador HTML (`preview-graph.js`, `preview-spec.js`, `preview-plan.js`), o agente DEVE executar o comando para abrir no navegador padrão do usuário e fornecer os links diretos clicáveis (`file:///...`) no chat. O usuário **nunca** deve receber apenas um paredão de texto no chat; ele deve ver seus painéis visuais abrindo na tela!
 
+### 1.3 Detecção Silenciosa & Fallback Elegante (Zero Caçadas no Disco)
+
+O agente deve ser cirúrgico e consciente de quais skills estão instaladas antes de disparar ferramentas:
+
+1. **Checagem Imediata (Fast Check):** O agente verifica se a skill irmã está no catálogo ativo de skills da sessão ou nos diretórios padrão (`.agents/skills/<nome>` ou `~/.gemini/config/skills/<nome>`).
+2. 🚨 **PROIBIÇÃO DE CAÇADA:** Se uma skill NÃO estiver instalada, é **terminantemente proibido** ficar varrendo o disco procurando scripts inexistentes ou inventando caminhos.
+3. **Degradação Graciosa Nativa:** O Orchestrator supre a ausência executando a lógica diretamente através de suas capacidades cognitivas nativas:
+   - **Sem `repo-cartographer`:** Rastreia dependências via busca textual pontual (`grep_search`), sem gerar `.code-map/`.
+   - **Sem `route-guard`:** Mapeia consumidores da rota manualmente e declara no Q1 da Sabatina.
+   - **Sem `frontend-craftsman`:** Aplica boas práticas de interface diretamente no código sem gerar `preview.html`.
+   - **Sem `security-audit`:** Faz a revisão dos pilares de segurança semanticamente como `RACIOCINADO` no Turno 2.
+   *O agente nunca trava, nunca alucina caminhos inexistentes e nunca entra em loops de busca inútil.*
+
 ---
 
 ## 2. Classificação
