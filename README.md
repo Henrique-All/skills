@@ -15,6 +15,7 @@
 
 - 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Comandos para Antigravity, Claude Code e Cursor
 - 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
+- ⚖️ [**Execução Individual vs. /orch**](#%EF%B8%8F-execu%C3%A7%C3%A3o-individual-vs-comando-mestre-orch-qual-a-diferen%C3%A7a) — Comparativo prático e matriz de decisão
 - 💰 [**Eficiência Extrema & Economia de Tokens (70%–85%)**](#-efici%C3%AAncia-extrema--economia-de-tokens-70-a-85-de-redu%C3%A7%C3%A3o) — Simulação matemática e os 4 pilares
 - 📊 [**Scorecard das Skills (Ecosistema 10.0)**](#-scorecard--notas-t%C3%A9cnicas-das-skills-ecosistema-100) — Tabela geral de notas
 - 🏆 [**O Motivo da Nota 10.0/10 de Cada Skill**](#-o-motivo-da-nota-10010-de-cada-skill) — Racional técnico e garantias
@@ -634,6 +635,43 @@ Você pode acionar as skills tanto por **linguagem natural** quanto diretamente 
 | **`/security-audit --pilares=2,5`** | Auditoria seletiva (ex: Auth e JWT) | `/security-audit --pilares=2,5 Audite as alterações no login` |
 
 > 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@frontend-craftsman`, `@mobile-converter`, `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
+
+---
+
+### ⚖️ Execução Individual vs. Comando Mestre `/orch`: Qual a Diferença?
+
+O **Enterprise AI Suite** foi desenhado com arquitetura de **dupla camada de acionamento**: você tem total liberdade para usar cada skill de forma cirúrgica e isolada ou delegar a orquestração ponta a ponta ao comando mestre.
+
+| Critério de Comparação | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: `/frontend-craftsman`, `/security-audit`)* | 🚀 Comando Mestre `/orch` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
+| :--- | :--- | :--- |
+| **Comando / Gatilho** | `/frontend-craftsman`, `/mobile-converter`, `/repo-cartographer`, `/route-guard`, `/security-audit`, `/hybrid-orchestrator` | `/orch <demanda>` ou `/orch --fast <demanda>` |
+| **Escopo de Ação** | **Laser-Focused:** Atua estritamente dentro do domínio de conhecimento daquela skill. | **Holístico & Multi-Camadas:** Orquestra compulsoriamente as 6 disciplinas (Cartografia ➔ Rotas ➔ UI ➔ Mobile ➔ Falsifier ➔ Segurança). |
+| **Quem Conecta as Etapas?** | **O Desenvolvedor:** Você decide manualmente quando mapear, quando criar contratos, quando desenhar telas e quando auditar. | **O Orchestrator (Lead):** Conecta as etapas automaticamente, passando os artefatos de uma skill para a outra sem intervenção humana. |
+| **Consumo de Contexto** | Ultrabaixo (< 2.000 tokens na sessão principal). Ideal para tarefas atômicas e hiper-específicas. | Otimizado via subagentes efêmeros (redução de 70% a 85% de tokens na API). |
+| **Troca de Informações** | Manual (o usuário copia saídas de um comando para o prompt seguinte). | **Automática via Handshakes Tipados:** `.code-map/handshake.json`, `DESIGN_SPEC.md` e relatórios SARIF fluem entre os subagentes. |
+| **Trava & Sabatina (4Q)** | Não possui (vai direto ao código ou auditoria daquela skill). | **Ativa no Turno 1 (Rota B):** Sabatina 4Q (Contratos, Concorrência, UI, Auth) e Trava rígida anti-drift antes de tocar em qualquer arquivo. |
+| **Ciclo Adversário (Falsifier)** | Não roda (a não ser que invocado via `hybrid-orchestrator`). | **Obrigatório:** O subagente Falsifier tenta ativamente quebrar a solução simulando race conditions, timeouts e limites extremos. |
+| **Verificação Pós-Código** | Apenas as ferramentas daquela skill específica. | **Pipeline Triplo Automático:** Executa `craft-audit.js` (UI), `mobile-audit.js` (Mobile) e `security-audit` (18 pilares OWASP). |
+| **Opção de Bypass Cirúrgico** | Já é naturalmente direto. | Possui a flag **`/orch --fast`** (aplica Rota A sem travas e com diffs atômicos para quando você quer o orchestrator veloz). |
+
+---
+
+#### 💡 Quando Escolher Cada Modo?
+
+1. **Escolha Execução Individual quando:**
+   - Você quer resolver um problema pontual e cirúrgico em uma única camada técnica:
+     - *"Mapeie quem chama este arquivo"* ➔ `/repo-cartographer`
+     - *"Valide se o endpoint quebra o front"* ➔ `/route-guard`
+     - *"Converta esta tabela para cards com gesto"* ➔ `/mobile-converter`
+     - *"Remova o estilo genérico de IA deste botão"* ➔ `/frontend-craftsman`
+     - *"Faça uma auditoria de segurança antes do git push"* ➔ `/security-audit`
+   - O overhead de planejamento em 4 quadrantes seria desnecessário para uma alteração de 2 minutos.
+
+2. **Escolha o Comando Mestre `/orch` quando:**
+   - Você vai implementar uma **feature completa** (ex: *checkout com cálculo de frete, pagamento Pix e validação de cupons*).
+   - A demanda cruza múltiplas fronteiras (banco de dados, rotas de API, componentes visuais, adaptação mobile e segurança de autenticação).
+   - Você quer **garantia de zero regressão**: o `/orch` garante que o contrato de rotas foi respeitado, o design não tem cara de IA, a tela funciona no smartphone, o Falsifier estressou cenários de erro e a auditoria OWASP aprovou o código com exit code 0.
+   - Para pequenas correções onde você quer que o Orchestrator resolva tudo sozinho de forma rápida: use **`/orch --fast`**.
 
 ---
 

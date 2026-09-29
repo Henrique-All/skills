@@ -99,6 +99,22 @@ const previewRelease = {
 
 ---
 
+### ⚖️ Execução Individual vs. Comando Mestre \`/orch\`: Qual a Diferença?
+
+| Critério | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: \`/frontend-craftsman\`, \`/security-audit\`)* | 🚀 Comando Mestre \`/orch\` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
+| :--- | :--- | :--- |
+| **Comando** | \`/frontend-craftsman\`, \`/mobile-converter\`, \`/repo-cartographer\`, \`/route-guard\`, \`/security-audit\`, \`/hybrid-orchestrator\` | \`/orch <demanda>\` ou \`/orch --fast <demanda>\` |
+| **Escopo** | **Laser-Focused:** Atua estritamente na especialidade daquela skill | **Holístico:** Orquestra compulsoriamente as 6 disciplinas (Cartografia ➔ Rotas ➔ UI ➔ Mobile ➔ Falsifier ➔ Segurança) |
+| **Quem Conecta?** | **O Desenvolvedor:** Você decide manualmente quando cartografar, desenhar e auditar | **O Orchestrator (Lead):** Conecta as etapas e repassa artefatos automaticamente |
+| **Consumo** | Ultrabaixo (< 2.000 tokens na sessão principal) | Otimizado via subagentes efêmeros (redução de 70% a 85% de tokens) |
+| **Handshakes** | Manual (copiar e colar no prompt) | **Automático:** \`.code-map/handshake.json\`, \`DESIGN_SPEC.md\` e SARIF fluem entre os subagentes |
+| **Trava & 4Q** | Não possui (vai direto ao ponto) | **Ativa no Turno 1:** Sabatina 4Q e bloqueio antes de tocar em código (bypass com \`--fast\`) |
+| **Falsifier** | Não roda (a não ser no hybrid) | **Obrigatório:** Subagente adversário ataca com 5 vetores de estresse |
+| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Triplo:** \`craft-audit.js\`, \`mobile-audit.js\` e \`security-audit\` |
+| **Quando Usar?** | Alterações pontuais, redesign de 1 componente, auditoria pré-commit, mapear 1 arquivo | Features completas de ponta a ponta, mudanças críticas em banco/rotas/telas |
+
+---
+
 ### 🧪 Como Testar a Versão Beta:
 \`\`\`bash
 # 1. Clone ou mude para a branch 2.2.0:
