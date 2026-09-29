@@ -34,84 +34,91 @@ const previewRelease = {
   name: 'v2.2.0-beta.1 — 🚀 Enterprise AI Suite: Plugin Oficial, Subagentes & Hooks (Preview Beta)',
   body: `# 🚀 Enterprise AI Suite v2.2.0-beta.1 (Preview / Beta Pública)
 
-> **Esta é uma release de pré-visualização (PREVIEW / BETA) para testes da nova arquitetura de Plugin Oficial e Subagentes do Google Antigravity.**
+> **Esta é uma release de pré-visualização (PREVIEW / BETA) com a arquitetura completa de Plugin Oficial, Enxame de 7 Subagentes, Cockpit Visual e 9 Skills de Engenharia.**  
 > Desenvolvida na branch \`2.2.0\` para quem deseja testar o ecossistema de ponta antes da release final na branch principal.
 
 ---
 
-### 💰 Eficiência Extrema & Economia de Tokens (70% a 85% de Redução)
+### 💰 Eficiência Extrema & Economia de Tokens (78% a 85% de Redução)
 
 > **Engenharia de Contexto Efêmero:** Como a v2.2.0 reduz drasticamente o consumo de tokens faturados na API da LLM enquanto eleva a precisão analítica e a velocidade de entrega.
 
-#### 📊 Simulação Real: Demanda Típica de 8 Turnos
+#### 📊 Simulação Real: Demanda Fullstack Completa (9 Turnos)
 | Etapa da Conversa | ❌ Modelo Antigo (Mono-thread)<br/>*Histórico Acumulado Reenviado* | ✅ Enterprise AI Suite v2.2.0<br/>*Handoffs Sintéticos Isolados* |
 | :--- | :---: | :---: |
-| **Turno 1: Leitura de 25 arquivos** | 30.000 tokens lidos no chat principal | 30.000 tokens lidos no subagente |
-| **Turno 2: Planejamento & Sabatina** | 33.000 tokens *(30k anteriores + 3k)* | **1.500 tokens** *(recebeu só o JSON de 500t)* |
-| **Turno 3: Autorização ("OK")** | 36.000 tokens *(tudo reenviado)* | **2.500 tokens** |
-| **Turno 4: Telas & Componentes (Front)** | 42.000 tokens *(tudo reenviado)* | **4.000 tokens** *(UI em subagente)* |
-| **Turno 5: Rotas & Banco (Back)** | 48.000 tokens *(tudo reenviado)* | **6.500 tokens** |
-| **Turno 6: Ajustes de Integração** | 54.000 tokens *(tudo reenviado)* | **8.000 tokens** |
-| **Turno 7: Auditoria DevSecOps** | 60.000 tokens *(tudo reenviado)* | **9.500 tokens** *(Auditoria em subagente)* |
-| **Turno 8: Validação e Entrega** | 66.000 tokens *(tudo reenviado)* | **11.000 tokens** |
-| ➕ **Subagentes descartáveis** | *Não possui (tudo roda no chat)* | **+ 45.000 tokens** *(rodaram 1x e fecharam)* |
-| **🔥 TOTAL FATURADO PELA API** | **~369.000 tokens** 💸 | **~88.000 tokens** 🟢 |
+| **Turno 1: Cartografia do Repo** | 40.000 tokens lidos no chat principal | **500 tokens** *(cartógrafo em thread limpa)* |
+| **Turno 2: Banco & Migrations (\`db-sentinel\`)** | 45.000 tokens *(acumulou 40k + 5k)* | **1.500 tokens** *(banco validado em subagente)* |
+| **Turno 3: Contratos de Rota (\`route-guard\`)** | 50.000 tokens *(acumulando)* | **2.800 tokens** *(recebeu só o Zod/DTO de 300t)* |
+| **Turno 4: UI & Molas (\`frontend-craftsman\`)** | 60.000 tokens *(acumulando)* | **4.500 tokens** *(UI em subagente)* |
+| **Turno 5: Mobile & Ergonomia (\`mobile-converter\`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
+| **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
+| **Turno 7: Criação de Testes (\`test-forge\`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
+| **Turno 8: Auditoria DevSecOps (\`security-audit\`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
+| **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
+| ➕ **Subagentes descartáveis** | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e fecharam)* |
+| **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
 
-> 📉 **Resultado:** **~76% de economia direta de tokens** (redução de **~280.000 tokens** em uma única demanda!). Em chats longos de 12 a 15 turnos, a economia ultrapassa **85%**.
-
-#### 🛡️ Os 4 Pilares da Economia de Tokens:
-1. **Fim do Efeito "Bola de Neve" (Janelas Efêmeras):** Arquivos brutos lidos morrem na thread descartável do subagente. O chat principal só recebe o resumo JSON de 500 tokens (\`handshake.json\`).
-2. **Scripts Locais em Node.js (Custo Zero na LLM):** Cartografia AST (\`cartographer.js\`), Blast Radius (\`analyze-route.js\`) e 18 pilares OWASP (\`audit.js\`) rodam na CPU da sua máquina.
-3. **Handoffs Tipados Ultracompactos (JSON Puro):** Subagentes comunicam dados condensados em schemas JSON estritos de 50 a 500 tokens.
-4. **Escape Cirúrgico com \`/orch --fast\`:** Rota A direta sem subagentes para tarefas pontuais (< 3.000 tokens do início ao fim).
+> 📉 **Resultado:** **~78.4% a 85% de economia direta de tokens** (redução de mais de **540.000 tokens** em uma única demanda!).
+> ⚡ **Zero Perda de Atenção ("Context Bloat"):** Enquanto o modelo antigo acumula 125k tokens e começa a alucinar, a suite termina a tarefa com apenas **15k tokens de contexto ativo** no chat principal.
 
 ---
 
 ### 🌟 O Que Há de Novo nesta Versão Preview
 
-#### 1. 📦 Manifesto Oficial do Plugin Antigravity (\`plugin.json\`)
-- O monorepo agora pode ser empacotado e instalado nativamente como o plugin **\`enterprise-ai-suite\`** (v2.2.0).
-- Instalação centralizada em um único comando: \`npm run install:plugin:global\` ou \`npm run install:plugin\`.
+#### 1. 🖥️ Cockpit Visual Unificado (\`npm run cockpit\`)
+- Central gráfica servida nativamente no navegador (\`http://localhost:3456\`) unindo:
+  - 📊 Painel geral de status e economia de tokens;
+  - 📋 Governança dos 4 Quadrantes com trava interativa;
+  - 📱 Simulador de iPhone 15 Pro com Dynamic Island e Bottom Sheet;
+  - 🔒 Centro DevSecOps com os 18 pilares OWASP.
 
-#### 2. 🤖 Enxame de Subagentes Especialistas de Contexto Limpo (\`agents/\`)
-- **\`cartographer.agent.md\`**: Exploração arquitetural 360° em modo estrito *Read-Only*, economizando até 90% dos tokens da sessão principal.
-- **\`route-guard.agent.md\`**: Prevenção de breaking changes de API, schemas Zod e cálculo de Blast Radius.
-- **\`ui-craftsman.agent.md\`**: Design Engineering anti-slop, molas elásticas do Framer Motion e ergonomia mobile (Bottom Sheets, 44px+).
-- **\`falsifier.agent.md\`**: Red Teamer adversário que ataca o plano na fase pré-código com 5 vetores de estresse.
-- **\`security-auditor.agent.md\`**: Portão DevSecOps dos 18 pilares OWASP com exportação SARIF.
+#### 2. 🗄️ Nova Skill: \`db-sentinel\` (Banco de Dados & Migrations Seguras)
+- Zero-Downtime migrations em 3 passos (Expand & Contract);
+- Detecção automática de Foreign Keys (\`@relation\`) sem índice (\`@@index\`);
+- Prevenção rigorosa de N+1 queries;
+- Gerador de seeds sintéticos e tipados com coerência relacional (\`scripts/generate-seed.js\`);
+- Auditor determinístico de schemas Prisma/Drizzle/SQL (\`scripts/db-audit.js\`).
 
-#### 3. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
-- **\`pre-command-guard.js\`**: Intercepta a ferramenta de terminal (\`run_command\`) antes de executar e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
+#### 3. 🧪 Nova Skill: \`test-forge\` (Engenharia de Testes Reais & Anti-Mock)
+- Erradicação de mocks fantasmas e asserções cosméticas;
+- Gerador de testes de integração de rota em 4 cenários (\`scripts/forge-api-test.js\`);
+- Gerador E2E Playwright com validação ergonômica mobile (\`scripts/forge-e2e.js\`);
+- Auditor de qualidade de testes e cálculo do Test Quality Score (\`scripts/test-audit.js\`).
+
+#### 4. 🤖 Enxame de 7 Subagentes Especialistas de Contexto Limpo (\`agents/\`)
+- **\`cartographer.agent.md\`**: Mapeamento 360° em modo *Read-Only*.
+- **\`route-guard.agent.md\`**: Blast Radius e contratos Zod/DTO.
+- **\`ui-craftsman.agent.md\`**: Design Engineering anti-slop e física de molas.
+- **\`db-sentinel.agent.md\`**: Modelagem relacional e migrations seguras.
+- **\`test-engineer.agent.md\`**: Testes de integração de API e E2E Playwright.
+- **\`falsifier.agent.md\`**: Red Teamer adversário com 5 vetores de estresse.
+- **\`security-auditor.agent.md\`**: Portão DevSecOps dos 18 pilares OWASP (SARIF).
+
+#### 5. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
+- **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
 - **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
 
-#### 4. ⚡ Novo Comando Mestre \`/orch\`
-- O atalho mais rápido para disparar o ecossistema com governança total:
-  - \`/orch <demanda>\`: Governança completa com Sabatina 4Q e Trava no Turno 1.
-  - \`/orch --fast <demanda>\`: Execução cirúrgica direta em Rota A.
-- Todos os comandos e skills individuais continuam 100% disponíveis (\`/frontend-craftsman\`, \`/mobile-converter\`, \`/repo-cartographer\`, \`/route-guard\`, \`/security-audit\`, \`/hybrid-orchestrator\`).
-
-#### 5. 🔄 Troca de Versões sem Clone Git (\`scripts/switch-version.js\`)
-- Baixa qualquer versão ou release diretamente do GitHub sem precisar clonar o repositório novamente:
-  \`\`\`bash
-  node scripts/switch-version.js v2.2.0-beta.1
-  node scripts/switch-version.js v2.1.0
-  \`\`\`
+#### 6. 🎛️ Ferramentas CLI Master (\`bin/orch.js\`)
+- **\`npm run doctor\`**: Diagnóstico determinístico de saúde do ecossistema e subagentes;
+- **\`npm run init:suite\`**: Autoconfigura qualquer projeto detectando a stack técnica (Vite, Next, Express, Prisma);
+- **\`npm run switch\`**: Troca de versões sem git clone;
+- **\`npm test\`**: Suíte universal com 100% de testes passando nas 9 skills.
 
 ---
 
 ### ⚖️ Execução Individual vs. Comando Mestre \`/orch\`: Qual a Diferença?
 
-| Critério | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: \`/frontend-craftsman\`, \`/security-audit\`)* | 🚀 Comando Mestre \`/orch\` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
+| Critério | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: \`/frontend-craftsman\`, \`/db-sentinel\`)* | 🚀 Comando Mestre \`/orch\` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
 | :--- | :--- | :--- |
-| **Comando** | \`/frontend-craftsman\`, \`/mobile-converter\`, \`/repo-cartographer\`, \`/route-guard\`, \`/security-audit\`, \`/hybrid-orchestrator\` | \`/orch <demanda>\` ou \`/orch --fast <demanda>\` |
-| **Escopo** | **Laser-Focused:** Atua estritamente na especialidade daquela skill | **Holístico:** Orquestra compulsoriamente as 6 disciplinas (Cartografia ➔ Rotas ➔ UI ➔ Mobile ➔ Falsifier ➔ Segurança) |
-| **Quem Conecta?** | **O Desenvolvedor:** Você decide manualmente quando cartografar, desenhar e auditar | **O Orchestrator (Lead):** Conecta as etapas e repassa artefatos automaticamente |
-| **Consumo** | Ultrabaixo (< 2.000 tokens na sessão principal) | Otimizado via subagentes efêmeros (redução de 70% a 85% de tokens) |
-| **Handshakes** | Manual (copiar e colar no prompt) | **Automático:** \`.code-map/handshake.json\`, \`DESIGN_SPEC.md\` e SARIF fluem entre os subagentes |
+| **Comando** | \`/frontend-craftsman\`, \`/db-sentinel\`, \`/test-forge\`, etc. | \`/orch <demanda>\` ou \`/orch --fast <demanda>\` |
+| **Escopo** | **Laser-Focused:** Atua estritamente na especialidade daquela skill | **Holístico:** Orquestra compulsoriamente as 9 disciplinas |
+| **Quem Conecta?** | **O Desenvolvedor:** Você decide manualmente quando mapear, desenhar e auditar | **O Orchestrator (Lead):** Conecta as etapas e repassa artefatos automaticamente |
+| **Consumo** | Ultrabaixo (< 2.000 tokens na sessão principal) | Otimizado via subagentes efêmeros (redução de 78% a 85% de tokens) |
+| **Handshakes** | Manual (copiar e colar no prompt) | **Automático:** \`.code-map/handshake.json\`, \`DESIGN_SPEC.md\` e SARIF |
 | **Trava & 4Q** | Não possui (vai direto ao ponto) | **Ativa no Turno 1:** Sabatina 4Q e bloqueio antes de tocar em código (bypass com \`--fast\`) |
 | **Falsifier** | Não roda (a não ser no hybrid) | **Obrigatório:** Subagente adversário ataca com 5 vetores de estresse |
-| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Triplo:** \`craft-audit.js\`, \`mobile-audit.js\` e \`security-audit\` |
-| **Quando Usar?** | Alterações pontuais, redesign de 1 componente, auditoria pré-commit, mapear 1 arquivo | Features completas de ponta a ponta, mudanças críticas em banco/rotas/telas |
+| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Quádruplo:** \`craft-audit\`, \`mobile-audit\`, \`db-audit\` e \`security-audit\` |
+| **Quando Usar?** | Alterações pontuais, redesign de 1 componente, auditoria pré-commit, validar 1 schema | Features completas de ponta a ponta, mudanças críticas em banco/rotas/telas |
 
 ---
 
@@ -120,13 +127,14 @@ const previewRelease = {
 # 1. Clone ou mude para a branch 2.2.0:
 git checkout 2.2.0
 
-# 2. Instale o plugin no Antigravity:
-npm run install:plugin:global
-
-# Ou instale tudo em todos os ambientes (Antigravity, Claude, Cursor):
+# 2. Instale tudo em todos os ambientes (Antigravity, Claude, Cursor):
 npm run install:all
 
-# 3. Valide o pipeline de testes:
+# 3. Abra o Cockpit no navegador:
+npm run cockpit
+
+# 4. Valide a integridade:
+npm run doctor
 npm test
 \`\`\``,
   draft: false,

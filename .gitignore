@@ -4,5 +4,7 @@ node_modules/
 .plan/
 .code-map/
 .agents/
+.claude/
+.cursor/
 .DS_Store
 Thumbs.db

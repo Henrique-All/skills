@@ -1,7 +1,7 @@
 # ⚡ Enterprise AI Suite (v2.2.0)
 
-> **Plugin Oficial, Enxame de Subagentes Especialistas, Governança, Cartografia Arquitetural e DevSecOps para Agentes de IA.**
-> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**, **Aider**) em verdadeiros engenheiros de software seniores, eliminando alucinações, desperdício de tokens e quebras em produção com isolamento de contexto e travas ativas de ciclo de vida.
+> **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia, Cockpit Visual e Firewall de Segurança no SO.**  
+> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
 [![CI Status](https://github.com/Henrique-All/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Henrique-All/skills/actions)
@@ -13,182 +13,130 @@
 
 ## 📌 Referências & Navegação Rápida
 
-- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Comandos para Antigravity, Claude Code e Cursor
+- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Antigravity, Claude Code, Cursor e Monorepo
+- 🖥️ [**O Cockpit Visual Unificado**](#%EF%B8%8F-o-cockpit-visual-unificado) — Central de comando no navegador (`localhost:3456`)
+- 🎛️ [**Ferramental CLI (Doctor & Init)**](#%EF%B8%8F-ferramental-cli-master) — `orch doctor`, `orch init`, `orch switch`
+- 💰 [**Economia Brutal de Tokens (78% a 85%)**](#-efici%C3%AAncia-extrema--economia-de-tokens-78-a-85-de-redu%C3%A7%C3%A3o) — Simulação matemática de 9 turnos
 - 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
-- ⚖️ [**Execução Individual vs. /orch**](#%EF%B8%8F-execu%C3%A7%C3%A3o-individual-vs-comando-mestre-orch-qual-a-diferen%C3%A7a) — Comparativo prático e matriz de decisão
-- 💰 [**Eficiência Extrema & Economia de Tokens (70%–85%)**](#-efici%C3%AAncia-extrema--economia-de-tokens-70-a-85-de-redu%C3%A7%C3%A3o) — Simulação matemática e os 4 pilares
-- 📊 [**Scorecard das Skills (Ecosistema 10.0)**](#-scorecard--notas-t%C3%A9cnicas-das-skills-ecosistema-100) — Tabela geral de notas
-- 🏆 [**O Motivo da Nota 10.0/10 de Cada Skill**](#-o-motivo-da-nota-10010-de-cada-skill) — Racional técnico e garantias
-- 🧭 [**O Ciclo de Engenharia Integrado**](#-o-ciclo-de-engenharia-integrado) — Diagrama de fluxo de trabalho
-- 🔗 [**Matriz de Comunicação Inter-Skills**](#-matriz-de-comunica%C3%A7%C3%A3o-inter-skills-como-elas-conversam) — Handshakes e dados trocados
-- 🔍 [**Detalhamento das 6 Skills**](#-o-que-cada-skill-faz--suas-vantagens-competitivas):
-  - ⚡ [`hybrid-orchestrator` (10.0)](#1--hybrid-orchestrator--nota-10010) — Governança, snapshots e Falsifier
-  - 🎨 [`frontend-craftsman` (10.0)](#2--frontend-craftsman--nota-10010) — Design Engineering, anti-AI slop e molas
-  - 📱 [`mobile-converter` (10.0)](#3--mobile-converter--nota-10010) — Adaptação mobile tátil e simulador
-  - 🗺️ [`repo-cartographer` (10.0)](#4--repo-cartographer--nota-10010) — Cartografia 360° e canvas web
-  - 🛡️ [`route-guard` (10.0)](#5--route-guard--nota-10010) — Contratos Zod/DTO e Mock Server
-  - 🔒 [`security-audit` (10.0)](#6--security-audit--nota-10010) — 18 pilares OWASP, Autofix e SARIF
-- 🤝 [**Contribuições & Governança**](#-contribui%C3%A7%C3%B5es--governan%C3%A7a) — Guia, templates e proteção da master
-- 📝 [**Changelog & Releases Oficiais**](#-changelog--releases) — Histórico de versões
+- ⚖️ [**Execução Individual vs. /orch**](#%EF%B8%8F-execu%C3%A7%C3%A3o-individual-vs-comando-mestre-orch-qual-a-diferen%C3%A7a) — Matriz comparativa de decisão
+- 📊 [**Scorecard das 9 Skills (Ecosistema 10.0)**](#-scorecard--notas-t%C3%A9cnicas-das-skills-ecosistema-100) — Tabela geral de notas
+- 🐝 [**Enxame de 7 Subagentes Especialistas**](#-enxame-de-7-subagentes-especialistas-agents) — Isolamento de contexto
+- 🛑 [**Firewall de Segurança Reativo (Hooks)**](#-firewall-de-seguran%C3%A7a-reativo-no-so-hooksjson) — Proteção no nível do SO
+- 🔍 [**Detalhamento Completo das 9 Skills**](#-detalhamento-das-9-skills-e-comandos-cli)
+- 🤝 [**Contribuições & Governança**](#-contribui%C3%A7%C3%B5es--governan%C3%A7a) — CI multi-versão e proteção de branch
 - 🏗️ [**Estrutura do Repositório**](#%EF%B8%8F-estrutura-do-reposit%C3%B3rio)
-- 📜 [**Licença**](#-licen%C3%A7a)
 
 ---
 
-## 🧭 O Ciclo de Engenharia Integrado
+## 🖥️ O Cockpit Visual Unificado
 
-As seis skills trabalham de forma coordenada, cobrindo o ciclo de vida completo de qualquer demanda de código:
+O **Cockpit** (`scripts/cockpit.js`) é a central gráfica unificada do desenvolvedor servida nativamente no navegador (porta `3456`, zero dependências externas, estética moderna *Dark Mode* inspirada no Linear, Raycast e Apple).
 
-```mermaid
-flowchart TD
-    subgraph FASE1 ["1. Descoberta, Contratos e Design"]
-        RC["🗺️ repo-cartographer<br/><b>Mapeamento 360°</b>"]
-        RG["🛡️ route-guard<br/><b>Blast Radius & Schemas</b>"]
-        FC["🎨 frontend-craftsman<br/><b>Design Engineering</b>"]
-        MC["📱 mobile-converter<br/><b>Adaptação & Ergonomia Mobile</b>"]
-    end
+```bash
+# Iniciar o Cockpit localmente:
+npm run cockpit
+# ou via CLI: node bin/orch.js cockpit
+```
+👉 Acesse no navegador: [**http://localhost:3456**](http://localhost:3456)
 
-    subgraph FASE2 ["2. Núcleo de Governança e Execução Cirúrgica"]
-        HO["⚡ hybrid-orchestrator<br/><b>Sabatina 4Q • Snapshot git • Falsifier</b>"]
-    end
+### As 4 Abas do Cockpit:
+1. **📊 Painel Geral:** Medidor de economia de tokens (78% a 85%), status dos 7 subagentes e monitor das 9 skills com notas 10.0/10;
+2. **📋 Governança dos 4 Quadrantes:** Visualização do plano pré-código (Contratos, Concorrência, UI, Segurança) com a caixa da **Trava do Turno 1** e botão interativo para copiar o `"OK"`;
+3. **📱 Simulador de Smartphone (Mobile):** Moldura realista de iPhone com Dynamic Island, Tab Bar tátil, checagem de touch targets (44px+) e Bottom Sheet;
+4. **🔒 Centro DevSecOps (OWASP):** Relatório de vulnerabilidades, escaneamento de segredos no Git e exit codes de CI.
 
-    subgraph FASE3 ["3. Portão DevSecOps e Entrega"]
-        SA["🔒 security-audit<br/><b>18 Pilares OWASP</b>"]
-        Deploy["🚀 Deploy Seguro em Produção"]
-    end
+---
 
-    RC -->|"Handshake 360°"| HO
-    RG -->|"Trava de Contrato"| HO
-    RG <-->|"Validação Zod/DTO"| FC
-    FC <-->|"Molas & Paleta"| MC
-    MC <-->|"DESIGN_SPEC.md"| HO
+## 🎛️ Ferramental CLI Master
 
-    HO -->|"Diff Atômico + Falsifier"| SA
-    SA -->|"Exit Code 0 (Aprovado)"| Deploy
+O Enterprise AI Suite conta com utilitários CLI determinísticos para máxima produtividade:
+
+```bash
+# 🩺 Diagnóstico determinístico de saúde do ecossistema e subagentes:
+npm run doctor
+# ou via CLI: node bin/orch.js doctor
+
+# ⚙️ Autoconfigurar qualquer projeto detectando a stack técnica (Next, Vite, Prisma, Express):
+npm run init:suite
+# ou via CLI: node bin/orch.js init
+
+# 🔄 Trocar de versão ou release do GitHub sem precisar clonar via git:
+npm run switch
+# ou via CLI: node bin/orch.js switch v2.2.0-beta.1
+
+# 🧪 Executar a bateria de testes automatizados do ecossistema:
+npm test
+# ou via CLI: node bin/orch.js test
 ```
 
 ---
 
-## 💰 Eficiência Extrema & Economia de Tokens (70% a 85% de Redução)
+## 💰 Eficiência Extrema & Economia de Tokens (78% a 85% de Redução)
 
 > **Engenharia de Contexto Efêmero:** Como a v2.2.0 reduz drasticamente o consumo de tokens faturados na API da LLM enquanto eleva a precisão analítica e a velocidade de entrega.
 
-### 📊 Simulação Matemática Real: Uma Demanda Típica de 8 Turnos
+### 📊 Simulação Real: Uma Demanda Fullstack Completa (9 Turnos)
+Ao implementar uma funcionalidade completa (*ex: criação de nova tela com banco de dados Prisma, rotas de API, mobile, testes e segurança*), veja a diferença matemática real:
 
-Ao implementar uma funcionalidade completa (ex: *checkout com cálculo de frete, pagamento Pix e validação de cupons*), o agente precisa ler ~25 arquivos do projeto para contextualizar. Veja o comparativo real entre o modelo tradicional mono-thread e o modelo v2.2.0 com subagentes:
-
-| Etapa da Conversa | ❌ Modelo Antigo (Mono-thread)<br/>*Histórico Acumulado Reenviado* | ✅ Enterprise AI Suite v2.2.0<br/>*Handoffs Sintéticos Isolados* |
+| Etapa do Desenvolvimento | ❌ Modelo Antigo (Mono-thread)<br/>*Histórico Acumulado Reenviado na API* | ✅ Enterprise AI Suite Completa<br/>*Subagentes Descartáveis + Scripts Locais* |
 | :--- | :---: | :---: |
-| **Turno 1: Leitura de 25 arquivos** | 30.000 tokens lidos no chat principal | 30.000 tokens lidos no subagente |
-| **Turno 2: Planejamento & Sabatina** | 33.000 tokens *(30k anteriores + 3k)* | **1.500 tokens** *(recebeu só o JSON de 500t)* |
-| **Turno 3: Autorização ("OK")** | 36.000 tokens *(tudo reenviado)* | **2.500 tokens** |
-| **Turno 4: Telas & Componentes (Front)** | 42.000 tokens *(tudo reenviado)* | **4.000 tokens** *(UI em subagente)* |
-| **Turno 5: Rotas & Banco (Back)** | 48.000 tokens *(tudo reenviado)* | **6.500 tokens** |
-| **Turno 6: Ajustes de Integração** | 54.000 tokens *(tudo reenviado)* | **8.000 tokens** |
-| **Turno 7: Auditoria DevSecOps** | 60.000 tokens *(tudo reenviado)* | **9.500 tokens** *(Auditoria em subagente)* |
-| **Turno 8: Validação e Entrega** | 66.000 tokens *(tudo reenviado)* | **11.000 tokens** |
-| ➕ **Subagentes descartáveis** | *Não possui (tudo roda no chat)* | **+ 45.000 tokens** *(rodaram 1x e fecharam)* |
-| **🔥 TOTAL FATURADO PELA API** | **~369.000 tokens** 💸 | **~88.000 tokens** 🟢 |
+| **Turno 1: Cartografia do Repo** | 40.000 tokens lidos no chat principal | **500 tokens** *(cartógrafo rodou em thread limpa)* |
+| **Turno 2: Banco & Migrations (`db-sentinel`)** | 45.000 tokens *(acumulou 40k + 5k)* | **1.500 tokens** *(banco validado em thread isolada)* |
+| **Turno 3: Contratos de Rota (`route-guard`)** | 50.000 tokens *(acumulando)* | **2.800 tokens** *(recebeu só o Zod/DTO de 300t)* |
+| **Turno 4: UI & Molas (`frontend-craftsman`)** | 60.000 tokens *(acumulando)* | **4.500 tokens** *(UI feita em subagente)* |
+| **Turno 5: Mobile & Ergonomia (`mobile-converter`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
+| **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
+| **Turno 7: Criação de Testes (`test-forge`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
+| **Turno 8: Auditoria DevSecOps (`security-audit`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
+| **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
+| ➕ **Subagentes descartáveis** *(leitura pesada)* | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e foram deletados)* |
+| **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
 
-> 📉 **Resultado:** **~76% de economia direta de tokens** (redução de **~280.000 tokens** em uma única demanda!). Em chats longos de 12 a 15 turnos, a economia ultrapassa **85%**.
+> 📉 **Resultado:** **~78.4% a 85% de economia direta de tokens** (redução de mais de **540.000 tokens** em uma única feature!).
+> ⚡ **Zero Perda de Atenção ("Context Bloat"):** Enquanto o modelo antigo acumula 125k tokens e começa a alucinar, a suite termina a tarefa com apenas **15k tokens de contexto ativo** no chat principal.
 
----
-
-### 🛡️ Os 4 Pilares da Economia de Tokens:
-
-1. **Fim do Efeito "Bola de Neve" (Janelas Efêmeras Descartáveis):**  
-   No modelo tradicional, se o agente lia 40.000 tokens no Turno 1, você pagava por aqueles mesmos 40.000 tokens a cada novo turno até o fim da sessão. Com subagentes, esses 40.000 tokens **morrem na thread descartável**. O chat principal só recebe o resumo JSON de 500 tokens (`handshake.json`) e você nunca mais paga por aquela leitura bruta.
-
-2. **Scripts Locais em Node.js (Custo Zero de Tokens na LLM):**  
-   Mapeamento AST, rastreamento de callers (`cartographer.js`), cálculo de Blast Radius (`analyze-route.js`) e auditoria de 18 pilares OWASP (`audit.js`) rodam localmente na CPU da sua máquina. O custo de tokens dessas varreduras na LLM é **zero**.
-
-3. **Handoffs Tipados Ultracompactos (JSON Puro):**  
-   Os subagentes não trocam texto prolixo em linguagem natural. Eles comunicam dados condensados em schemas JSON estritos de 50 a 500 tokens, eliminando conversas desnecessárias.
-
-4. **Escape Cirúrgico com `/orch --fast`:**  
-   Para correções pontuais e tarefas rápidas, a flag `--fast` desliga o enxame de subagentes e executa a Rota A direta, consumindo menos de 3.000 tokens do início ao fim.
+### 🛡️ Os 4 Pilares da Redução:
+1. **Fim do Efeito "Bola de Neve" (Janelas Efêmeras):** Arquivos brutos lidos morrem na thread descartável do subagente; o chat principal recebe apenas resumos JSON estruturados de 300 a 500 tokens.
+2. **Scripts Locais em Node.js (Custo Zero na LLM):** Cartografia AST (`cartographer.js`), auditoria de banco (`db-audit.js`), Blast Radius (`analyze-route.js`) e 18 pilares OWASP (`audit.js`) rodam na CPU da sua máquina local.
+3. **Handoffs Tipados Ultracompactos (JSON Puro):** Comunicação inter-agentes em schemas condensados eliminando conversas prolixas.
+4. **Escape Cirúrgico com `/orch --fast`:** Rota A direta sem subagentes para tarefas pontuais (< 3.000 tokens do início ao fim).
 
 ---
 
-## 🔗 Matriz de Comunicação Inter-Skills: Como Elas Conversam
+## 🤖 Como Acionar no Chat com seu Agente de IA
 
-Nenhuma skill opera como uma ilha isolada. Quando instaladas juntas no workspace (`.agents/skills/*`) ou no perfil global, elas trocam dados estruturados via **arquivos de handshake tipados, travas de permissão e pipelines cruzados**:
+Você pode acionar as ferramentas tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no Antigravity e Claude Code, ou via **Regras Contextuais (`@`)** no Cursor e Windsurf:
 
-```mermaid
-flowchart TD
-    subgraph C1 ["Camada 1: Descoberta e Contratos"]
-        RC["🗺️ repo-cartographer<br/>Mapeamento 360°"]
-        RG["🛡️ route-guard<br/>Blast Radius & Schemas"]
-    end
-
-    subgraph C2 ["Camada 2: Design e Mobile Engineering"]
-        FC["🎨 frontend-craftsman<br/>Anti-AI Slop • Molas • Spec"]
-        MC["📱 mobile-converter<br/>Bottom Sheets • Tab Bar • dvh"]
-    end
-
-    subgraph C3 ["Camada 3: Governança e Execução"]
-        HO["⚡ hybrid-orchestrator<br/>Sabatina 4Q • Snapshot • Falsifier"]
-    end
-
-    subgraph C4 ["Camada 4: Portão DevSecOps"]
-        SA["🔒 security-audit<br/>18 Pilares OWASP"]
-    end
-
-    %% Ligações
-    RC -- "1. handshake.json" --> HO
-    RC -. "Resolve aliases" .-> RG
-    RG -- "2. Blast Radius" --> HO
-    RG -- "Validação Schemas" --> FC
-    FC -- "3. DESIGN_SPEC.md" --> MC
-    MC -- "4. Specs Mobile" --> HO
-    HO -- "5. craft-audit.js" --> FC
-    HO -- "6. mobile-audit.js" --> MC
-    HO -- "7. audit.js" --> SA
-    SA -- "Exit Code 0 ou 1" --> HO
-```
-
-### 📋 Tabela de Handshakes e Protocolos de Conversa
-
-| Origem | Destino | Artefato / Mecanismo de Troca | Como a Informação é Consumida na Prática |
-| :--- | :--- | :--- | :--- |
-| **`repo-cartographer`** | **`hybrid-orchestrator`** | `.code-map/handshake.json` *(Schema tipado)* | O Orchestrator lê os nós `confirmed`, `inferred` e `unknown` na **Seção 3.1 (Análise de Impacto)**, eliminando leituras repetitivas e economizando até **90% dos tokens** de exploração. |
-| **`route-guard`** | **`hybrid-orchestrator`** | Relatório de Impacto de Rota (`analyze-route.js`) | Se a rota alterada já existir e tiver chamadores no front-end, o Orchestrator aciona a **Trava de Retrocompatibilidade no Q1 da Sabatina** e impede edições até aprovação expressa do usuário. |
-| **`frontend-craftsman`** | **`mobile-converter`** | Tokens de Paleta, Tipografia e Molas | O Mobile Converter herda as molas do Framer Motion e paleta refinada para aplicar em Bottom Sheets e Tab Bars. |
-| **`mobile-converter`** | **`hybrid-orchestrator`** | Especificação Mobile & Metamorfoses | Fornece componentes adaptados (Tabela ➔ Cards, Bottom Sheets) para alimentar o **Q3 da Sabatina**. |
-| **`hybrid-orchestrator`** | **`mobile-converter`** | Pipeline 7.3 (`mobile-audit.js`) | Ao finalizar telas responsivas, o Orchestrator roda a auditoria mobile. Só aprova se o **Mobile Readiness Score for ≥ 90/100**. |
-| **`hybrid-orchestrator`** | **`frontend-craftsman`** | Pipeline 7.2 (`craft-audit.js`) | Ao finalizar a implementação de qualquer tela, o Orchestrator roda a auditoria visual pós-execução. A entrega só é aprovada se o **Craftsmanship Score for ≥ 90/100**. |
-| **`hybrid-orchestrator`** | **`security-audit`** | Pipeline 7.1 (`audit.js --pilares=X,Y`) | Sempre que o Orchestrator toca em autenticação, senhas, uploads, rotas ou cookies, ele dispara o auditor. Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e aciona o Builder para correção**. |
-| **`route-guard`** | **`frontend-craftsman`** | Contratos de Endpoint (Zod/DTOs) | Ao desenhar interfaces que submetem formulários, o Craftsman consulta os schemas validados pelo Route Guard, evitando disparidades entre frontend e backend. |
+| Slash Command / Atalho | Especialidade | Exemplo de Uso no Chat |
+| :--- | :--- | :--- |
+| **`/orch`** ⭐ | **Comando Geral Mestre:** Orquestração completa das 9 skills | `/orch Implemente o checkout com Pix, Prisma e adaptação mobile` |
+| **`/orch --fast`** ⚡ | **Execução Cirúrgica Direta:** Rota A sem travas e com diffs atômicos | `/orch --fast Corrija a tipagem de retorno do controller de tickets` |
+| **`/frontend-craftsman`** | Design Engineering sem cara de IA (Framer Motion / Tailwind v4) | `/frontend-craftsman Crie a tela de faturamento com paleta Linear` |
+| **`/mobile-converter`** | Converter tela desktop para mobile nativo (Bottom Sheets / 44px+) | `/mobile-converter Adapte a tabela de pedidos para cards no mobile` |
+| **`/db-sentinel`** 🆕 | Banco de Dados, Migrations Seguras e Índices Faltantes | `/db-sentinel Valide a migration e gere o seed tipado do Prisma` |
+| **`/test-forge`** 🆕 | Testes de Integração de API Reais e E2E Playwright | `/test-forge Crie os testes de integração para POST /api/orders` |
+| **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° em 6 camadas | `/repo-cartographer Mapeie o fluxo da tela de Checkout até o banco` |
+| **`/route-guard`** | Prevenir quebras de contrato de API e Blast Radius | `/route-guard Analise o impacto de alterar a rota em api/routes` |
+| **`/security-audit`** | Auditoria DevSecOps completa dos 18 pilares OWASP | `/security-audit Execute a auditoria de segurança pré-deploy` |
+| **`/hybrid-orchestrator`** | Desenvolver feature com governança rígida e Falsifier | `/hybrid-orchestrator Implemente a regra de frete com rollback seguro` |
 
 ---
 
-### 🎬 Cenários Práticos de Fluxo Completo (Ponta a Ponta)
+## ⚖️ Execução Individual vs. Comando Mestre `/orch`: Qual a Diferença?
 
-#### Cenário 1: Criando uma Funcionalidade Fullstack com UI (Ex: "Central de Cobranças")
-1. **Cartografia Inicial (`repo-cartographer`):** O desenvolvedor pede a feature. O cartógrafo rastreia os modelos de dados e serviços existentes, gerando `.code-map/handshake.json`.
-2. **Verificação de Rota (`route-guard`):** Avalia se a rota `/api/cobrancas` já existe ou se é nova. Se for nova, define os schemas Zero-Trust de entrada.
-3. **Artesanato Visual & Adaptação Mobile (`frontend-craftsman` + `mobile-converter`):** Gera o `DESIGN_SPEC.md` com a paleta refinada, tabela que vira cards no mobile e Bottom Sheet para detalhes.
-4. **Validação do Usuário:** O desenvolvedor vê a tela interativa no navegador e responde **"OK"**.
-5. **Governança & Execução (`hybrid-orchestrator`):**
-   - Cria o snapshot atômico de segurança (`git stash create`);
-   - Preenche os 4 quadrantes (Q1: Contrato verificado, Q2: Idempotência de pagamento, Q3: UI do spec + Mobile, Q4: Auth do tenant);
-   - O **Builder** implementa componentes táteis e rotas;
-   - O **Falsifier** tenta quebrar a tela simulando falhas de rede, cliques duplos e campos vazios.
-6. **Pipeline Triplo de Verificação Pós-Execução:**
-   - **Visual:** `node scripts/craft-audit.js` valida ausência de vícios de IA (Score: 100/100);
-   - **Mobile:** `node scripts/mobile-audit.js` valida ausência de bugs de viewport e touch targets de 44px+ (Score: 100/100);
-   - **Segurança:** `node scripts/audit.js --pilares=2,5,10` garante autenticação e integridade.
-7. **Entrega Pronta:** O código vai para commit limpo, robusto e testado.
+O **Enterprise AI Suite** possui arquitetura de **dupla camada de acionamento**:
 
-#### Cenário 2: Refatoração de Rota Crítica (Ex: "Alterar retorno de GET /api/pedidos")
-1. **Bloqueio de Quebra (`route-guard`):** O script `analyze-route.js` detecta que a rota é consumida por 3 telas (`Dashboard.tsx`, `OrderList.tsx`, `ReceiptModal.tsx`).
-2. **Trava no Orchestrator (`hybrid-orchestrator`):** O Orchestrator entra em Rota B, lista as 3 telas no Turno 1 e **não toca em nenhum arquivo** até o desenvolvedor confirmar a quebra.
-3. **Auditoria Final (`security-audit`):** Ao concluir, o auditor valida se nenhuma brecha de IDOR ou vazamento de segredos foi inserido.
-
-#### Cenário 3: Redesign e Adaptação Mobile de Interface Legada
-1. **Design & Mobile Engineering (`frontend-craftsman` + `mobile-converter`):** Analisa a tela legada via `craft-audit.js` e `mobile-audit.js` (detecta tabela quebrada e fonte de input < 16px).
-2. **Metamorfose:** Converte a tabela em `ResponsiveTableToCards` e o modal flutuante em `BottomSheet` com puxador tátil.
-3. **Handoff Cirúrgico (`hybrid-orchestrator --fast`):** Aplica os diffs atômicos via Rota A, valida build/lint e garante score mobile ≥ 90.
+| Critério de Comparação | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: `/frontend-craftsman`, `/db-sentinel`)* | 🚀 Comando Mestre `/orch` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
+| :--- | :--- | :--- |
+| **Comando / Gatilho** | `/frontend-craftsman`, `/mobile-converter`, `/db-sentinel`, `/test-forge`, etc. | `/orch <demanda>` ou `/orch --fast <demanda>` |
+| **Escopo de Ação** | **Laser-Focused:** Atua estritamente no domínio de conhecimento daquela skill. | **Holístico & Multi-Camadas:** Orquestra compulsoriamente as disciplinas de ponta a ponta. |
+| **Quem Conecta as Etapas?** | **O Desenvolvedor:** Você decide manualmente quando mapear, desenhar, testar e auditar. | **O Orchestrator (Lead):** Conecta as etapas e repassa artefatos automaticamente. |
+| **Consumo de Contexto** | Ultrabaixo (< 2.000 tokens na sessão principal). Ideal para tarefas atômicas. | Otimizado via subagentes efêmeros (redução de 78% a 85% de tokens na API). |
+| **Troca de Informações** | Manual (o usuário copia saídas de um comando para o outro). | **Automática via Handshakes:** `.code-map/handshake.json`, `DESIGN_SPEC.md` e SARIF. |
+| **Trava & Sabatina (4Q)** | Não possui (vai direto ao ponto daquela skill). | **Ativa no Turno 1 (Rota B):** Sabatina 4Q e Trava rígida anti-drift antes de editar arquivos. |
+| **Ciclo Adversário (Falsifier)** | Não roda (a menos que no hybrid). | **Obrigatório:** O subagente Falsifier ataca a solução com estresse de 5 vetores. |
+| **Verificação Pós-Código** | Apenas as ferramentas daquela skill. | **Pipeline Quádruplo:** `craft-audit`, `mobile-audit`, `db-audit` e `security-audit`. |
+| **Opção de Bypass Cirúrgico** | Já é naturalmente direto. | Possui a flag **`/orch --fast`** (aplica Rota A sem travas e com velocidade máxima). |
 
 ---
 
@@ -196,407 +144,109 @@ flowchart TD
 
 | Skill | Nota | Foco Principal | Maior Diferencial Prático |
 | :--- | :---: | :--- | :--- |
-| **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-10010)** | **`10.0` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot atômico (`git stash`) + Falsifier adversário com estresse (`falsify.js`) + Visualizador ASCII de plano (`preview-plan.js`). |
-| **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme), Skeletons Content-Aware e auditoria determinística (`craft-audit.js`). |
-| **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, Swipeable Rows, simulador `preview-mobile.js` e auditoria com Autofix (`--fix`). |
-| **[`security-audit`](#4--security-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, Autofix seguro (`--fix`), exportação SARIF v2.1.0 (`--sarif`), Git hook pre-commit e exit codes bloqueantes. |
-| **[`repo-cartographer`](#5--repo-cartographer--nota-10010)** | **`10.0` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco, resolução de aliases (`@/`), barrels, ciclos, diagramas Mermaid dinâmicos, callers reversos e canvas interativo web (`preview-graph.js`). |
-| **[`route-guard`](#6--route-guard--nota-10010)** | **`10.0` / 10** | **Contratos de Rotas & Zero-Trust** | Descoberta de chamadores no front (Blast Radius), trava de retrocompatibilidade, gerador de contratos Zod/DTO (`generate-contract.js`) e Mock Server HTTP com CORS (`mock-route.js`). |
-| **Infra do Monorepo** | **`10.0` / 10** | **Automação & CI/CD** | Instalador unificado em 1 comando, test-runner automático e **GitHub Actions CI** em Node 18, 20 e 22 com 100% de testes passando. |
+| **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-10010)** | **`10.0` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot git stash + Falsifier adversário com estresse (`falsify.js`). |
+| **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme) e `craft-audit.js`. |
+| **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, simulador interativo e `mobile-audit.js --fix`. |
+| **[`db-sentinel`](#4--db-sentinel--nota-10010)** 🆕 | **`10.0` / 10** | **Banco de Dados & Migrations Seguras** | Zero-Downtime em 3 passos, detecção de Foreign Keys sem índice, anti-N+1, gerador de seeds tipados e `db-audit.js`. |
+| **[`test-forge`](#5--test-forge--nota-10010)** 🆕 | **`10.0` / 10** | **QA & Testes Reais (Anti-Mock Slop)** | Testes de integração de API em 4 cenários (Supertest/Vitest), Playwright E2E em viewport mobile e `test-audit.js`. |
+| **[`security-audit`](#6--security-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, Autofix seguro (`--fix`), exportação SARIF v2.1.0 e git hook. |
+| **[`repo-cartographer`](#7--repo-cartographer--nota-10010)** | **`10.0` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco em 6 camadas, resolução de aliases (`@/`), diagramas Mermaid dinâmicos e canvas web. |
+| **[`route-guard`](#8--route-guard--nota-10010)** | **`10.0` / 10** | **Contratos de Rotas & Zero-Trust** | Blast Radius reverso no front, trava de retrocompatibilidade, gerador Zod/DTO e Mock Server HTTP com CORS. |
+| **[`orch`](#9--orch-comando-mestre--nota-10010)** | **`10.0` / 10** | **Maestro Regente do Ecossistema** | Acionamento centralizado de todas as skills, Rota A rápida (`--fast`) e Rota B com governança soberana. |
 
 ---
 
-## 🏆 O Motivo da Nota 10.0/10 de Cada Skill
+## 🐝 Enxame de 7 Subagentes Especialistas (`agents/`)
 
-Todas as skills do ecossistema foram elevadas a ferramentas de engenharia de nível de produção. Nenhuma skill opera apenas com "sugestões de prompt": cada uma é equipada com **motores de CLI determinísticos, testes automatizados, garantias de segurança e mecanismos interativos de validação**. Abaixo está o racional técnico de cada nota máxima:
+Os subagentes operam em **janelas de contexto limpas e descartáveis**, permitindo análises profundas sem sobrecarregar o chat principal:
 
-### 1. ⚡ `hybrid-orchestrator` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **Snapshot Atômico e Rollback em 1 Comando (`scripts/snapshot.js`):** Cria stashes nomeados (`git stash create`) antes de tocar em qualquer linha de código. Se qualquer validação falhar, o rollback é instantâneo e garantido (`node scripts/snapshot.js rollback`).
-  2. **Falsifier Adversário com Estresse Automatizado (`scripts/falsify.js`):** Não confia em autoavaliação da LLM. Executa testes estressando 5 vetores concretos: loops assíncronos (anti-N+1), timeouts de I/O, dados em limites extremos (boundary values), concorrência e integridade transacional.
-  3. **Visualizador de Plano ASCII para Turno 1 (`scripts/preview-plan.js`):** Renderiza o quadro visual dos 4 Quadrantes (Q1 Contratos, Q2 Concorrência, Q3 UI, Q4 Segurança) no terminal para aprovação expressa do desenvolvedor antes de qualquer edição.
-  4. **Âncoras de Atenção Anti-Drift:** Impede a IA de fugir do plano em conversas longas de 50+ interações.
-
-### 2. 🎨 `frontend-craftsman` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **Erradicação Científica do AI Slop:** Proíbe gradientes roxos genéricos, blurs soltos e botões estáticos. Impõe paletas profundas calibradas e apenas 1 acento cirúrgico (< 5% da tela).
-  2. **Física de Molas Real:** Abas com `layoutId="active-pill"`, modais com `AnimatePresence mode="wait"` e molas Framer Motion táteis (`stiffness: 450, damping: 30`).
-  3. **Preview Visual Instantâneo em 1s (`scripts/preview-spec.js`):** Sobe um servidor local que abre o navegador com os componentes vivos e interativos para o usuário validar antes de codificar.
-  4. **Motor de Auditoria Visual (`scripts/craft-audit.js`):** Varre os arquivos JSX/TSX/CSS e gera o Craftsmanship Score (0-100), alertando transições duras, cores fora de token e CLS.
-  5. **Suporte Nativo a Tailwind v4 (`@theme`) e v3:** Gera tokens prontos em CSS puro ou JS.
-
-### 3. 📱 `mobile-converter` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **Metamorfoses Estruturais:** Converte tabelas largas em cards verticais com badges (`ResponsiveTableToCards`), menus superiores em Tab Bars de polegar (`MobileBottomNav`) e modais em gavetas deslizantes (`BottomSheet`).
-  2. **Ergonomia Móvel Severa:** Touch targets de 44×44px obrigatórios, suporte a safe-areas de hardware (`env(safe-area-inset-bottom)`), prevenção de zoom indesejado no iOS Safari com `font-size: 16px` e uso estrito de `100dvh`.
-  3. **Simulador de Smartphone no Navegador (`scripts/preview-mobile.js`):** Renderiza uma moldura de iPhone 15 Pro / Galaxy com Dynamic Island para testar gestos e toque.
-  4. **Auditoria com Autofix (`scripts/mobile-audit.js --fix`):** Calcula o Mobile Readiness Score (0-100) e conserta automaticamente falhas de `100vh` e safe-areas nos arquivos.
-
-### 4. 🔒 `security-audit` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **18 Pilares DevSecOps e OWASP:** Cobre autenticação, JWT sem fallback, senhas com bcrypt, CSRF, CORS restrito, anti-IDOR, anti-XSS, sanitização SQL e segredos rastreados no git.
-  2. **Autofix de Riscos Graves (`scripts/audit.js --fix`):** Corrige automaticamente vulnerabilidades de reverse tabnabbing (`rel="noopener noreferrer"`) e cookies inseguros (`HttpOnly; Secure; SameSite=Lax`).
-  3. **Padrão Industrial SARIF v2.1.0 (`scripts/audit.js --sarif`):** Exporta relatórios interoperáveis que podem ser consumidos nativamente por GitHub Code Scanning e GitLab CI.
-  4. **Git Hook Pre-Commit Automatizado (`scripts/install-hook.js`):** Instala trava no repositório que impede commits acidentais de segredos ou vulnerabilidades críticas.
-  5. **Modo Estritamente Somente-Leitura:** Nunca adiciona ou altera código destrutivamente sem autorização.
-
-### 5. 🗺️ `repo-cartographer` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **Descida em 6 Camadas Zero-Token:** Rastreia da UI ao Banco economizando até 90% dos tokens de exploração.
-  2. **Diagramas Mermaid Dinâmicos (`node scripts/cartographer.js mermaid <file>`):** Gera diagramas de fluxo arquiteturais prontos para documentação e PRs.
-  3. **Análise de Blast Radius Reverso (`node scripts/cartographer.js callers <file>`):** Mostra instantaneamente todos os arquivos que dependem de um componente ou serviço específico.
-  4. **Canvas Web Interativo Completo (`scripts/preview-graph.js`):** Sobe uma interface gráfica moderna no navegador com nós arrastáveis, filtro de camadas (L1 a L6) e destaque de caminhos de dependência.
-  5. **Handshake Tipado com JSON Schema (`handshake.json`):** Entrega dados estruturados para o Orchestrator com incerteza explícita (`confirmed`, `inferred`, `unknown`).
-
-### 6. 🛡️ `route-guard` — Nota 10.0/10
-- **Por que é Nota 10:**
-  1. **Prevenção Bidirecional de Quebras de Contrato:** Identifica onde o endpoint está no backend e quais arquivos do frontend/serviços o consomem antes de tocar em código.
-  2. **Trava de Retrocompatibilidade Automática:** Bloqueia a IA de modificar rotas compartilhadas sem autorização expressa do desenvolvedor.
-  3. **Gerador Automático de Contratos Zod & DTOs TypeScript (`scripts/generate-contract.js`):** Cria esquemas de validação de runtime e interfaces estáticas com tipagem defensiva em segundos.
-  4. **Servidor Mock HTTP Zero-Dependency com CORS Total (`scripts/mock-route.js`):** Sobe em 1 segundo um servidor de testes na porta 3333 com simulação de latência e respostas realistas, destravando o time de frontend para criar telas antes do backend estar pronto.
+1. **`cartographer.agent.md`**: Exploração arquitetural 360° em modo *Read-Only*, economizando até 90% dos tokens de leitura inicial.
+2. **`route-guard.agent.md`**: Análise de contratos de rotas, cálculo de Blast Radius e geração de schemas Zod/DTO.
+3. **`ui-craftsman.agent.md`**: Design Engineering anti-slop, molas do Framer Motion e ergonomia mobile (Bottom Sheets, 44px+).
+4. **`db-sentinel.agent.md`**: Arquiteto relacional que valida schemas Prisma/Drizzle e impede migrations destrutivas.
+5. **`test-engineer.agent.md`**: Engenheiro de QA que cria testes de integração de API e E2E Playwright reais.
+6. **`falsifier.agent.md`**: Red Teamer adversário que ataca o plano na fase pré-código com 5 vetores de estresse.
+7. **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP com exportação SARIF.
 
 ---
 
-## 🔍 O Que Cada Skill Faz & Suas Vantagens Competitivas
+## 🛑 Firewall de Segurança Reativo no SO (`hooks.json`)
+
+O monorepo conta com travas de ciclo de vida que interceptam a execução de ferramentas no nível do sistema operacional:
+
+- **`pre-command-guard.js`**: Intercepta comandos de terminal antes de executar e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`post-write-lint.js`**: Validação silenciosa de integridade pós-escrita de arquivos.
+
+---
+
+## 🔍 Detalhamento das 9 Skills e Comandos CLI
 
 ### 1. ⚡ `hybrid-orchestrator` — Nota: 10.0/10
-> **Protocolo de Decisão, Planejamento e Execução Adaptativa.**
-
-#### 🛑 O Problema que Resolve:
-Agentes de IA convencionais sofrem de impulso destrutivo: começam a editar arquivos no primeiro segundo, alteram coisas fora do escopo, alucinam testes que "passaram" sem ter rodado nada e quebram o repositório sem possibilidade de rollback.
-
-#### 💡 O que ela faz:
-1. **Maestro Regente Automático:** Aciona compulsoriamente todo o ecossistema (`repo-cartographer` para arquitetura 360°, `route-guard` para contratos de rotas, `frontend-craftsman` para UI, e `security-audit` pós-execução) sem o usuário precisar digitar as 6 skills no prompt.
-2. **Governança Ativa por Padrão (Rota B Soberana):** Sem flags, ativa a **Rota B (Governança Completa com Trava no Turno 1)**. Para execução direta cirúrgica sem travas, use `--fast` ou `--quick`.
-3. **Princípio da Tangibilidade Absoluta:** Proibição de arquivos fantasmas no chat (`[CRIADO]`). Geração física obrigatória no disco (`.code-map/handshake.json`, `DESIGN_SPEC.md`) no Turno 1.
-4. **Painel Visual de Governança no Navegador (`preview-plan.js`):** Gera `.plan/plan.html` interativo no navegador com os 4 Quadrantes, checklist com checkboxes interativos persistidos e botões táteis de cópia da Trava.
-5. **Sabatina em 4 Quadrantes:** Preenche suposições estruturadas em Q1 (Contratos), Q2 (Dados & Concorrência com locks e idempotência), Q3 (UI) e Q4 (Segurança).
-6. **Trava de Permissão em 2 Turnos:** Bloqueio rígido no Turno 1. Nenhum arquivo de código é tocado sem autorização explícita do desenvolvedor ("OK").
-7. **Âncoras de Atenção Anti-Prompt-Drift:** Selos visuais como `[ORCHESTRATOR: ROTA B | TURNO 1]` ancoram os pesos da LLM, impedindo que ela esqueça regras em chats longos.
-8. **Ciclo Adversário (Lead / Builder / Falsifier):** O Falsifier tenta quebrar ativamente a solução simulando race conditions, inputs maliciosos, timeouts e memory leaks.
-9. **Snapshot Atômico & Rollback Seguro:** Registra um snapshot git antes da edição. Se o Falsifier falhar, executa `git restore` e deixa o repositório limpo.
-
-#### 🎭 Como Executa: Modo Plandex (Cirúrgico) vs. Modo Teamwork (Multi-Agente)
-O orchestrator adapta a inteligência ao ambiente e à complexidade da demanda:
-- **Padrão Plandex Puro (Rota A / `--fast`):**
-  - **Agente Único:** Sem sabatina, sem trava e sem perda de tempo. Foca exclusivamente em leitura rápida ➔ diff atômico cirúrgico ➔ verificação de build/lint ➔ entrega.
-- **Padrão Teamwork & Swarm (Rotas B e C / Críticas):**
-  - Divide a execução em 3 personas cognitivas: **Lead** (congela escopo), **Builder** (implementa código e testes) e **Falsifier** (tenta quebrar ativamente com estresse).
-  - **Em ferramentas com suporte a subagentes (Google Antigravity, Claude Code com tasks):** O **Falsifier é spawnado como um subagente independente** em sessão limpa e isolada, sem o histórico da conversa, eliminando o viés de confirmação e atacando o código de forma verdadeiramente adversária.
-  - **Em ferramentas de agente único (Cursor, Windsurf, Copilot):** Aplica **Degradação Graciosa**, onde o mesmo agente troca de persona e percorre os 5 cenários de ataque item a item antes de declarar a tarefa pronta.
-
-#### 🚀 Vantagens de Usar:
-- **Zero código espaguete:** você nunca mais terá que dar `git reset --hard` porque a IA estragou o repositório.
-- **Honestidade de testes:** distingue claramente entre `EXECUTADO` (com saída real de terminal) e `RACIOCINADO`.
-- **Prevenção de N+1:** checa ativamente consultas em loop assíncrono em ORMs.
-
-#### 💻 Comandos e Ferramentas (CLI):
-```bash
-# 1. Criar snapshot atômico git antes de editar código (Zero-Risk):
-node hybrid-orchestrator/scripts/snapshot.js create "Pre-Checkout-Refactor"
-
-# 2. Rollback seguro instantâneo caso os testes ou falsifier reprovem:
-node hybrid-orchestrator/scripts/snapshot.js rollback
-
-# 3. Rodar estresse adversário automatizado (Falsifier 5 Vetores):
-node hybrid-orchestrator/scripts/falsify.js
-
-# 4. Visualizar quadro ASCII dos 4 Quadrantes para Turno 1:
-node hybrid-orchestrator/scripts/preview-plan.js
-
-# Flags de acionamento no chat da IA:
-# --fast ou --quick   -> Força Rota A (execução cirúrgica direta sem travas)
-# --deep ou --swarm   -> Força Rota B (sabatina 4Q + 3 ciclos do Falsifier)
-
-# Testar integridade da skill:
-cd hybrid-orchestrator && npm test
-```
-
----
+- Snapshot atômico com `git stash create` e rollback instantâneo (`node scripts/snapshot.js rollback`);
+- Falsifier adversário com estresse automatizado em 5 vetores (`node scripts/falsify.js`);
+- Painel dos 4 Quadrantes no terminal e navegador (`preview-plan.js`).
 
 ### 2. 🎨 `frontend-craftsman` — Nota: 10.0/10
-> **Design Engineering de Alta Fidelidade: Erradicação do "AI Slop UI", Física de Molas & Preview Instantâneo.**
-
-#### 🛑 O Problema que Resolve:
-Quando modelos de linguagem geram interfaces por conta própria, caem no visual clichê de IA: fundos com gradientes roxos/índigo (`from-purple-600 to-indigo-600`), `backdrop-blur` desregulado em todos os cards, botões estáticos sem feedback tátil de press, ausência de física de molas (ou transições lineares duras `duration-300`) e textos artificiais ("Unleash next-gen AI...").
-
-#### 💡 O que ela faz:
-1. **Os 7 Pilares Anti-AI Slop:** Regras estritas que proíbem gradientes roxos genéricos e impõem paletas profundas calibradas (Dark & Light) com apenas **1 cor de acento cirúrgica** (< 5% da área visual).
-2. **Framer Motion com Física de Molas Real (Spring Physics):**
-   - Micro-interações rápidas e responsivas (`stiffness: 450, damping: 30`);
-   - Abas deslizantes fluidas com `layoutId="active-pill"` estilo macOS/Linear sem pulo visual;
-   - Modais com `AnimatePresence mode="wait"`;
-   - Respeito obrigatório a `prefers-reduced-motion`.
-3. **Superfícies de Hardware Físico:** Substitui blur embaçado por camadas opacas estruturadas, bordas ultrafinas de 1px com opacidade precisa (`border-white/[0.08]` em dark / `border-black/[0.06]` em light) e **inner highlights** superiores.
-4. **Gerador de Especificação Visual (`DESIGN_SPEC.md`):** Cria um documento visual com tabela de cores, tipografia com `tracking-tight`, escala modular, bibliotecas e wireframe ASCII para validação do usuário antes de codificar.
-5. **Preview Visual Instantâneo no Navegador (`preview-spec.js`):** Abre localmente em 1 segundo uma página HTML interativa com os componentes vivos (spotlight, tabs e botões táteis) antes de aprovar a execução!
-6. **Suporte Nativo a Tailwind CSS v4:** Exporta tokens tanto no formato clássico (`tailwind.config.js`) quanto na nova diretiva `@theme` CSS-first do Tailwind v4.
-7. **Motor Determinístico de Auditoria (`craft-audit.js`):** Analisa a base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e calcula o **Craftsmanship Score (0–100)**, apontando linhas exatas e sugestões de polimento.
-8. **Catálogo de Componentes Prontos (`templates/`):** Templates de alta fidelidade para `AnimatedTabs`, `SpotlightCard`, `MagneticButton`, `SmoothAccordion` e `ContentSkeleton` (zero CLS).
-
-#### 🚀 Vantagens de Usar:
-- **Acabamento nível Linear, Apple, Stripe e Raycast:** Suas interfaces deixam de parecer "projeto de IA gerado em 10 segundos" e ganham aspecto de software de alta engenharia.
-- **Validação visual prévia & Preview Interativo:** Você vê e interage com os botões e cores no seu navegador antes que qualquer linha de código de produção seja escrita.
-- **Micro-interações táteis nativas:** Todo botão e card responde fisicamente ao ponteiro e ao clique.
-
-#### 💻 Comandos e Ferramentas:
-```bash
-# 1. Gerar documento de especificação visual (DESIGN_SPEC.md):
-node frontend-craftsman/scripts/generate-spec.js "Dashboard de Vendas" --preset=linear-dark
-
-# 2. Abrir preview interativo no navegador em 1 segundo:
-node frontend-craftsman/scripts/preview-spec.js DESIGN_SPEC.md
-
-# 3. Auditar qualidade artesanal da interface (detecta vícios de IA):
-node frontend-craftsman/scripts/craft-audit.js src/
-
-# 4. Exportar tokens de paleta (Tailwind v3, Tailwind v4 ou CSS):
-node frontend-craftsman/scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
-
-# 5. Testar integridade da skill:
-cd frontend-craftsman && npm test
-```
-
----
-
-### 🤝 O Elo Perfeito: `frontend-craftsman` ⟷ `hybrid-orchestrator`
-
-Quando você possui ambas as skills instaladas, elas se conectam automaticamente criando um **ciclo simbiótico de alta engenharia**:
-
-#### 🎨 Fluxo 1: Design-First (Iniciado no Craftsman)
-> Recomendado quando o foco principal é concepção visual, telas novas ou redesign de interface.
-
-```mermaid
-flowchart TD
-    D1["👤 Usuário solicita Front-end / UI"] --> D2["🎨 Craftsman gera DESIGN_SPEC.md<br/>• Paleta calibrada & Molas<br/>• Preview interativo local"]
-    D2 --> D3{"Usuário aprova<br/>o design?"}
-    
-    D3 -- NÃO --> D4["✏️ Ajustar Paleta,<br/>Fontes ou Wireframe"]
-    D4 --> D2
-    
-    D3 -- SIM (OK) --> D5["🤝 Handoff para Hybrid Orchestrator<br/>• Snapshot git stash<br/>• Sabatina Q1-Q4 (Q3 preenchido)"]
-    D5 --> D6["⚡ Execução Cirúrgica & Falsifier<br/>• Física de molas real<br/>• Pipeline craft-audit.js (Score ≥ 90)"]
-```
-
-#### ⚡ Fluxo 2: Engineering-First (Iniciado no Hybrid)
-> Recomendado quando o foco é uma feature completa, refatoração de regras ou correção de bug.
-
-```mermaid
-flowchart TD
-    H1["👤 Usuário solicita feature<br/>no Hybrid Orchestrator"] --> H2{"Demanda toca em<br/>UI / Telas / Componentes?"}
-
-    H2 -- NÃO --> H_BACK["⚙️ Hybrid segue fluxo padrão<br/>(backend / regras / banco)"]
-
-    H2 -- SIM --> H3["🎨 Hybrid invoca Craftsman<br/>para gerar DESIGN_SPEC.md"]
-    H3 --> H4["🛑 Turno 1 (Trava Obrigatória)<br/>DESIGN_SPEC.md anexado ao plano"]
-    
-    H4 --> H5{"Usuário aprova<br/>o Turno 1?"}
-
-    H5 -- NÃO --> H_ADJUST["✏️ Ajustar arquitetura,<br/>design ou requisitos"]
-    H_ADJUST --> H3
-
-    H5 -- SIM --> H6["⚡ Turno 2: Implementação Cirúrgica<br/>• Física de molas & Radix UI<br/>• Ataque com Falsifier"]
-    H6 --> H7["🏆 Pipeline 7.2: craft-audit.js<br/>Score ≥ 90 Obrigatório"]
-```
-
-1. **Se você chamar `frontend-craftsman` primeiro:** Ele elabora o `DESIGN_SPEC.md` visual. Após o seu "OK", se o `hybrid-orchestrator` estiver presente, ele assume a execução técnica (criando snapshot de segurança `git stash`, rodando a Sabatina dos 4 Quadrantes, implementando com física de molas e atacando com o Falsifier).
-2. **Se você chamar `hybrid-orchestrator` primeiro:** Se a demanda tocar em telas ou componentes, ele **não cria código genérico de IA**; ele invoca o `frontend-craftsman`, gera a especificação visual detalhada no Turno 1 (Trava) e só começa a codificar após você validar as cores, fontes e estrutura. No pipeline final de verificação, ele executa o `craft-audit.js` exigindo score ≥ 90.
-3. **Se você usar as skills separadas:** Cada uma funciona de forma independente e autônoma, sem dependências quebradas.
-
----
+- Erradicação de AI Slop (proibição de gradientes roxos genéricos e blur desregulado);
+- Molas táteis Framer Motion (`stiffness: 450, damping: 30`) e abas com `layoutId`;
+- Preview visual instantâneo em 1s (`node scripts/preview-spec.js`);
+- Auditoria determinística de interface (`node scripts/craft-audit.js`).
 
 ### 3. 📱 `mobile-converter` — Nota: 10.0/10
-> **Engenharia de Adaptação Mobile de Alta Fidelidade: Anti-Mobile Slop, Bottom Sheets, Simulador & Autofix.**
+- Metamorfose de tabelas largas em cards verticais (`ResponsiveTableToCards.tsx`);
+- Modais transformados em gavetas deslizantes com gesto de arrasto (`BottomSheet.tsx`);
+- Touch targets obrigatórios de 44x44px e viewport dinâmico `100dvh`;
+- Simulador de iPhone 15 Pro no navegador (`node scripts/preview-mobile.js`) e auditoria com Autofix (`mobile-audit.js --fix`).
 
-#### 🛑 O Problema que Resolve:
-Modelos de IA adaptam interfaces para celulares simplesmente espremendo colunas desktop, gerando o **Mobile Slop**: tabelas com 6 colunas que quebram o layout com scroll horizontal impossível de ler, botões minúsculos (< 30px), menus superiores inacessíveis pelo polegar, rodapés cobertos pela barra de navegação do iPhone e auto-zoom indesejado no iOS Safari.
+### 4. 🗄️ `db-sentinel` — Nota: 10.0/10 🆕
+- Zero-Downtime migrations em 3 passos para adições de colunas e renomeações;
+- Auditoria de schemas Prisma, Drizzle e SQL (`node scripts/db-audit.js`);
+- Detecção automática de chaves estrangeiras (`@relation`) sem índice (`@@index`);
+- Gerador de seeds sintéticos e tipados com coerência relacional (`node scripts/generate-seed.js`).
 
-#### 💡 O que ela faz:
-1. **Os 7 Pilares Anti-Mobile Slop:** Regras de ouro para touch targets mínimos de 44×44px, safe-areas de hardware (`env(safe-area-inset-bottom)`), checagem obrigatória de `viewport-fit=cover` e eliminação de sticky hover.
-2. **Viewport Dinâmico Real:** Erradica o bug clássico de `100vh`/`h-screen` adotando `100dvh` / `min-h-dvh` para telas móveis.
-3. **Simulador de Smartphone no Navegador (`preview-mobile.js`):** Abre localmente em 1s uma moldura realista (iPhone 15 Pro, SE e Galaxy) com Dynamic Island e Home Bar para testar os gestos interativamente!
-4. **Metamorfose de Componentes:**
-   - **Tabelas ➔ Feed de Cards:** Transforma tabelas ilegíveis em pilhas verticais de cards táteis com badges e ações rápidas (`ResponsiveTableToCards.tsx`).
-   - **Navegação Desktop ➔ Mobile Bottom Nav:** Converte headers e sidebars densos em uma **Tab Bar inferior** estilo iOS ao alcance do polegar (`MobileBottomNav.tsx`).
-   - **Modais ➔ Swipeable Bottom Sheets:** Modais centralizados viram gavetas deslizantes com puxador e gesto de arrastar para baixo para fechar (`BottomSheet.tsx`).
-   - **Listas ➔ Swipeable Rows:** Linhas com gesto lateral estilo WhatsApp/iOS Mail para ações rápidas (`SwipeableRow.tsx`).
-5. **Prevenção de Auto-Zoom no iOS:** Força `font-size: 16px` (`text-base md:text-sm`) em inputs para impedir que o Safari amplie a tela ao focar.
-6. **Motor Determinístico com Autofix (`mobile-audit.js --fix`):** Varre os componentes, pontua o **Mobile Readiness Score (0–100)** e corrige automaticamente falhas de viewport e safe-areas!
-7. **Gerador de Receita de Adaptação (`adapt-screen.js`):** Analisa qualquer componente desktop e gera o plano passo a passo de conversão para smartphone.
-
-#### 🚀 Vantagens de Usar:
-- **Interfaces com sensação de aplicativo nativo:** Telas responsivas que parecem desenvolvidas sob medida para iOS e Android (estilo Nubank e Airbnb).
-- **Validação visual com simulador de bolso:** Veja e interaja com os componentes móveis antes de enviar para produção.
-- **Zero scroll horizontal acidental:** Seus layouts nunca mais quebram em telas de 375px ou 390px.
-- **Ergonomia real do polegar:** Elementos essenciais posicionados na Thumb Zone natural do usuário.
-
-#### 💻 Comandos e Ferramentas (CLI):
-```bash
-# 1. Abrir simulador visual interativo de smartphone no navegador (1s):
-node mobile-converter/scripts/preview-mobile.js
-node mobile-converter/scripts/preview-mobile.js --device=iphone15
-node mobile-converter/scripts/preview-mobile.js --device=galaxy
-
-# 2. Auditar qualidade mobile e calcular o Mobile Readiness Score (0-100):
-node mobile-converter/scripts/mobile-audit.js src/
-
-# 3. Aplicar correções automáticas de viewport e safe-areas (Autofix):
-node mobile-converter/scripts/mobile-audit.js src/ --fix
-
-# 4. Gerar receita de adaptação para um componente:
-node mobile-converter/scripts/adapt-screen.js src/components/OrderTable.tsx
-
-# 5. Testar integridade da skill:
-cd mobile-converter && npm test
-```
-
----
-
-### 4. 🗺️ `repo-cartographer` — Nota: 10.0/10
-> **Motor de Cartografia Arquitetural, Diagramas Mermaid & Contexto 360° Orientado por Evidência.**
-
-#### 🛑 O Problema que Resolve:
-Para entender onde fica um botão ou endpoint, agentes normais fazem dezenas de `grep` e `list_dir` às cegas, queimando 80.000 tokens e estourando a janela de contexto antes mesmo de começar a trabalhar.
-
-#### 💡 O que ela faz:
-1. **Descida em 6 Camadas:** Mapeia do topo à base do sistema:  
-   `[1. UI]` ➔ `[2. Estado]` ➔ `[3. Rede/Contrato]` ➔ `[4. Backend]` ➔ `[5. Banco]` ➔ `[6. Infra/Externos]`.
-2. **Scanner Determinístico Zero-Token (`cartographer.js trace`):** Mapeia árvores de arquivos locais em milissegundos sem gastar tokens de LLM.
-3. **Resolução de Path Aliases & Barrels:** Carrega o `tsconfig.json`/`jsconfig.json` para resolver `@/components` e segue re-exports (`export * from`).
-4. **Detecção de Ciclos:** Algoritmo DFS que detecta loops de dependência (A ➔ B ➔ A).
-5. **Diagramas Mermaid Dinâmicos (`cartographer.js mermaid <file>`):** Gera diagramas visuais verticais prontos para documentação e PRs.
-6. **Análise de Blast Radius Reverso (`cartographer.js callers <file>`):** Rastreia instantaneamente todos os arquivos que dependem de um componente específico.
-7. **Canvas Web Interativo Completo (`preview-graph.js`):** Sobe visualizador gráfico no navegador com nós arrastáveis e filtros de camada L1 a L6.
-8. **Cache Incremental com Hash SHA-256 (`.code-map/graph.json`):** Revalida nós no disco e só reindexa arquivos alterados.
-9. **Handshake Tipado (`handshake.json`):** Entrega um JSON Schema formal com nós `confirmed`, `inferred` e `unknown` direto para o `hybrid-orchestrator`.
-
-#### 🚀 Vantagens de Usar:
-- **Economia brutal de tokens:** reduz em até **90%** o consumo de leitura inicial de repositórios.
-- **Incerteza explícita:** se o cartógrafo não tiver certeza de uma dependência, ele documenta o motivo em vez de inventar conexões falsas.
-- **Visualização gráfica instantânea:** explore a arquitetura do projeto no navegador sem ferramentas externas.
-
-#### 💻 Comandos de Terminal (CLI):
-```bash
-# 1. Rastreamento 360° determinístico a partir de uma tela/arquivo:
-node repo-cartographer/scripts/cartographer.js trace src/pages/Checkout.tsx
-
-# 2. Gerar diagrama Mermaid pronto para o Markdown:
-node repo-cartographer/scripts/cartographer.js mermaid src/pages/Checkout.tsx
-
-# 3. Analisar blast radius reverso (quem consome este arquivo):
-node repo-cartographer/scripts/cartographer.js callers src/services/api.ts
-
-# 4. Abrir Canvas Web Interativo de visualização de camadas no navegador:
-node repo-cartographer/scripts/preview-graph.js
-
-# 5. Checar integridade do cache (.code-map/graph.json):
-node repo-cartographer/scripts/cartographer.js check
-
-# Teste de integridade da skill:
-cd repo-cartographer && npm test
-```
-
----
-
-### 5. 🛡️ `route-guard` — Nota: 10.0/10
-> **Guardião de Contratos de API, Geração de Schemas Zod & Mock Server Zero-Trust.**
-
-#### 🛑 O Problema que Resolve:
-Ao ajustar uma rota no backend, a IA altera o formato de retorno ou os parâmetros da requisição e quebra 4 telas no frontend sem saber que elas consumiam aquele endpoint.
-
-#### 💡 O que ela faz:
-1. **Descoberta Rápida (`analyze-route.js`):** Localiza arquivo, linha e método onde a rota está declarada.
-2. **Mapeamento de Consumidores (Blast Radius):** Varre todo o código em busca de chamadas `axios`, `fetch` ou clientes HTTP que apontam para aquele endpoint.
-3. **Cálculo de Risco de Quebra:** Classifica o risco em **Alto** (múltiplas telas dependentes), **Médio** ou **Baixo**.
-4. **Trava de Retrocompatibilidade:** Se a rota for existente e consumida, a IA é proibida de modificar o código sem a confirmação de que o desenvolvedor quer quebrar a compatibilidade.
-5. **Gerador Automático de Contratos Zod & DTOs TypeScript (`generate-contract.js`):** Gera contratos tipados de runtime e interfaces estáticas com tipagem defensiva.
-6. **Servidor Mock HTTP Zero-Dependency com CORS Total (`mock-route.js`):** Sobe em 1 segundo um mock server na porta 3333 com simulação de latência e payloads realistas para descarrego ágil do frontend.
-
-#### 🚀 Vantagens de Usar:
-- **Fim das quebras silenciosas em APIs:** você sabe exatamente quais componentes da interface serão afetados antes de aprovar a mudança.
-- **Desenvolvimento paralelo real:** frontend pode construir e testar telas contra o mock server antes do backend existir.
-- **Contratos seguros:** garante que toda rota nova já nasça com validação estrita de schema.
-
-#### 💻 Comandos de Terminal (CLI):
-```bash
-# 1. Analisar impacto de um endpoint e listar consumidores HTTP no front:
-node route-guard/scripts/analyze-route.js POST /api/orders
-node route-guard/scripts/analyze-route.js GET /users/:id --json
-
-# 2. Gerar contrato tipado Zod + DTOs TypeScript:
-node route-guard/scripts/generate-contract.js POST /api/orders --fields "productId:string,quantity:number,coupon:string?" --out src/contracts/order.contract.ts
-
-# 3. Iniciar Servidor de Mock HTTP (porta 3333 com CORS total e latência de 150ms):
-node route-guard/scripts/mock-route.js --port 3333 --delay 150
-
-# Teste de integridade da skill:
-cd route-guard && npm test
-```
-
----
+### 5. 🧪 `test-forge` — Nota: 10.0/10 🆕
+- Erradicação do "Mock Fantasma" e testes com asserções cosméticas;
+- Gerador de testes de integração de rota em 4 cenários (`node scripts/forge-api-test.js POST /api/orders`);
+- Gerador E2E Playwright cobrindo Desktop e Mobile iPhone 15 Pro (`node scripts/forge-e2e.js /checkout`);
+- Auditor de robustez de testes e cálculo do Test Quality Score (`node scripts/test-audit.js test/`).
 
 ### 6. 🔒 `security-audit` — Nota: 10.0/10
-> **Motor DevSecOps com os 18 Pilares de Segurança, Autofix, SARIF e Pre-Commit Hook.**
+- Auditoria estritamente somente-leitura dos 18 pilares OWASP e DevSecOps (`node scripts/audit.js`);
+- Autofix seguro de links vulneráveis e cookies (`node scripts/audit.js --fix`);
+- Exportação SARIF v2.1.0 para GitHub Code Scanning (`--sarif`);
+- Git hook pre-commit bloqueante (`node scripts/install-hook.js`).
 
-#### 🛑 O Problema que Resolve:
-Agentes de IA frequentemente introduzem falhas graves: deixam `JWT_SECRET || 'secret123'`, usam `origin: *` com credenciais no CORS, cometem segredos no git ou usam `dangerouslySetInnerHTML` desprotegido.
+### 7. 🗺️ `repo-cartographer` — Nota: 10.0/10
+- Rastreamento determinístico em 6 camadas economizando até 90% dos tokens (`node scripts/cartographer.js trace`);
+- Diagramas Mermaid dinâmicos prontos para PRs (`node scripts/cartographer.js mermaid`);
+- Análise de Blast Radius reverso (`node scripts/cartographer.js callers`);
+- Canvas web interativo com nós arrastáveis (`node scripts/preview-graph.js`).
 
-#### 💡 O que ela faz:
-1. **Modo Estritamente Somente-Leitura:** Jamais altera código arbitrariamente; audita, classifica e orienta a remediação.
-2. **18 Pilares DevSecOps:**
-   - **Back-end:** Auth em rotas, JWT sem fallback estático, senhas com bcrypt (custo >= 10), Helmet, cookies seguros (`HttpOnly`, `SameSite`, `Secure`), upload seguro.
-   - **Front-end:** Clientes HTTP com `withCredentials`, anti-XSS (`dangerouslySetInnerHTML` sem `DOMPurify`), higiene de sessão sem tokens no `localStorage`.
-   - **OWASP & Supply Chain:** Anti-SQLi em queries raw, scanner de segredos no git (`.env` rastreado, API keys) e `npm audit` automatizado.
-   - **Banco:** Princípio do menor privilégio (proibido usuário `root`, `postgres` ou `sa` em produção).
-3. **Autofix Seguro de Vulnerabilidades (`--fix`):** Corrige automaticamente links vulneráveis a reverse tabnabbing (`rel="noopener noreferrer"`) e adiciona opções de segurança a cookies.
-4. **Exportação Padrão SARIF v2.1.0 (`--sarif`):** Gera relatórios compatíveis diretamente com GitHub Code Scanning e GitLab SAST.
-5. **Git Hook Pre-Commit Automatizado (`install-hook.js`):** Instala trava no git para bloquear commits com segredos ou vulnerabilidades críticas.
-6. **Mascaramento Automático:** Credenciais e tokens são sempre mascarados no console (`sk-pr****xyz`).
-7. **Exceções com Expiração (`.audit-exceptions.json`):** Permite liberar exceções com data limite (`expiraEm`) e responsável (`aprovadoPor`). Se expirar, volta a bloquear.
-8. **Exit Codes Determinísticos:** Código `1` (bloqueia o CI/CD se houver achado Crítico ou Alto) e `0` (aprovado).
+### 8. 🛡️ `route-guard` — Nota: 10.0/10
+- Identificação de consumidores HTTP no frontend antes de tocar em rotas (`node scripts/analyze-route.js`);
+- Gerador automático de contratos Zod e DTOs TypeScript (`node scripts/generate-contract.js`);
+- Servidor de Mock HTTP Zero-Dependency com CORS total na porta 3333 (`node scripts/mock-route.js`).
 
-#### 🚀 Vantagens de Usar:
-- **Segurança de esteira automatizada:** atua como um portão de qualidade (Quality Gate) antes de fazer deploy ou aprovar PRs.
-- **Integração nativa com GitHub e GitLab:** relatórios SARIF aparecem na aba Security do seu repositório.
-- **100% agnóstica:** funciona em qualquer projeto Node, TypeScript, Python ou fullstack sem dependências externas.
-
-#### 💻 Comandos de Terminal (CLI):
-```bash
-# 1. Auditoria completa de segurança dos 18 pilares:
-node security-audit/scripts/audit.js
-
-# 2. Aplicar correções automáticas seguras (Autofix tabnabbing e cookies):
-node security-audit/scripts/audit.js --fix
-
-# 3. Exportar relatório em formato industrial SARIF v2.1.0:
-node security-audit/scripts/audit.js --sarif=security-report.sarif
-
-# 4. Instalar Git Hook pre-commit bloqueante no repositório:
-node security-audit/scripts/install-hook.js
-
-# 5. Auditoria seletiva por pilares de domínio (ex: auth, cookies, senhas):
-node security-audit/scripts/audit.js --pilares=2,3,5
-
-# Teste de integridade da skill:
-cd security-audit && npm test
-```
+### 9. ⭐ `orch` — Nota: 10.0/10
+- Comando geral mestre do ecossistema para governança unificada;
+- Modo completo com Sabatina 4Q (`/orch <demanda>`) e modo rápido cirúrgico (`/orch --fast <demanda>`).
 
 ---
 
 ## 🚀 Como Instalar e Usar
 
-### 1. Instalação Unificada (Todos os Agentes e Todas as Skills)
+### 1. Instalação Unificada (Todos os Agentes e Todas as 9 Skills)
 Instala simultaneamente no **Google Antigravity**, **Claude Code** e **Cursor Rules**:
 
 ```bash
 # Na raiz do monorepo:
 npm run install:all
 
-# Ou via node direto:
-node install.js --global --target=all
+# Ou instalando tanto local quanto globalmente:
+npm run install:both
 ```
 
-### 2. Instalação como Plugin Oficial do Antigravity (com Subagentes e Hooks):
+### 2. Instalação como Plugin Oficial do Antigravity:
 ```bash
 # Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite):
 npm run install:plugin:global
@@ -605,111 +255,25 @@ npm run install:plugin:global
 npm run install:plugin
 ```
 
-### 3. Instalação no Workspace Local (.agents/skills/*):
+### 3. Troca de Versões sem Git Clone (`scripts/switch-version.js`):
 ```bash
-npm run install:local
+# Baixa e instala qualquer versão diretamente do GitHub:
+node scripts/switch-version.js v2.2.0-beta.1
+node scripts/switch-version.js v2.1.0
 ```
 
-### 4. Rodar Testes de Integridade (Plugin + Subagentes + Skills):
+### 4. Rodar Testes de Integridade (Plugin + 7 Subagentes + 9 Skills):
 ```bash
 npm test
 ```
 
 ---
 
-## 🤖 Como Acionar no Chat com seu Agente de IA
-
-Você pode acionar as skills tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no Claude Code e Antigravity, ou via **Regras Contextuais (`@`)** no Cursor e Windsurf:
-
-| Slash Command / Atalho | Objetivo | Exemplo de Uso no Chat |
-| :--- | :--- | :--- |
-| **`/orch`** ⭐ | **Comando Geral Mestre:** Governança total e orquestração das 6 skills | `/orch Implemente a tela de checkout com Pix e recálculo de frete` |
-| **`/orch --fast`** ⚡ | **Execução Cirúrgica Direta:** Rota A sem travas e com diffs atômicos | `/orch --fast Corrija a tipagem de retorno do UserService` |
-| **`/frontend-craftsman`** | Gerar interface artesanal sem cara de IA (Framer Motion) | `/frontend-craftsman Crie a interface da Central de Clientes com paleta Linear` |
-| **`/mobile-converter`** | Converter tela desktop para mobile tátil (Bottom Sheets / dvh) | `/mobile-converter Adapte a tela de Checkout para mobile com Bottom Sheet` |
-| **`/hybrid-orchestrator`** | Desenvolver feature com governança e Falsifier | `/hybrid-orchestrator Implemente o recálculo de frete na tela de checkout` |
-| **`/hybrid-orchestrator --fast`** | Correção cirúrgica direta (Rota A sem travas) | `/hybrid-orchestrator --fast Ajuste a tipagem de retorno do UserService` |
-| **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° sem gastar tokens | `/repo-cartographer Mapeie o fluxo completo da tela de Checkout` |
-| **`/route-guard`** | Prevenir quebra de contrato e analisar endpoints | `/route-guard Analise o impacto da rota POST /api/orders` |
-| **`/security-audit`** | Auditoria DevSecOps completa pré-deploy (18 pilares) | `/security-audit Execute a auditoria de segurança pré-deploy` |
-| **`/security-audit --pilares=2,5`** | Auditoria seletiva (ex: Auth e JWT) | `/security-audit --pilares=2,5 Audite as alterações no login` |
-
-> 💡 **Dica de Produtividade:** No Cursor e Windsurf, você também pode chamar `@frontend-craftsman`, `@mobile-converter`, `@hybrid-orchestrator`, `@repo-cartographer`, `@route-guard` ou `@security-audit` no chat para carregar o contexto exato da regra. No Antigravity, comandos como `/plan` e `/grill-me` se integram nativamente ao ciclo da Hybrid.
-
----
-
-### ⚖️ Execução Individual vs. Comando Mestre `/orch`: Qual a Diferença?
-
-O **Enterprise AI Suite** foi desenhado com arquitetura de **dupla camada de acionamento**: você tem total liberdade para usar cada skill de forma cirúrgica e isolada ou delegar a orquestração ponta a ponta ao comando mestre.
-
-| Critério de Comparação | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: `/frontend-craftsman`, `/security-audit`)* | 🚀 Comando Mestre `/orch` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
-| :--- | :--- | :--- |
-| **Comando / Gatilho** | `/frontend-craftsman`, `/mobile-converter`, `/repo-cartographer`, `/route-guard`, `/security-audit`, `/hybrid-orchestrator` | `/orch <demanda>` ou `/orch --fast <demanda>` |
-| **Escopo de Ação** | **Laser-Focused:** Atua estritamente dentro do domínio de conhecimento daquela skill. | **Holístico & Multi-Camadas:** Orquestra compulsoriamente as 6 disciplinas (Cartografia ➔ Rotas ➔ UI ➔ Mobile ➔ Falsifier ➔ Segurança). |
-| **Quem Conecta as Etapas?** | **O Desenvolvedor:** Você decide manualmente quando mapear, quando criar contratos, quando desenhar telas e quando auditar. | **O Orchestrator (Lead):** Conecta as etapas automaticamente, passando os artefatos de uma skill para a outra sem intervenção humana. |
-| **Consumo de Contexto** | Ultrabaixo (< 2.000 tokens na sessão principal). Ideal para tarefas atômicas e hiper-específicas. | Otimizado via subagentes efêmeros (redução de 70% a 85% de tokens na API). |
-| **Troca de Informações** | Manual (o usuário copia saídas de um comando para o prompt seguinte). | **Automática via Handshakes Tipados:** `.code-map/handshake.json`, `DESIGN_SPEC.md` e relatórios SARIF fluem entre os subagentes. |
-| **Trava & Sabatina (4Q)** | Não possui (vai direto ao código ou auditoria daquela skill). | **Ativa no Turno 1 (Rota B):** Sabatina 4Q (Contratos, Concorrência, UI, Auth) e Trava rígida anti-drift antes de tocar em qualquer arquivo. |
-| **Ciclo Adversário (Falsifier)** | Não roda (a não ser que invocado via `hybrid-orchestrator`). | **Obrigatório:** O subagente Falsifier tenta ativamente quebrar a solução simulando race conditions, timeouts e limites extremos. |
-| **Verificação Pós-Código** | Apenas as ferramentas daquela skill específica. | **Pipeline Triplo Automático:** Executa `craft-audit.js` (UI), `mobile-audit.js` (Mobile) e `security-audit` (18 pilares OWASP). |
-| **Opção de Bypass Cirúrgico** | Já é naturalmente direto. | Possui a flag **`/orch --fast`** (aplica Rota A sem travas e com diffs atômicos para quando você quer o orchestrator veloz). |
-
----
-
-#### 💡 Quando Escolher Cada Modo?
-
-1. **Escolha Execução Individual quando:**
-   - Você quer resolver um problema pontual e cirúrgico em uma única camada técnica:
-     - *"Mapeie quem chama este arquivo"* ➔ `/repo-cartographer`
-     - *"Valide se o endpoint quebra o front"* ➔ `/route-guard`
-     - *"Converta esta tabela para cards com gesto"* ➔ `/mobile-converter`
-     - *"Remova o estilo genérico de IA deste botão"* ➔ `/frontend-craftsman`
-     - *"Faça uma auditoria de segurança antes do git push"* ➔ `/security-audit`
-   - O overhead de planejamento em 4 quadrantes seria desnecessário para uma alteração de 2 minutos.
-
-2. **Escolha o Comando Mestre `/orch` quando:**
-   - Você vai implementar uma **feature completa** (ex: *checkout com cálculo de frete, pagamento Pix e validação de cupons*).
-   - A demanda cruza múltiplas fronteiras (banco de dados, rotas de API, componentes visuais, adaptação mobile e segurança de autenticação).
-   - Você quer **garantia de zero regressão**: o `/orch` garante que o contrato de rotas foi respeitado, o design não tem cara de IA, a tela funciona no smartphone, o Falsifier estressou cenários de erro e a auditoria OWASP aprovou o código com exit code 0.
-   - Para pequenas correções onde você quer que o Orchestrator resolva tudo sozinho de forma rápida: use **`/orch --fast`**.
-
----
-
 ## 🤝 Contribuições & Governança
 
-Contribuições são muito bem-vindas! Este projeto segue padrões rígidos de qualidade de software open-source para garantir que nenhuma alteração comprometa a estabilidade dos agentes de IA em produção:
-
-- 📖 **Guia Completo de Contribuição:** Consulte o [**`CONTRIBUTING.md`**](CONTRIBUTING.md) para regras de branch, commits SemVer e diretrizes de desenvolvimento.
-- 📋 **Template de Pull Request:** Todos os PRs devem preencher o [**`PULL_REQUEST_TEMPLATE.md`**](.github/PULL_REQUEST_TEMPLATE.md), confirmando que a esteira `npm test` passou com 100% de sucesso.
-- 🐛 **Reportar um Bug:** Utilize o [**Template de Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md).
-- 💡 **Sugerir Funcionalidade:** Utilize o [**Template de Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md).
-- 🔒 **Política de Segurança:** Reporte vulnerabilidades de forma responsável conforme detalhado em [**`SECURITY.md`**](SECURITY.md).
-- 📜 **Código de Conduta:** Adotamos o [**Contributor Covenant v2.1**](CODE_OF_CONDUCT.md).
-
-### 🛡️ Regras de Proteção da Branch `master`
-A branch `master` é blindada contra quebras acidentais através das seguintes regras ativas no GitHub:
-1. **Pull Request Obrigatório:** Nenhum commit direto é permitido por terceiros;
-2. **Revisão Humana Exigida:** Requer no mínimo 1 aprovação de code review;
-3. **Invalidar Reviews Antigos:** Novos commits descartam aprovações anteriores;
-4. **CI Automatizado Obrigatório:** Status checks do GitHub Actions (Node 18, 20 e 22) devem estar 100% verdes;
-5. **Anti-Force-Push & Anti-Deletion:** Proibição estrita de force push (`git push -f`) e deleção da branch principal.
-
----
-
-## 📝 Changelog & Releases
-
-O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**](CHANGELOG.md) conforme o padrão [Keep a Changelog](https://keepachangelog.com/).
-
-### 🏆 Releases Oficiais no GitHub
-- [**v2.2.0 — Enterprise AI Suite (Plugin Oficial + Enxame de Subagentes + Hooks Reativos)**](https://github.com/Henrique-All/skills/releases/tag/v2.2.0) — Transformação do monorepo em Plugin nativo do Antigravity com 5 subagentes especialistas de contexto limpo e firewall ativo no sistema operacional.
-- [**v2.1.0 — Maestro Regente do Ecossistema & Tangibilidade Visual Total**](https://github.com/Henrique-All/skills/releases/tag/v2.1.0) — Governança ativa por padrão, preview visual do plano e acionamento automático inter-skills.
-- [**v2.0.0 — Ecossistema Pleno 10.0/10 (Ultimate Release)**](https://github.com/Henrique-All/skills/releases/tag/v2.0.0) — Todas as 6 skills com CLIs determinísticos e nota máxima.
-- [**v1.3.0 — Mobile Converter 10.0/10 & Simulador de Smartphone**](https://github.com/Henrique-All/skills/releases/tag/v1.3.0) — Metamorfoses táteis e molduras interativas.
-- [**v1.2.0 — Frontend Craftsman 10.0/10 & Matriz Inter-Skills**](https://github.com/Henrique-All/skills/releases/tag/v1.2.0) — Preview HTML vivo em 1s e Tailwind v4 `@theme`.
-- [**v1.1.0 — Lançamento do Frontend Craftsman (Design Engineering)**](https://github.com/Henrique-All/skills/releases/tag/v1.1.0) — Anti-AI slop e molas táteis.
-- [**v1.0.0 — Fundação do Ecossistema Enterprise AI Skills**](https://github.com/Henrique-All/skills/releases/tag/v1.0.0) — As 4 skills pioneiras e infraestrutura CI/CD.
-
-👉 Todas as releases podem ser acompanhadas na [**Página Oficial de Releases**](https://github.com/Henrique-All/skills/releases).
+- 📖 **Guia Completo de Contribuição:** Consulte o [**`CONTRIBUTING.md`**](CONTRIBUTING.md).
+- 📋 **Template de Pull Request:** Todos os PRs devem preencher o [**`PULL_REQUEST_TEMPLATE.md`**](.github/PULL_REQUEST_TEMPLATE.md).
+- 🛡️ **Branch Protection na `master`:** Requer PR obrigatório, code review humano, CI Actions (Node 18, 20, 22) 100% verde e anti-force-push.
 
 ---
 
@@ -719,38 +283,36 @@ O histórico completo de cada versão é mantido no arquivo [**`CHANGELOG.md`**]
 enterprise-ai-suite/
 ├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.2.0)
 ├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
-├── agents/                # 🤖 Subagentes Especialistas (Contextos Isolados)
+├── bin/
+│   └── orch.js            # CLI Master da Suite (doctor, init, cockpit, switch, test, audit)
+├── agents/                # 🤖 Enxame de 7 Subagentes Especialistas (Contextos Limpos)
 │   ├── cartographer.agent.md   # Mapeamento 360° em modo estrito Read-Only
 │   ├── route-guard.agent.md    # Blast Radius e contratos Zod/DTO
 │   ├── ui-craftsman.agent.md   # Design Engineering anti-slop e física de molas
+│   ├── db-sentinel.agent.md    # Modelagem relacional e migrations seguras
+│   ├── test-engineer.agent.md  # Testes de integração de API e E2E Playwright
 │   ├── falsifier.agent.md      # Subagente adversário para estresse pré-código
 │   └── security-auditor.agent.md # Auditoria DevSecOps dos 18 pilares OWASP (SARIF)
 ├── rules/                 # 📜 Regras Globais (Zero-Trust, Anti-AI Slop)
-│   ├── 01-zero-trust.md
-│   └── 02-anti-ai-slop.md
 ├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
 ├── mobile-converter/      # Adaptação mobile tátil, Bottom Sheets, Tab Bar e dvh
+├── db-sentinel/           # Banco de dados, migrations zero-downtime e seeds tipados
+├── test-forge/            # Engenharia de testes reais, integração e Playwright mobile
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
 ├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust
 ├── security-audit/        # Motor DevSecOps com os 18 pilares OWASP
+├── orch/                  # Atalho mestre do ecossistema (/orch e /orch --fast)
 ├── scripts/
-│   ├── test-all.js        # Test runner universal (Plugin + Subagentes + Skills)
-│   ├── hooks/             # Scripts executados pelas travas reativas (hooks.json)
-│   │   ├── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos
-│   │   └── post-write-lint.js    # Checagem silenciosa pós-edição
-│   ├── protect-master.js  # Script de automação das regras da branch master
-│   └── create-github-releases.js # Publicador automático de releases
-├── .github/
-│   ├── workflows/ci.yml   # Pipeline CI multi-versão (Node 18, 20, 22)
-│   ├── ISSUE_TEMPLATE/    # Templates para bugs e novas features
-│   └── PULL_REQUEST_TEMPLATE.md # Template obrigatório para PRs
-├── CONTRIBUTING.md        # Guia oficial de contribuição
-├── CHANGELOG.md           # Histórico de versões e alterações
-├── SECURITY.md            # Política de segurança
-├── CODE_OF_CONDUCT.md     # Código de conduta internacional
-├── install.js             # Instalador central do monorepo e do plugin
-├── package.json           # Scripts globais
+│   ├── cockpit.js         # Cockpit visual web unificado no navegador (localhost:3456)
+│   ├── doctor.js          # Diagnóstico determinístico de saúde do ecossistema
+│   ├── init.js            # Autoconfiguração inteligente por detecção de stack
+│   ├── test-all.js        # Test runner universal (Plugin + 7 Subagentes + 9 Skills)
+│   ├── switch-version.js  # Seletor e trocador de versões remotas sem git clone
+│   └── hooks/             # Scripts executados pelas travas reativas (hooks.json)
+│       ├── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos
+│       └── post-write-lint.js    # Checagem silenciosa pós-edição
+├── package.json           # Scripts globais e binário orch
 └── README.md              # Este manual completo
 ```
 

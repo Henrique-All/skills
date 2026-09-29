@@ -1,0 +1,14 @@
+---
+description: "Engenharia de Banco de Dados, Migrations Seguras e Prevenção de Locks e Índices Faltantes (Prisma, Drizzle, SQL)"
+globs: ["**/*.prisma", "**/schema.ts", "**/migrations/**", "**/*.sql"]
+---
+
+# 🗄️ Regra DB Sentinel: Banco de Dados & Migrations Seguras
+
+Ao criar ou modificar schemas de banco de dados, models ORM (Prisma/Drizzle) ou scripts SQL:
+
+1. **Nunca crie colunas `NOT NULL` sem valor `DEFAULT`** em tabelas já povoadas. Siga o padrão Expand & Contract em 3 passos.
+2. **Toda chave estrangeira (`@relation`, `references`) DEVE possuir índice explícito** (`@@index([fkId])`). Não confie em indexação automática do banco.
+3. **Proíba remoção direta de colunas (`DROP COLUMN`)** sem antes depreciar o campo no código da aplicação.
+4. **Prevenção de N+1:** Nunca execute queries de banco dentro de loops assíncronos (`.map()`, `for...of`). Use `findMany({ where: { id: { in: ids } } })` ou joins explícitos.
+5. **Comando de Auditoria:** Execute `node db-sentinel/scripts/db-audit.js <schema>` para validar o Database Health Score (0-100).

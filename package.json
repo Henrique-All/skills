@@ -2,8 +2,14 @@
   "name": "henrique-skills-monorepo",
   "version": "2.2.0",
   "description": "Enterprise AI Suite — Monorepo de Plugin, Subagentes Especialistas e Skills de Alta Performance para Agentes de IA (Antigravity, Claude Code, Cursor)",
+  "bin": {
+    "orch": "./bin/orch.js"
+  },
   "scripts": {
     "test": "node scripts/test-all.js",
+    "doctor": "node scripts/doctor.js",
+    "init:suite": "node scripts/init.js",
+    "cockpit": "node scripts/cockpit.js",
     "install:all": "node install.js --global --target=all",
     "install:local": "node install.js",
     "install:both": "node install.js --both",

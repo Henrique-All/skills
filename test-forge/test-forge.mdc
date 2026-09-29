@@ -1,0 +1,17 @@
+---
+description: "Engenharia de Testes Automatizados de Alta Fidelidade (Anti-Mock Slop), Integração e Playwright E2E"
+globs: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/e2e/**"]
+---
+
+# 🧪 Regra Test Forge: Testes Reais & Anti-Mock Fantasma
+
+Ao criar ou modificar testes automatizados (Vitest, Jest, Playwright, Supertest):
+
+1. **Erradique Mocks Fantasmas:** Nunca crie testes que mockem tudo a ponto de validar apenas `expect(true).toBe(true)`. Testes devem validar contratos reais de entrada e saída.
+2. **4 Cenários Obrigatórios em APIs:**
+   - [200/201] Caminho feliz com schema Zod respeitado;
+   - [400] Falha com campos obrigatórios ausentes;
+   - [401] Falha de autorização (sem token / token expirado);
+   - [404/409] Cenários de registro inexistente ou conflito/idempotência.
+3. **E2E com Viewport Mobile:** Todo teste Playwright deve rodar também na emulação de iPhone 15 Pro, testando touch targets de 44px+ e ausência de scroll horizontal.
+4. **Comando de Auditoria:** Execute `node test-forge/scripts/test-audit.js test/` para verificar o Test Quality Score (0-100).

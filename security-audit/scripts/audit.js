@@ -25,32 +25,46 @@ const selectedPilares = pilaresArg ? pilaresArg.split('=')[1].split(',').map(Num
 const projectDir = process.cwd();
 
 // 1. Carregar Configuração e Exceções
+const defaultAuditConfig = {
+  autoDetect: true,
+  rules: {
+    minBcryptRounds: 10,
+    secretsScan: {
+      ignorePaths: ['node_modules', '.git', 'dist', 'build', '.code-map'],
+      regexPatterns: [
+        'AKIA[0-9A-Z]{16}',
+        'AIza[0-9A-Za-z\\-_]{35}',
+        '-----BEGIN (?:RSA |EC )?PRIVATE KEY-----',
+        'ghp_[0-9a-zA-Z]{36}',
+        'sk-proj-[a-zA-Z0-9_-]{30,}'
+      ]
+    }
+  },
+  exceptionsFile: '.audit-exceptions.json'
+};
+
 function loadConfig() {
   const configPath = path.join(projectDir, 'audit.config.json');
   if (fs.existsSync(configPath)) {
     try {
-      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const userCfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      return {
+        ...defaultAuditConfig,
+        ...userCfg,
+        rules: {
+          ...defaultAuditConfig.rules,
+          ...(userCfg.rules || {}),
+          secretsScan: {
+            ...defaultAuditConfig.rules.secretsScan,
+            ...((userCfg.rules && userCfg.rules.secretsScan) || {})
+          }
+        }
+      };
     } catch (e) {
       console.warn('⚠️  audit.config.json corrompido, usando auto-detecção.');
     }
   }
-  return {
-    autoDetect: true,
-    rules: {
-      minBcryptRounds: 10,
-      secretsScan: {
-        ignorePaths: ['node_modules', '.git', 'dist', 'build', '.code-map'],
-        regexPatterns: [
-          'AKIA[0-9A-Z]{16}',
-          'AIza[0-9A-Za-z\\-_]{35}',
-          '-----BEGIN (?:RSA |EC )?PRIVATE KEY-----',
-          'ghp_[0-9a-zA-Z]{36}',
-          'sk-proj-[a-zA-Z0-9_-]{30,}'
-        ]
-      }
-    },
-    exceptionsFile: '.audit-exceptions.json'
-  };
+  return defaultAuditConfig;
 }
 
 function loadExceptions(config) {

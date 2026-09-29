@@ -1,0 +1,20 @@
+{
+  "name": "db-sentinel-skill",
+  "version": "1.0.0",
+  "description": "Engenharia de Banco de Dados, Migrations Seguras e Prevenção de Locks e Índices Faltantes",
+  "main": "scripts/db-audit.js",
+  "scripts": {
+    "test": "node test/validate.js"
+  },
+  "keywords": [
+    "antigravity",
+    "prisma",
+    "drizzle",
+    "database",
+    "migrations",
+    "sql",
+    "skills"
+  ],
+  "author": "Henrique Alves",
+  "license": "MIT"
+}
