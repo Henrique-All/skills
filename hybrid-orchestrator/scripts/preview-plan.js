@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const noOpen = args.includes('--no-open') || Boolean(process.env.CI);
@@ -620,14 +620,16 @@ console.log(`🔗 URL Local: file:///${planFile.replace(/\\/g, '/')}\n`);
 
 if (!noOpen) {
   console.log('🌐 Abrindo painel visual de governança no seu navegador padrão...');
-  const startCmd = process.platform === 'win32' ? `start "" "${planFile}"` :
-                   process.platform === 'darwin' ? `open "${planFile}"` :
-                   `xdg-open "${planFile}"`;
-  exec(startCmd, (err) => {
-    if (err) {
-      console.log('ℹ️  Abra o link acima no navegador para visualizar o plano.');
+  try {
+    if (process.platform === 'win32') {
+      execSync(`powershell.exe -NoProfile -Command "Start-Process '${planFile.replace(/'/g, "''")}'"`, { stdio: 'ignore' });
+    } else if (process.platform === 'darwin') {
+      execSync(`open "${planFile}"`, { stdio: 'ignore' });
     } else {
-      console.log('✅ Painel aberto no navegador com sucesso!');
+      execSync(`xdg-open "${planFile}"`, { stdio: 'ignore' });
     }
-  });
+    console.log('✅ Painel aberto no navegador com sucesso!');
+  } catch (err) {
+    console.log('ℹ️  Abra o link acima no navegador para visualizar o plano.');
+  }
 }
