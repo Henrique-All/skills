@@ -2,7 +2,7 @@
 /**
  * bin/orch.js
  * CLI Master do Enterprise AI Suite (v2.2.0)
- * Permite acionar diagnósticos, inicialização de projetos, cockpit visual e trocas de versão.
+ * Permite acionar diagnósticos, inicialização de projetos, testes e trocas de versão.
  */
 
 const { spawn } = require('child_process');
@@ -15,7 +15,6 @@ const command = args[0] || 'help';
 const commands = {
   doctor: path.join(rootDir, 'scripts', 'doctor.js'),
   init: path.join(rootDir, 'scripts', 'init.js'),
-  cockpit: path.join(rootDir, 'scripts', 'cockpit.js'),
   switch: path.join(rootDir, 'scripts', 'switch-version.js'),
   test: path.join(rootDir, 'scripts', 'test-all.js'),
   audit: path.join(rootDir, 'security-audit', 'scripts', 'audit.js')
@@ -32,7 +31,6 @@ Uso:
 Comandos Disponíveis:
   🩺 doctor            Executa diagnóstico completo de ambiente e subagentes
   ⚙️  init              Inicializa e calibra o projeto detectando a stack
-  🖥️  cockpit           Abre a central gráfica unificada no navegador
   🔄 switch [versao]   Troca a versão da suite sem precisar clonar via git
   🧪 test              Roda a bateria de testes automatizados do ecossistema
   🔒 audit             Executa a auditoria DevSecOps dos 18 pilares OWASP
@@ -40,7 +38,6 @@ Comandos Disponíveis:
 Exemplos:
   orch doctor
   orch init --force
-  orch cockpit --port=3456
   orch switch v2.2.0-beta.1
 `);
 }

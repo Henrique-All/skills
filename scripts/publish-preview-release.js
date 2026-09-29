@@ -34,7 +34,7 @@ const previewRelease = {
   name: 'v2.2.0-beta.1 — 🚀 Enterprise AI Suite: Plugin Oficial, Subagentes & Hooks (Preview Beta)',
   body: `# 🚀 Enterprise AI Suite v2.2.0-beta.1 (Preview / Beta Pública)
 
-> **Esta é uma release de pré-visualização (PREVIEW / BETA) com a arquitetura completa de Plugin Oficial, Enxame de 7 Subagentes, Cockpit Visual e 9 Skills de Engenharia.**  
+> **Esta é uma release de pré-visualização (PREVIEW / BETA) com a arquitetura completa de Plugin Oficial, Enxame de 7 Subagentes e 9 Skills de Engenharia.**  
 > Desenvolvida na branch \`2.2.0\` para quem deseja testar o ecossistema de ponta antes da release final na branch principal.
 
 ---
@@ -65,27 +65,20 @@ const previewRelease = {
 
 ### 🌟 O Que Há de Novo nesta Versão Preview
 
-#### 1. 🖥️ Cockpit Visual Unificado (\`npm run cockpit\`)
-- Central gráfica servida nativamente no navegador (\`http://localhost:3456\`) unindo:
-  - 📊 Painel geral de status e economia de tokens;
-  - 📋 Governança dos 4 Quadrantes com trava interativa;
-  - 📱 Simulador de iPhone 15 Pro com Dynamic Island e Bottom Sheet;
-  - 🔒 Centro DevSecOps com os 18 pilares OWASP.
-
-#### 2. 🗄️ Nova Skill: \`db-sentinel\` (Banco de Dados & Migrations Seguras)
+#### 1. 🗄️ Nova Skill: \`db-sentinel\` (Banco de Dados & Migrations Seguras)
 - Zero-Downtime migrations em 3 passos (Expand & Contract);
 - Detecção automática de Foreign Keys (\`@relation\`) sem índice (\`@@index\`);
 - Prevenção rigorosa de N+1 queries;
 - Gerador de seeds sintéticos e tipados com coerência relacional (\`scripts/generate-seed.js\`);
 - Auditor determinístico de schemas Prisma/Drizzle/SQL (\`scripts/db-audit.js\`).
 
-#### 3. 🧪 Nova Skill: \`test-forge\` (Engenharia de Testes Reais & Anti-Mock)
+#### 2. 🧪 Nova Skill: \`test-forge\` (Engenharia de Testes Reais & Anti-Mock)
 - Erradicação de mocks fantasmas e asserções cosméticas;
 - Gerador de testes de integração de rota em 4 cenários (\`scripts/forge-api-test.js\`);
 - Gerador E2E Playwright com validação ergonômica mobile (\`scripts/forge-e2e.js\`);
 - Auditor de qualidade de testes e cálculo do Test Quality Score (\`scripts/test-audit.js\`).
 
-#### 4. 🤖 Enxame de 7 Subagentes Especialistas de Contexto Limpo (\`agents/\`)
+#### 3. 🤖 Enxame de 7 Subagentes Especialistas de Contexto Limpo (\`agents/\`)
 - **\`cartographer.agent.md\`**: Mapeamento 360° em modo *Read-Only*.
 - **\`route-guard.agent.md\`**: Blast Radius e contratos Zod/DTO.
 - **\`ui-craftsman.agent.md\`**: Design Engineering anti-slop e física de molas.
@@ -94,11 +87,11 @@ const previewRelease = {
 - **\`falsifier.agent.md\`**: Red Teamer adversário com 5 vetores de estresse.
 - **\`security-auditor.agent.md\`**: Portão DevSecOps dos 18 pilares OWASP (SARIF).
 
-#### 5. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
+#### 4. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
 - **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
 - **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
 
-#### 6. 🎛️ Ferramentas CLI Master (\`bin/orch.js\`)
+#### 5. 🎛️ Ferramentas CLI Master (\`bin/orch.js\`)
 - **\`npm run doctor\`**: Diagnóstico determinístico de saúde do ecossistema e subagentes;
 - **\`npm run init:suite\`**: Autoconfigura qualquer projeto detectando a stack técnica (Vite, Next, Express, Prisma);
 - **\`npm run switch\`**: Troca de versões sem git clone;
@@ -130,10 +123,7 @@ git checkout 2.2.0
 # 2. Instale tudo em todos os ambientes (Antigravity, Claude, Cursor):
 npm run install:all
 
-# 3. Abra o Cockpit no navegador:
-npm run cockpit
-
-# 4. Valide a integridade:
+# 3. Valide a integridade:
 npm run doctor
 npm test
 \`\`\``,

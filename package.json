@@ -9,7 +9,6 @@
     "test": "node scripts/test-all.js",
     "doctor": "node scripts/doctor.js",
     "init:suite": "node scripts/init.js",
-    "cockpit": "node scripts/cockpit.js",
     "install:all": "node install.js --global --target=all",
     "install:local": "node install.js",
     "install:both": "node install.js --both",

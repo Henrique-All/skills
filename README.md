@@ -1,6 +1,6 @@
 # ⚡ Enterprise AI Suite (v2.2.0)
 
-> **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia, Cockpit Visual e Firewall de Segurança no SO.**  
+> **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
@@ -14,7 +14,6 @@
 ## 📌 Referências & Navegação Rápida
 
 - 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Antigravity, Claude Code, Cursor e Monorepo
-- 🖥️ [**O Cockpit Visual Unificado**](#%EF%B8%8F-o-cockpit-visual-unificado) — Central de comando no navegador (`localhost:3456`)
 - 🎛️ [**Ferramental CLI (Doctor & Init)**](#%EF%B8%8F-ferramental-cli-master) — `orch doctor`, `orch init`, `orch switch`
 - 💰 [**Economia Brutal de Tokens (78% a 85%)**](#-efici%C3%AAncia-extrema--economia-de-tokens-78-a-85-de-redu%C3%A7%C3%A3o) — Simulação matemática de 9 turnos
 - 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
@@ -25,25 +24,6 @@
 - 🔍 [**Detalhamento Completo das 9 Skills**](#-detalhamento-das-9-skills-e-comandos-cli)
 - 🤝 [**Contribuições & Governança**](#-contribui%C3%A7%C3%B5es--governan%C3%A7a) — CI multi-versão e proteção de branch
 - 🏗️ [**Estrutura do Repositório**](#%EF%B8%8F-estrutura-do-reposit%C3%B3rio)
-
----
-
-## 🖥️ O Cockpit Visual Unificado
-
-O **Cockpit** (`scripts/cockpit.js`) é a central gráfica unificada do desenvolvedor servida nativamente no navegador (porta `3456`, zero dependências externas, estética moderna *Dark Mode* inspirada no Linear, Raycast e Apple).
-
-```bash
-# Iniciar o Cockpit localmente:
-npm run cockpit
-# ou via CLI: node bin/orch.js cockpit
-```
-👉 Acesse no navegador: [**http://localhost:3456**](http://localhost:3456)
-
-### As 4 Abas do Cockpit:
-1. **📊 Painel Geral:** Medidor de economia de tokens (78% a 85%), status dos 7 subagentes e monitor das 9 skills com notas 10.0/10;
-2. **📋 Governança dos 4 Quadrantes:** Visualização do plano pré-código (Contratos, Concorrência, UI, Segurança) com a caixa da **Trava do Turno 1** e botão interativo para copiar o `"OK"`;
-3. **📱 Simulador de Smartphone (Mobile):** Moldura realista de iPhone com Dynamic Island, Tab Bar tátil, checagem de touch targets (44px+) e Bottom Sheet;
-4. **🔒 Centro DevSecOps (OWASP):** Relatório de vulnerabilidades, escaneamento de segredos no Git e exit codes de CI.
 
 ---
 
@@ -284,7 +264,7 @@ enterprise-ai-suite/
 ├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.2.0)
 ├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
 ├── bin/
-│   └── orch.js            # CLI Master da Suite (doctor, init, cockpit, switch, test, audit)
+│   └── orch.js            # CLI Master da Suite (doctor, init, switch, test, audit)
 ├── agents/                # 🤖 Enxame de 7 Subagentes Especialistas (Contextos Limpos)
 │   ├── cartographer.agent.md   # Mapeamento 360° em modo estrito Read-Only
 │   ├── route-guard.agent.md    # Blast Radius e contratos Zod/DTO
@@ -304,7 +284,6 @@ enterprise-ai-suite/
 ├── security-audit/        # Motor DevSecOps com os 18 pilares OWASP
 ├── orch/                  # Atalho mestre do ecossistema (/orch e /orch --fast)
 ├── scripts/
-│   ├── cockpit.js         # Cockpit visual web unificado no navegador (localhost:3456)
 │   ├── doctor.js          # Diagnóstico determinístico de saúde do ecossistema
 │   ├── init.js            # Autoconfiguração inteligente por detecção de stack
 │   ├── test-all.js        # Test runner universal (Plugin + 7 Subagentes + 9 Skills)
