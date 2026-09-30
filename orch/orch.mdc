@@ -1,0 +1,13 @@
+---
+description: Atalho mestre do Enterprise AI Suite. Dispara o Hybrid Orchestrator para governança, sabatina e execução coordenada das skills.
+globs: *
+alwaysApply: false
+---
+
+# /orch — Master Command do Enterprise AI Suite
+
+Ao receber `@orch` ou `/orch`:
+1. Ative o protocolo do Hybrid Orchestrator.
+2. Padrão: Rota B com Sabatina dos 4 Quadrantes e Trava de Permissão no Turno 1 (Stop in Turn 1).
+3. Se contiver `--fast`: Rota A cirúrgica direta com diffs atômicos.
+4. Acione compulsoriamente Cartographer para mapas, Route Guard para contratos, UI Craftsman para telas e Security Audit no Turno 2.

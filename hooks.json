@@ -1,0 +1,40 @@
+{
+  "safety-firewall": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/pre-command-guard.js",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "code-quality-gate": {
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/post-write-lint.js",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/post-write-lint.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

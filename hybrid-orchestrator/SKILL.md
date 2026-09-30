@@ -20,16 +20,21 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo d
 7. **Use as ferramentas do projeto.** Descubra como o projeto compila, testa e lida com lint antes de sugerir comandos (seção 7).
 8. **Pergunte só o essencial.** Se faltar informação crítica, faça no máximo 2 perguntas antes de começar. Caso contrário, declare a suposição em uma linha e siga.
 
-### 1.1 O Maestro Regente do Ecossistema (Harmonia Automática das 6 Skills)
+### 1.1 O Maestro Regente do Ecossistema (Harmonia das Skills e Subagentes v2.2.0)
 
-O `hybrid-orchestrator` atua como o **Maestro Regente** de todo o ecossistema. O desenvolvedor **não precisa digitar o nome de todas as 6 skills no prompt**. O Orchestrator analisa a demanda e aciona compulsoriamente os especialistas necessários:
+O `hybrid-orchestrator` atua como o **Maestro Regente** de todo o ecossistema. O desenvolvedor **não precisa digitar o nome de todas as skills no prompt**. O Orchestrator analisa a demanda e orquestra compulsoriamente os especialistas necessários:
 
-- 🗺️ **Se a demanda envolve fluxo, múltiplos arquivos ou arquitetura:** Dispara o `repo-cartographer`. Salva `.code-map/handshake.json` no disco e roda `node scripts/preview-graph.js`, gerando `.code-map/graph.html` e abrindo no navegador.
-- 🛡️ **Se a demanda toca em rotas, endpoints, controllers ou APIs:** Dispara compulsoriamente o `route-guard`. Executa `node scripts/analyze-route.js <método> <rota>` para calcular o Blast Radius (quantas telas front-end quebram) e travar no Q1 da Sabatina.
-- 🎨 **Se a demanda toca em interface, telas, modais ou front-end:** Dispara compulsoriamente o `frontend-craftsman` (e `mobile-converter`). Salva o arquivo real `DESIGN_SPEC.md` no disco e roda `node scripts/preview-spec.js DESIGN_SPEC.md`, gerando `.craft/preview.html` e abrindo no navegador.
+- 🤖 **Modo Multi-Agente (com Subagentes no Antigravity):** Em plataformas com suporte a subagentes, o Orchestrator delega tarefas pesadas para os subagentes especialistas (`agents/cartographer.agent.md`, `agents/route-guard.agent.md`, `agents/ui-craftsman.agent.md`, `agents/falsifier.agent.md`, `agents/security-auditor.agent.md`). Cada subagente processa em contexto isolado e devolve apenas o handoff sintético em JSON, preservando o contexto principal limpo.
+- ⚙️ **Modo Procedural Direto (Fallback Mono-Agente):** Em ambientes de thread única (Claude Code, Cursor), o Orchestrator executa os scripts determinísticos das skills diretamente sem perder consistência.
+
+**Delegação por Domínio:**
+- 🗺️ **Se a demanda envolve fluxo, múltiplos arquivos ou arquitetura:** Dispara o `cartographer` (ou `repo-cartographer`). Salva `.code-map/handshake.json` no disco e roda `node scripts/preview-graph.js`, gerando `.code-map/graph.html` e abrindo no navegador.
+- 🛡️ **Se a demanda toca em rotas, endpoints, controllers ou APIs:** Dispara o `route-guard`. Executa `node scripts/analyze-route.js <método> <rota>` para calcular o Blast Radius (quantas telas front-end quebram) e travar no Q1 da Sabatina.
+- 🎨 **Se a demanda toca em interface, telas, modais ou front-end:** Dispara o `ui-craftsman` (ou `frontend-craftsman` / `mobile-converter`). Salva o arquivo real `DESIGN_SPEC.md` no disco e roda `node scripts/preview-spec.js DESIGN_SPEC.md`, gerando `.craft/preview.html` e abrindo no navegador.
+- 🎯 **Fase 2 — Validação Adversária com Falsifier:** O `falsifier` submete o plano a 5 vetores de estresse pré-código (race conditions, falhas de rede, transações parciais, edge cases e IDOR) para blindagem mandatória.
 - ⚡ **Painel Unificado de Governança no Turno 1:** Roda `node scripts/preview-plan.js` gerando `.plan/plan.html` com o dashboard interativo (Grafo 360°, Design Preview, Sabatina dos 4 Quadrantes e Checklist) e abrindo no navegador.
 - 🔒 **Turno 2 — Portões DevSecOps Pós-Execução Invioláveis:**
-  - Se tocou em backend, rotas, auth, cookies, senhas, banco ou dependências: roda compulsoriamente `node scripts/audit.js` do `security-audit`. Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e exige correção imediata**.
+  - Se tocou em backend, rotas, auth, cookies, senhas, banco ou dependências: dispara o `security-auditor` (`node scripts/audit.js`). Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e exige correção imediata**.
   - Se tocou em UI: roda compulsoriamente `node scripts/craft-audit.js` e `node scripts/mobile-audit.js` (Score >= 90).
 
 ### 1.2 Princípio da Tangibilidade Absoluta (Anti-Alucinação de Chat)

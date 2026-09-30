@@ -1,12 +1,17 @@
 {
   "name": "henrique-skills-monorepo",
-  "version": "1.0.0",
-  "description": "Monorepo de Skills de Alta Performance para Agentes de IA (Antigravity, Claude Code, Cursor)",
+  "version": "2.2.0",
+  "description": "Enterprise AI Suite — Monorepo de Plugin, Subagentes Especialistas e Skills de Alta Performance para Agentes de IA (Antigravity, Claude Code, Cursor)",
   "scripts": {
     "test": "node scripts/test-all.js",
     "install:all": "node install.js --global --target=all",
     "install:local": "node install.js",
-    "install:both": "node install.js --both"
+    "install:both": "node install.js --both",
+    "install:plugin": "node install.js --plugin-only",
+    "install:plugin:global": "node install.js --plugin-only --global",
+    "switch": "node scripts/switch-version.js",
+    "install:beta": "node scripts/switch-version.js --version=v2.2.0-beta.1",
+    "install:stable": "node scripts/switch-version.js --version=v2.1.0"
   },
   "keywords": [
     "antigravity",
