@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * bin/orch.js
- * CLI Master do Enterprise AI Suite (v2.2.0)
+ * CLI Master do Enterprise AI Suite (v2.2.1)
  * Permite acionar diagnósticos, inicialização de projetos, testes e trocas de versão.
  */
 
@@ -13,6 +13,7 @@ const args = process.argv.slice(2);
 const command = args[0] || 'help';
 
 const commands = {
+  run: path.join(rootDir, 'scripts', 'orch-pipeline.js'),
   doctor: path.join(rootDir, 'scripts', 'doctor.js'),
   init: path.join(rootDir, 'scripts', 'init.js'),
   switch: path.join(rootDir, 'scripts', 'switch-version.js'),
@@ -22,13 +23,14 @@ const commands = {
 
 function printHelp() {
   console.log(`
-⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.2.0)
+⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.2.1)
 
 Uso:
   orch <comando> [opções]
   node bin/orch.js <comando> [opções]
 
 Comandos Disponíveis:
+  🚀 run [dir] "[meta]" Executa o pipeline unificado de todas as 6 skills (0 tokens)
   🩺 doctor            Executa diagnóstico completo de ambiente e subagentes
   ⚙️  init              Inicializa e calibra o projeto detectando a stack
   🔄 switch [versao]   Troca a versão da suite sem precisar clonar via git

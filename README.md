@@ -1,4 +1,4 @@
-# ⚡ Enterprise AI Suite (v2.2.0)
+# ⚡ Enterprise AI Suite (v2.2.1)
 
 > **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
@@ -261,10 +261,10 @@ npm test
 
 ```
 enterprise-ai-suite/
-├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.2.0)
+├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.2.1)
 ├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
 ├── bin/
-│   └── orch.js            # CLI Master da Suite (doctor, init, switch, test, audit)
+│   └── orch.js            # CLI Master da Suite (run, doctor, init, switch, test, audit)
 ├── agents/                # 🤖 Enxame de 7 Subagentes Especialistas (Contextos Limpos)
 │   ├── cartographer.agent.md   # Mapeamento 360° em modo estrito Read-Only
 │   ├── route-guard.agent.md    # Blast Radius e contratos Zod/DTO

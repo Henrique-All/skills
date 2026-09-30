@@ -7,6 +7,31 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [2.2.1] - 2026-09-30 — ⚡ Correção do Fluxograma do /orch, Pipeline Determinístico & Flags Diretas
+
+### 🐛 Correções & Estabilização Crítica
+- **🚀 Pipeline Determinístico Unificado Local (`bin/orch.js run` / `scripts/orch-pipeline.js`):**
+  - Elimina a dependência de leitura manual de arquivos no chat da LLM, executando as 6 auditorias diretamente na CPU da máquina local via AST e análise estática em ~2 segundos com **zero tokens de LLM gastos**.
+  - Impede o viés de palavra-chave que fazia o modelo acionar exclusivamente o front-end ao identificar termos como *"design"* ou *"botão"*.
+- **🎯 Suporte a Flags Diretas de Escopo:**
+  - A Cartografia 360° (**S1**) é mantida compulsoriamente como fundação arquitetural de contexto (AST).
+  - Novas flags direcionadas:
+    - `--front` / `--ui`: Executa **S1 (Cartografia)** ➔ **S3 (UI Craftsman)** + **S4 (Mobile Converter)**.
+    - `--mobile`: Executa **S1 (Cartografia)** ➔ **S4 (Mobile Converter)**.
+    - `--db`: Executa **S1 (Cartografia)** ➔ **S5 (DB Sentinel)** + **S6 (Falsifier Concorrência)**.
+    - `--sec`: Executa **S1 (Cartografia)** ➔ **S2 (DevSecOps 18 Pilares OWASP / RBAC)**.
+    - `--api`: Executa **S1 (Cartografia)** ➔ **S2 (Segurança)** + **S6 (Falsifier Concorrência)**.
+    - `--test`: Executa **S1 (Cartografia)** ➔ **Test Forge (Test Audit)**.
+    - Sem flag (padrão): Executa compulsoriamente todas as 6 skills (Governança Total).
+- **📄 Fim do Paredão de Texto no Chat:**
+  - O pipeline grava o plano detalhado, scorecard e checklist de governança diretamente em `.plan/PLAN.md`. O chat recebe apenas um resumo executivo de 5 a 8 linhas e o link direto para o arquivo.
+- **🛠️ Correção no `db-audit.js`:**
+  - Corrigido erro `EISDIR` ao passar diretório raiz no argumento do scanner de banco de dados.
+- **🌐 Sincronização Global das Diretrizes:**
+  - Atualizado `GEMINI.md` global e `SKILL.md` em todas as instâncias locais e globais do Antigravity, Claude Code e Cursor.
+
+---
+
 ## [2.2.0] - 2026-09-30 — 🚀 Enterprise AI Suite: Plugin Oficial, Enxame de Subagentes & 9 Skills
 
 ### ✨ Destaques da Release (Arquitetura de Plugin, Enxame de Subagentes & Redução Drástica de Tokens)
