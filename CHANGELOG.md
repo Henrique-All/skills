@@ -7,20 +7,42 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
-## [2.2.0] - 2026-09-29 — 🚀 Enterprise AI Suite: Plugin Oficial, Subagentes & Hooks Reativos
+## [2.2.0] - 2026-09-30 — 🚀 Enterprise AI Suite: Plugin Oficial, Enxame de Subagentes & 9 Skills
 
-### ✨ Adicionado & Aprimorado (Arquitetura de Plugin e Enxame de Subagentes)
+### ✨ Destaques da Release (Arquitetura de Plugin, Enxame de Subagentes & Redução Drástica de Tokens)
 - **📦 Manifesto Oficial do Plugin Antigravity (`plugin.json`):**
   - O monorepo agora é empacotado como o plugin nativo **`enterprise-ai-suite`** (v2.2.0), permitindo instalação atômica em `.agents/plugins/` ou `~/.gemini/config/plugins/`.
-- **🤖 Enxame de Subagentes Especialistas com Contexto Isolado (`agents/`):**
-  - **`cartographer.agent.md`**: Especialista em cartografia 360° em modo estritamente *Read-Only*, economizando até 90% dos tokens da conversa principal.
+- **🤖 Enxame de 7 Subagentes Especialistas com Contexto Isolado (`agents/`):**
+  - **`cartographer.agent.md`**: Especialista em cartografia 360° em modo estritamente *Read-Only*, economizando até 90% dos tokens de exploração.
   - **`route-guard.agent.md`**: Guardião de contratos de API, DTOs e cálculo de Blast Radius.
   - **`ui-craftsman.agent.md`**: Design Engineer anti-AI slop, molas do Framer Motion e ergonomia mobile tátil.
+  - **`db-sentinel.agent.md`**: Modelagem relacional e migrations seguras zero-downtime.
+  - **`test-engineer.agent.md`**: Testes reais de integração de rotas e E2E Playwright.
   - **`falsifier.agent.md`**: Subagente adversário dedicado a quebrar o plano na fase pré-código (5 vetores de estresse).
   - **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP com exportação SARIF e saída bloqueante.
+- **💰 Economia Brutal de Tokens (78% a 85% de Redução):**
+  - Adoção de subagentes efêmeros e handshakes compactos (`.code-map/handshake.json`), reduzindo o consumo de ~690k para ~149k tokens em fluxos fullstack de 9 turnos, eliminando perda de atenção (*context bloat*).
+- **🗄️ Nova Skill: `db-sentinel` (Banco de Dados & Migrations Seguras):**
+  - Migrations Zero-Downtime em 3 passos (Expand & Contract).
+  - Detecção automática de Foreign Keys (`@relation`) sem índice (`@@index`).
+  - Prevenção rigorosa de N+1 queries e gerador de seeds tipados (`scripts/generate-seed.js`).
+  - Auditor determinístico de schemas Prisma/Drizzle/SQL (`scripts/db-audit.js`).
+- **🧪 Nova Skill: `test-forge` (Engenharia de Testes Reais & Anti-Mock):**
+  - Erradicação de testes cosméticos e mocks excessivos.
+  - Gerador de testes de integração de rota em 4 cenários (`scripts/forge-api-test.js`).
+  - Gerador E2E Playwright com ergonomia mobile (`scripts/forge-e2e.js`).
+  - Auditor de qualidade de testes e cálculo do Test Quality Score (`scripts/test-audit.js`).
 - **🛡️ Travas Reativas de Ciclo de Vida no Sistema Operacional (`hooks.json`):**
   - **`safety-firewall` (`pre-command-guard.js`)**: Intercepta comandos de terminal e bloqueia operações destrutivas (`DROP TABLE`, `rm -rf /`, `git push --force`, `Remove-Item -Recurse -Force`, `prisma migrate reset`).
   - **`code-quality-gate` (`post-write-lint.js`)**: Checagem silenciosa pós-escrita de arquivos.
+- **⚡ Atalho Mestre `/orch` & CLI Unificada (`bin/orch.js`):**
+  - Permite invocar a governança completa ou cirúrgica (`/orch` ou `/orch --fast`).
+  - Ferramental CLI master: `npm run doctor`, `npm run init:suite`, `npm run switch`, `npm test`.
+- **🚀 Modernizações de Ponta (Especificações 2026):**
+  - **`frontend-craftsman`**: View Transitions API nativa (`document.startViewTransition`), CSS Container Queries (`@container`) e navegação por teclado acessível WAI-ARIA.
+  - **`mobile-converter`**: Feedback háptico via Web Vibration API (`navigator.vibrate`) em Bottom Sheets e Tab Bar; auditoria de PWA (`theme-color`, `apple-mobile-web-app-capable`).
+  - **`security-audit`**: Detecção de rotas de auth sem Rate Limiting, detecção de IDOR em queries de ID diretas sem escopo de tenant/usuário, e verificação de Helmet/CSP.
+  - **`route-guard`**: Exportação automatizada de especificações OpenAPI 3.0.3 / Swagger JSON com a flag `--openapi`.
 - **📜 Regras Globais do Sistema (`rules/`):**
   - **`01-zero-trust.md`**: Governança obrigatória de rotas A/B/C e honestidade de evidência.
   - **`02-anti-ai-slop.md`**: Diretrizes de estética premium, eliminação de clichês visuais e ergonomia mobile (44px+, dvh).
