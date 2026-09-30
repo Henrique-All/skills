@@ -42,7 +42,7 @@ function findSchemaFiles(dir = process.cwd()) {
 }
 
 const targetFiles = targetArg && fs.existsSync(targetArg)
-  ? [path.resolve(targetArg)]
+  ? (fs.statSync(targetArg).isDirectory() ? findSchemaFiles(path.resolve(targetArg)) : [path.resolve(targetArg)])
   : findSchemaFiles();
 
 if (targetFiles.length === 0) {
