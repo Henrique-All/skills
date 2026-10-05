@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.2.1)
+ * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.3.0)
  * Executa testes de integridade das skills, do Plugin oficial, dos Subagentes e dos Hooks.
  */
 
@@ -9,7 +9,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.2.1');
+console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.3.0');
 console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 

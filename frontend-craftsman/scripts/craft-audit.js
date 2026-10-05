@@ -17,7 +17,7 @@ const isJson = args.includes('--json');
 const targetArg = args.find((a) => !a.startsWith('--')) || '.';
 const targetPath = path.resolve(process.cwd(), targetArg);
 
-const EXTENSIONS = new Set(['.tsx', '.jsx', '.vue', '.html', '.css', '.svelte', '.js']);
+const EXTENSIONS = new Set(['.tsx', '.jsx', '.vue', '.html', '.css', '.svelte', '.js', '.ts']);
 
 // Regras de Detecção de "AI Slop"
 const RULES = [
@@ -29,6 +29,33 @@ const RULES = [
     regex: /(?:from-purple-\d+|from-violet-\d+|to-indigo-\d+|to-pink-\d+|#7c3aed|#8b5cf6|#6366f1.*#ec4899)/i,
     message: 'Gradiente roxo-neon/índigo genérico detectado. Use paleta monocromática refinada (Zinc/Slate) com apenas 1 cor de destaque proposital.',
     suggestion: 'Substitua por fundo neutro profundo (bg-zinc-900) e uma borda sutil com destaque acentuado único (ex: amber-500 ou emerald-500).'
+  },
+  {
+    id: 'LIGHT_MODE_WHITE_TEXT',
+    name: 'Texto Branco Hardcoded Incompatível com Light Mode',
+    severity: 'HIGH',
+    penalty: 15,
+    regex: /(?:color:\s*['"]?#(?:fff|ffffff)['"]?|color:\s*white)/i,
+    message: 'Texto branco (#fff/white) hardcoded sem condicional de tema. Em Light Mode o texto fica completamente invisível ou ilegível.',
+    suggestion: 'Substitua por theme.colors.text ou condicional isLight(theme) ? "#0f172a" : "#fff", ou classe Tailwind text-zinc-900 dark:text-white.'
+  },
+  {
+    id: 'LIGHT_MODE_GHOST_SURFACE',
+    name: 'Superfície Fantasma em Fundo Claro (rgba branca fraca)',
+    severity: 'MEDIUM',
+    penalty: 10,
+    regex: /(?:background:\s*rgba\(255,\s*255,\s*255,\s*0\.0\d\)|border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.0\d\))/i,
+    message: 'Superfície ou borda com rgba(255,255,255, 0.0x) hardcoded. No Light Mode (#F8FAFC) o card desaparece e fica sem contraste.',
+    suggestion: 'Use theme.colors.surface ou isLight(theme) ? "#ffffff" : theme.colors.surface com borda #e2e8f0 no tema claro.'
+  },
+  {
+    id: 'HARDCODED_DARK_SURFACE',
+    name: 'Fundo Escuro Hardcoded sem Suporte a Modo Claro',
+    severity: 'HIGH',
+    penalty: 15,
+    regex: /(?:background(?:-color)?:\s*['"]?#(?:0b0b0e|0f172a|1a1a24|18181b|09090b)['"]?)/i,
+    message: 'Fundo escuro hardcoded sem token de tema. O componente não responderá à troca para Light Mode.',
+    suggestion: 'Utilize ${({ theme }) => theme.colors.background} ou classe bg-white dark:bg-zinc-900.'
   },
   {
     id: 'UNREGULATED_BLUR',
