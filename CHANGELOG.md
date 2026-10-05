@@ -5,6 +5,17 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.3.1] - 2026-10-05 — 🚀 Desburocratização Radical, Zero Atrito no Chat & Densidade Real de Software
+
+### ⚡ Desburocratização & Fim do "Process Theater"
+- **Zero Intromissão no Chat:** Removidos do `hooks.json` os hooks `skill-router` (`PreInvocation`) e `ui-quality-gate` (`Stop`). O chat volta a ser 100% limpo, sem injeção de avisos de sistema ou bloqueios de parada de turno. Mantido apenas o `safety-firewall` (`pre-command-guard.js`) no SO para bloquear comandos destrutivos (`DROP TABLE`, `rm -rf`, `git push --force`).
+- **Via Rápida Pragmática como Padrão (Route A):** Tarefas cotidianas (ajustes de tela, correções de bugs, pequenas refatorações, estilização) são resolvidas diretamente no código, com zero cerimônia (sem paradas forçadas para `DESIGN_SPEC.md`, sem Sabatinas 4Q forçadas e sem painéis HTML desnecessários). Planejamento formal fica restrito a quando o usuário invocar explicitamente `/plan` ou `/orch`.
+- **Densidade Real de Software (Anti-Landing Page Bloat):** Atualizada a `rules/02-anti-ai-slop.md` e `agents/ui-craftsman.agent.md` proibindo o estilo de "landing page / Dribbble" (`rounded-3xl`, paddings inflados `p-8`/`p-10`, sombras neon desnecessárias) em softwares corporativos e ferramentas de trabalho. Foco em alta densidade, botões normais (32-38px) e tipografia sóbria.
+- **Defensive CSS:** Regra inegociável contra quebra de layout: proibição de remoção de `min-width: 0`, preservação da cadeia flex/overflow e preservação rigorosa de callbacks e eventos (`onClick`, `onClose`).
+- **Reescrita Arquitetural do `adapt-screen.js`:** Transforma o script em um analisador que detecta layouts multi-coluna e gera código pronto para arquitetura Master-Detail real (com estado de alternância, botão `← Voltar` tátil e Bottom Sheet para detalhes secundários), erradicando a preguiça de apenas empilhar colunas.
+
+---
+
 ## [2.3.0] - 2026-10-05 — 🎨 Dual-Theme (Modo Claro + Escuro), Master-Detail Mobile & Fim dos Comandos Avulsos
 
 ### 🚀 Novas Funcionalidades & Arquitetura

@@ -1,6 +1,6 @@
 {
   "name": "henrique-skills-monorepo",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Enterprise AI Suite — Monorepo de Plugin, Subagentes Especialistas e Skills de Alta Performance para Agentes de IA (Antigravity, Claude Code, Cursor)",
   "bin": {
     "orch": "./bin/orch.js"

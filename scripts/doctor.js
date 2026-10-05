@@ -76,12 +76,13 @@ if (fs.existsSync(hooksJsonPath)) {
   try {
     const hj = JSON.parse(fs.readFileSync(hooksJsonPath, 'utf-8'));
     const hasSafety = !!hj['safety-firewall']?.PreToolUse;
-    const hasRouter = !!hj['skill-router']?.PreInvocation;
-    const hasGate = !!hj['ui-quality-gate']?.Stop;
-    if (hasSafety && hasRouter && hasGate) {
-      report('Manifestos', 'hooks.json (Governança Ativa)', 'PASS', 'Hooks de PreToolUse (firewall), PreInvocation (router) e Stop (quality gate) configurados');
+    const hasIntrusive = !!hj['skill-router'] || !!hj['ui-quality-gate'];
+    if (hasSafety && !hasIntrusive) {
+      report('Manifestos', 'hooks.json (Safety Firewall Ativo)', 'PASS', 'PreToolUse (firewall de comandos destrutivos no SO) configurado sem intromissão no chat');
+    } else if (hasSafety && hasIntrusive) {
+      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json contém interceptadores ativos no chat');
     } else {
-      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json presente mas sem todas as travas declaradas (safety, router, gate)');
+      report('Manifestos', 'hooks.json', 'FAIL', 'hooks.json sem safety-firewall');
     }
   } catch (e) {
     report('Manifestos', 'hooks.json', 'FAIL', `Erro de JSON: ${e.message}`);
@@ -90,15 +91,12 @@ if (fs.existsSync(hooksJsonPath)) {
   report('Manifestos', 'hooks.json', 'FAIL', 'hooks.json não encontrado');
 }
 
-// 3. Scripts de Lifecycle Hooks (Firewall e Governança no SO)
+// 3. Scripts de Lifecycle Hooks (Firewall no SO)
 const preCmdPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
-const routerPath = path.join(rootDir, 'scripts', 'hooks', 'skill-router.js');
-const gatePath = path.join(rootDir, 'scripts', 'hooks', 'ui-quality-gate.js');
-const utilsPath = path.join(rootDir, 'scripts', 'hooks', 'lib', 'hook-utils.js');
-if (fs.existsSync(preCmdPath) && fs.existsSync(routerPath) && fs.existsSync(gatePath) && fs.existsSync(utilsPath)) {
-  report('Segurança', 'Scripts de Lifecycle Hooks', 'PASS', 'pre-command-guard.js, skill-router.js, ui-quality-gate.js e hook-utils.js verificados');
+if (fs.existsSync(preCmdPath)) {
+  report('Segurança', 'Safety Firewall (SO)', 'PASS', 'pre-command-guard.js verificado e ativo contra DROP TABLE / rm -rf');
 } else {
-  report('Segurança', 'Scripts de Lifecycle Hooks', 'FAIL', 'Um ou mais scripts de hook estão ausentes');
+  report('Segurança', 'Safety Firewall (SO)', 'FAIL', 'pre-command-guard.js ausente');
 }
 
 // 4. Subagentes Especialistas (agents/)

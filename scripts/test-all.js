@@ -32,21 +32,18 @@ try {
   const hooksJsonPath = path.join(rootDir, 'hooks.json');
   if (!fs.existsSync(hooksJsonPath)) throw new Error('hooks.json não encontrado na raiz!');
   const hooksJson = JSON.parse(fs.readFileSync(hooksJsonPath, 'utf-8'));
-  if (!hooksJson['safety-firewall'] || !hooksJson['skill-router'] || !hooksJson['ui-quality-gate']) {
-    throw new Error('hooks.json não contém safety-firewall, skill-router ou ui-quality-gate!');
+  if (!hooksJson['safety-firewall']) {
+    throw new Error('hooks.json não contém safety-firewall!');
   }
-  console.log('   ✅ hooks.json configurado com safety-firewall, skill-router e ui-quality-gate');
+  if (hooksJson['skill-router'] || hooksJson['ui-quality-gate']) {
+    throw new Error('hooks.json não deve conter hooks intrusivos no chat (skill-router ou ui-quality-gate)!');
+  }
+  console.log('   ✅ hooks.json configurado de forma limpa (apenas safety-firewall no SO, zero intromissão no chat)');
 
   // scripts/hooks/
   const preGuardPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
-  const skillRouterPath = path.join(rootDir, 'scripts', 'hooks', 'skill-router.js');
-  const uiQualityPath = path.join(rootDir, 'scripts', 'hooks', 'ui-quality-gate.js');
-  const hookUtilsPath = path.join(rootDir, 'scripts', 'hooks', 'lib', 'hook-utils.js');
   if (!fs.existsSync(preGuardPath)) throw new Error('scripts/hooks/pre-command-guard.js não encontrado!');
-  if (!fs.existsSync(skillRouterPath)) throw new Error('scripts/hooks/skill-router.js não encontrado!');
-  if (!fs.existsSync(uiQualityPath)) throw new Error('scripts/hooks/ui-quality-gate.js não encontrado!');
-  if (!fs.existsSync(hookUtilsPath)) throw new Error('scripts/hooks/lib/hook-utils.js não encontrado!');
-  console.log('   ✅ Scripts de lifecycle hooks verificados com sucesso');
+  console.log('   ✅ Script de safety firewall (pre-command-guard.js) verificado');
 
   // Testar funcionalidade do firewall pre-command-guard.js
   const testDeny = execSync(
@@ -69,13 +66,6 @@ try {
   const testAllowJson = JSON.parse(testAllow);
   if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
   console.log('   ✅ Firewall de segurança testado: Bloqueio estrito de DROP TABLE, git push --force & aprovação de npm test');
-
-  // Executar suíte de testes unitários dos hooks
-  const testHooksPath = path.join(rootDir, 'scripts', 'test-hooks.js');
-  if (fs.existsSync(testHooksPath)) {
-    execSync(`node "${testHooksPath}"`, { stdio: 'pipe' });
-    console.log('   ✅ Suíte de testes de hooks (test-hooks.js) passou em todos os cenários');
-  }
 
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');

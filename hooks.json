@@ -12,23 +12,5 @@
         ]
       }
     ]
-  },
-  "skill-router": {
-    "PreInvocation": [
-      {
-        "type": "command",
-        "command": "node scripts/hooks/skill-router.js",
-        "timeout": 5
-      }
-    ]
-  },
-  "ui-quality-gate": {
-    "Stop": [
-      {
-        "type": "command",
-        "command": "node scripts/hooks/ui-quality-gate.js",
-        "timeout": 60
-      }
-    ]
   }
 }
