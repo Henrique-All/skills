@@ -99,6 +99,15 @@ Em listas de dados móveis, expor múltiplos botões consome espaço vertical.
 - Adicione ações reveladas por arrasto horizontal para a esquerda (ex: Arquivar e Excluir estilo iOS/WhatsApp).
 - Use o template oficial [templates/SwipeableRow.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/SwipeableRow.tsx).
 
+### f) Metamorfose 6: Multi-Colunas (Chat/Inboxes) ➔ Fluxo Master-Detail
+NUNCA empilhe colunas de chat/atendimento verticalmente no celular (`flex-direction: column` cego).
+- **Estratégia Obrigatória:** No mobile, exiba apenas a lista de conversas quando nenhum chat estiver selecionado. Ao clicar em uma conversa, oculte a lista e exiba a área de chat em tela cheia com botão tátil de retorno (`← Voltar`) chamando `onCloseChat()` ou limpando o `selectedId`.
+- **Eliminação de Cards Vazios:** Oculte placeholders de tela vazia secundários no mobile (`display: none`).
+
+### g) Clearance de Elementos Fixos (Menu Hambúrguer / Toggles)
+Botões fixos no topo/esquerda (ex: `top: 16px; left: 16px`) NUNCA podem colidir ou sobrepor o título da página.
+- **Estratégia Obrigatória:** Adicione `padding-left: 52px+` no cabeçalho ou reduza proporcionalmente a tipografia do título (`font-size: 1.15rem`) no breakpoint mobile para acomodar o botão de menu lado a lado.
+
 ---
 
 ## 🚫 5. A Armadilha do Auto-Zoom no iOS Safari

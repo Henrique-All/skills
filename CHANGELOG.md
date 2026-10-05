@@ -5,6 +5,25 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.3.0] - 2026-10-05 — 🎨 Dual-Theme (Modo Claro + Escuro), Master-Detail Mobile & Fim dos Comandos Avulsos
+
+### 🚀 Novas Funcionalidades & Arquitetura
+- **🎨 Frontend Craftsman: Auditoria e Garantia Dual-Theme (Light & Dark Mode):**
+  - Adicionado suporte a arquivos `.ts` (styled-components e TypeScript design systems).
+  - Novas regras determinísticas no `craft-audit.js`:
+    - `LIGHT_MODE_WHITE_TEXT`: Bloqueia `color: #fff` / `color: white` hardcoded sem condicional de tema, impedindo texto invisível no Modo Claro.
+    - `LIGHT_MODE_GHOST_SURFACE`: Bloqueia superfícies e bordas `rgba(255, 255, 255, 0.0x)` que desaparecem sobre fundos claros (#F8FAFC).
+    - `HARDCODED_DARK_SURFACE`: Bloqueia superfícies escuras fixas que não respondem à troca de tema.
+  - Atualizada a `rules/02-anti-ai-slop.md` com o Pilar 3 (Coerência Obrigatória Dual-Theme).
+- **📱 Mobile Converter: Metamorfose Master-Detail & Clearance Seguro:**
+  - Adicionado suporte nativo a arquivos `.ts` no analisador.
+  - Nova regra `FIXED_NAV_COLLISION`: Detecta botões flutuantes fixos no topo/esquerda (ex: menu hambúrguer) e exige `padding-left: 52px+` no cabeçalho mobile para evitar sobreposição com o título da tela.
+  - Nova regra `DESKTOP_STACKED_SLOP`: Bloqueia o empilhamento vertical de colunas de chat/tabelas no mobile sem fluxo Master-Detail.
+  - Adicionado o Pilar 4.f (Metamorfose Master-Detail de Chat/Inboxes) no `SKILL.md`.
+- **⚡ Fim dos Comandos Avulsos — Modo Maestro Proativo (Diretrizes Globais v2.3.0):**
+  - Atualizado `GEMINI.md` com o protocolo de proatividade: o agente é expressamente proibido de exigir que o usuário digite `/front`, `/mobile` ou `/db` para entregar código com qualidade.
+  - O agente assume autonomamente a governança de ambos os temas (Claro e Escuro) e responsividade mobile em qualquer solicitação de interface.
+
 ---
 
 ## [2.2.1] - 2026-09-30 — ⚡ Correção do Fluxograma do /orch, Pipeline Determinístico & Flags Diretas

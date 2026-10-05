@@ -13,7 +13,7 @@ const isStrict = args.includes('--strict');
 const shouldFix = args.includes('--fix');
 const targetArg = args.find((a) => !a.startsWith('--')) || '.';
 
-const SUPPORTED_EXTS = ['.tsx', '.jsx', '.html', '.vue', '.css'];
+const SUPPORTED_EXTS = ['.tsx', '.jsx', '.html', '.vue', '.css', '.ts'];
 
 function getAllFiles(dirPath, arrayOfFiles = []) {
   if (!fs.existsSync(dirPath)) return arrayOfFiles;
@@ -75,8 +75,11 @@ const RULES = [
     id: 'VIEWPORT_100VH',
     penalty: 15,
     name: 'Uso de 100vh/h-screen sem dvh (Bug Safari/Chrome mobile)',
-    check: (line, content) => {
+    check: (line, content, ext, index, lines) => {
       if ((line.includes('100vh') || line.includes('h-screen')) && !line.includes('dvh') && !line.includes('svh')) {
+        const nextLine = lines && lines[index + 1] ? lines[index + 1] : '';
+        const prevLine = lines && lines[index - 1] ? lines[index - 1] : '';
+        if (nextLine.includes('dvh') || prevLine.includes('dvh')) return null;
         return 'Substitua "100vh" ou "h-screen" por "100dvh" ou "min-h-dvh" para evitar sobreposição da barra de navegação móvel.';
       }
       return null;
@@ -92,7 +95,8 @@ const RULES = [
     penalty: 20,
     name: 'Elemento fixado na base sem padding de Safe Area',
     check: (line, content) => {
-      if ((line.includes('fixed bottom-0') || line.includes('bottom: 0')) && 
+      const isFixedBottom = line.includes('fixed bottom-0') || (/(?<!margin-|padding-|border-)bottom:\s*0/.test(line) && content.includes('position: fixed'));
+      if (isFixedBottom && 
           !line.includes('safe-area-inset-bottom') && 
           !content.includes('safe-area-inset-bottom')) {
         return 'Adicione padding para a barra Home do iPhone: pb-[env(safe-area-inset-bottom)] ou padding-bottom: max(16px, env(safe-area-inset-bottom)).';
@@ -192,6 +196,30 @@ const RULES = [
       }
       return null;
     }
+  },
+  {
+    id: 'FIXED_NAV_COLLISION',
+    penalty: 20,
+    name: 'Botão/Navegação fixa (top/left) sem compensação no cabeçalho mobile',
+    check: (line, content) => {
+      if (line.includes('position: fixed') && (line.includes('top:') || line.includes('top-')) && (line.includes('left:') || line.includes('left-'))) {
+        if (!content.includes('padding-left') && !content.includes('pl-') && !content.includes('padding: 80px') && !content.includes('padding: 6')) {
+          return 'Botões fixos no topo/esquerda (ex: MobileToggleButton) colidem com o título do cabeçalho se não houver padding-left compensatório no breakpoint mobile.';
+        }
+      }
+      return null;
+    }
+  },
+  {
+    id: 'DESKTOP_STACKED_SLOP',
+    penalty: 20,
+    name: 'Multi-colunas colapsadas em pilha vertical sem Master-Detail no mobile',
+    check: (line, content) => {
+      if (line.includes('flex-direction: column') && (content.includes('grid-template-columns') || content.includes('grid-cols-')) && !content.includes('display: none') && !content.includes('hidden md:')) {
+        return 'Layouts multi-coluna complexos (chat/tickets/listas) colapsados para coluna única sem ocultar colunas inativas criam pilhas verticais desastrosas no mobile. Use padrão Master-Detail.';
+      }
+      return null;
+    }
   }
 ];
 
@@ -204,7 +232,7 @@ files.forEach((filePath) => {
 
   lines.forEach((line, index) => {
     RULES.forEach((rule) => {
-      const issue = rule.check(line, content, ext);
+      const issue = rule.check(line, content, ext, index, lines);
       if (issue) {
         if (shouldFix && rule.fix) {
           const fixedLine = rule.fix(line, ext);
