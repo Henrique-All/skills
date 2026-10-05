@@ -92,9 +92,10 @@ const officialRelease = {
 - Gerador E2E Playwright com validação ergonômica mobile (\`scripts/forge-e2e.js\`);
 - Auditor de qualidade de testes e cálculo do Test Quality Score (\`scripts/test-audit.js\`).
 
-#### 5. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
-- **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
-- **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
+#### 5. 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
+- **`pre-command-guard.js`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`skill-router.js`**: Roteia proativamente intenções no PreInvocation sem exigir comandos avulsos.
+- **`ui-quality-gate.js`**: Valida contraste e ergonomia no Stop para impedir entrega de telas quebradas.
 
 #### 6. ⚡ Atalho Mestre \`/orch\` & Ferramentas CLI Master (\`bin/orch.js\`)
 - Permite invocar a governança completa ou cirúrgica (\`/orch\` ou \`/orch --fast\`);

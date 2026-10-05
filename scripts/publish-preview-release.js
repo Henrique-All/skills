@@ -87,9 +87,10 @@ const previewRelease = {
 - **\`falsifier.agent.md\`**: Red Teamer adversário com 5 vetores de estresse.
 - **\`security-auditor.agent.md\`**: Portão DevSecOps dos 18 pilares OWASP (SARIF).
 
-#### 4. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
-- **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
-- **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
+#### 4. 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
+- **`pre-command-guard.js`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`skill-router.js`**: Roteia proativamente intenções no PreInvocation sem exigir comandos avulsos.
+- **`ui-quality-gate.js`**: Valida contraste e ergonomia no Stop para impedir entrega de telas quebradas.
 
 #### 5. 🎛️ Ferramentas CLI Master (\`bin/orch.js\`)
 - **\`npm run doctor\`**: Diagnóstico determinístico de saúde do ecossistema e subagentes;

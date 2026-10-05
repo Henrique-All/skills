@@ -17,6 +17,8 @@ const requiredFiles = [
   'README.md',
   'package.json',
   'scripts/craft-audit.js',
+  'scripts/lib/style-blocks.js',
+  'scripts/visual-check.js',
   'scripts/craft-palette.js',
   'scripts/generate-spec.js',
   'scripts/preview-spec.js',
@@ -150,7 +152,55 @@ try {
   hasErrors = true;
 }
 
-// 8. Testar execução de craft-audit.js nos próprios templates (deve passar com louvor)
+// 8. Testar detecção de vícios de Light Mode e Contraste na fixture 'bad'
+try {
+  const badDir = path.join(rootDir, 'test', 'fixtures', 'bad');
+  let parsedBad = null;
+  try {
+    const out = execSync(`node "${path.join(rootDir, 'scripts', 'craft-audit.js')}" "${badDir}" --json`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+    parsedBad = JSON.parse(out);
+  } catch (err) {
+    parsedBad = JSON.parse(err.stdout ? err.stdout.toString() : '{}');
+  }
+
+  const expectedRules = ['LIGHT_MODE_WHITE_TEXT', 'LOW_CONTRAST_LIGHT', 'LOW_CONTRAST_DARK', 'LIGHT_MODE_GHOST_SURFACE'];
+  const foundRules = (parsedBad?.findings || []).map((f) => f.ruleId);
+  const missingRules = expectedRules.filter((r) => !foundRules.includes(r));
+
+  if (parsedBad && parsedBad.passed === false && missingRules.length === 0) {
+    console.log(`✅ Fixture 'bad' detectou corretamente ${parsedBad.findings.length} violações incluindo Light Mode e Contraste`);
+  } else {
+    console.error(`❌ Fixture 'bad' falhou na detecção! Regras ausentes: ${missingRules.join(', ')}`);
+    hasErrors = true;
+  }
+} catch (err) {
+  console.error(`❌ Erro ao validar fixture bad: ${err.message}`);
+  hasErrors = true;
+}
+
+// 9. Testar fixture correta dual-theme (test/fixtures/good) - deve passar com 100/100
+try {
+  const goodDir = path.join(rootDir, 'test', 'fixtures', 'good');
+  const out = execSync(`node "${path.join(rootDir, 'scripts', 'craft-audit.js')}" "${goodDir}" --json`, {
+    encoding: 'utf-8',
+    stdio: 'pipe'
+  });
+  const parsedGood = JSON.parse(out);
+  if (parsedGood.passed && parsedGood.score === 100 && parsedGood.findings.length === 0) {
+    console.log('✅ Fixture \'good\' passou com 100/100 e 0 violações dual-theme');
+  } else {
+    console.error(`❌ Fixture 'good' não obteve 100/100: Score ${parsedGood.score}, findings: ${parsedGood.findings.length}`);
+    hasErrors = true;
+  }
+} catch (err) {
+  console.error(`❌ Erro ao validar fixture good: ${err.message}`);
+  hasErrors = true;
+}
+
+// 10. Testar execução de craft-audit.js nos próprios templates (deve passar com louvor)
 try {
   const auditOutput = execSync('node scripts/craft-audit.js templates/ --json', { cwd: rootDir, encoding: 'utf-8' });
   const parsed = JSON.parse(auditOutput);

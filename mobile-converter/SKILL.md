@@ -133,40 +133,53 @@ node mobile-converter/scripts/preview-mobile.js --device=galaxy
 
 ---
 
-## 🛠️ Motor Determinístico de Auditoria: `mobile-audit.js`
+## 🛠️ Ferramentas da Skill
 
-A skill conta com um script de análise estática determinística que audita a base de código e gera o **Mobile Readiness Score (0 a 100)**:
+### 1. Auditoria Estática Mobile por Blocos (`mobile-audit.js v3.0.0`)
+Script determinístico baseado em parser de blocos CSS (Scoped CSS, Styled-Components, Media Queries e Tailwind). Audita e gera o **Mobile Readiness Score (0 a 100)**:
 
 ```bash
-# Auditar um arquivo específico:
-node mobile-converter/scripts/mobile-audit.js src/pages/Checkout.tsx
-
-# Auditar uma pasta inteira:
-node mobile-converter/scripts/mobile-audit.js src/components/
-
-# Aplicar correções automáticas (Autofix):
-node mobile-converter/scripts/mobile-audit.js src/ --fix
+# Auditar arquivo ou pasta inteira:
+node mobile-converter/scripts/mobile-audit.js src/ --json
 ```
 
-### O que o auditor analisa:
-1. `viewport-fit=cover` na meta tag HTML (essencial para ativar `env(safe-area-inset-*)` no iOS Safari);
-2. `h-screen` / `100vh` sem tratamento de `100dvh`;
-3. Elementos fixos no rodapé (`bottom-0`) sem padding de safe area;
-4. Inputs com `text-xs` ou `text-sm` sem proteção de 16px (`text-base`);
-5. Tags `<table>` sem contêiner de overflow ou fallback mobile;
-6. Botões e links com padding inferior a 40px de área de toque;
-7. Classes de largura fixa (`w-[600px]`, `min-w-[500px]`) que quebram o viewport de 390px.
+#### Regras Bloqueantes e Alertas Verificados:
+1. **`STACKED_COLUMNS` (Erro):** Layouts multi-coluna desktop que viram uma pilha vertical gigante no mobile sem fluxo Master-Detail.
+2. **`GRID_FIXED_OVERFLOW` (Erro):** Grids com colunas de largura fixa em pixels (`280px 280px`) que somam mais de 390px e quebram a viewport.
+3. **`SAFE_AREA_BOTTOM` (Erro):** Barras fixas na base sem `env(safe-area-inset-bottom)`, ficando sob o indicador Home do iPhone.
+4. **`VIEWPORT_100VH` (Erro):** `100vh` ou `h-screen` sem `100dvh`, cortando conteúdo atrás das barras do navegador mobile.
+5. **`IOS_INPUT_ZOOM` (Erro):** Campos de formulário com fonte `< 16px` (`text-sm`, `14px`), provocando zoom involuntário no iOS Safari.
+6. **`FIXED_NAV_COLLISION` (Alerta):** Botão fixo no topo (ex.: hambúrguer em `top: 16px; left: 16px`) sem padding de afastamento (`padding-left: 64px`) no cabeçalho.
+7. **`SMALL_TOUCH_TARGET` (Alerta):** Botões e controles com área menor que 44×44px (Apple HIG / WCAG 2.5.5).
+8. **`FIXED_WIDTH_SPILL` (Erro):** Elementos com `width` fixo maior que a tela do celular (~390px).
+
+### 2. Verificação Visual Headless (`visual-check.js v1.0.0`)
+Executa o Playwright em modo headless para auditar a interface renderizada real no viewport móvel (390×844px):
+- Mede se há colisão física real entre botões flutuantes e títulos via `document.elementFromPoint`.
+- Detecta estouro horizontal de viewport (`document.body.scrollWidth > window.innerWidth`).
+- Mede a área física real clicável (bounding rect) de todos os botões no celular.
+```bash
+# Auditar preview ou HTML compilado:
+node mobile-converter/scripts/visual-check.js .craft/preview.html
+
+# Auditar aplicação em execução local:
+node mobile-converter/scripts/visual-check.js http://localhost:3000 --json
+```
+
+### 3. Simulador Visual de Telas no Navegador (`preview-mobile.js`)
+Abre uma moldura realista no browser para testar interativamente em múltiplos dispositivos:
+```bash
+node mobile-converter/scripts/preview-mobile.js --device=iphone15
+```
 
 ---
 
-## 🤝 O Elo com o Ecossistema de Skills
+## 🔄 Fluxo de Resolução Autônoma & Master-Detail
 
-```mermaid
-flowchart TD
-    A["🎨 frontend-craftsman<br/>Design System & Molas"] --> B["📱 mobile-converter<br/>Adaptação Viewport & Ergonomia"]
-    B --> C["⚡ hybrid-orchestrator<br/>Sabatina 4Q & Execução Segura"]
-    C --> D["🏆 Pipeline 7.3: mobile-audit.js<br/>Score ≥ 90 Obrigatório"]
-```
-
-1. **Com `frontend-craftsman`:** O Craftsman gera a paleta, tipografia e física de molas. O Mobile Converter garante que os componentes usem Bottom Sheets, safe areas e touch targets corretos.
-2. **Com `hybrid-orchestrator`:** Quando uma tarefa envolve responsividade ou mobile, o Orchestrator aciona o `mobile-converter` para garantir que o código passe no pipeline `mobile-audit.js (Score ≥ 90)`.
+O agente opera sem esperar comandos avulsos (`/mobile`):
+1. **Em telas de Atendimento / Chat / Inboxes:**
+   - Implemente obrigatoriamente o padrão **Master-Detail**: no celular, exiba a lista de itens quando nada estiver selecionado; ao selecionar, esconda a lista e exiba a conversa em tela cheia com botão de retorno `← Voltar` (≥44px) e altura `100dvh`.
+   - Garanta `padding-left: 64px` ou recuo adequado no cabeçalho se houver botão fixo de menu lateral.
+2. **Execução Pós-Edição:**
+   - Execute `node mobile-converter/scripts/mobile-audit.js <caminho>` para garantir Score ≥ 85.
+   - Execute `node mobile-converter/scripts/visual-check.js` para certificar que nenhum elemento colide fisicamente.

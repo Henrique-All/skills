@@ -17,6 +17,8 @@ const requiredFiles = [
   'README.md',
   'package.json',
   'scripts/mobile-audit.js',
+  'scripts/lib/style-blocks.js',
+  'scripts/visual-check.js',
   'scripts/adapt-screen.js',
   'scripts/preview-mobile.js',
   'templates/BottomSheet.tsx',
@@ -80,21 +82,70 @@ try {
   hasErrors = true;
 }
 
-// 4. Executar scripts/mobile-audit.js nos templates
+// 4. Testar detecção de violações na fixture propositalmente quebrada (test/fixtures/bad)
 try {
-  const templatesDir = path.join(rootDir, 'templates');
-  const auditOutput = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${templatesDir}"`, {
-    encoding: 'utf-8'
-  });
-  console.log('✅ Execução bem-sucedida: scripts/mobile-audit.js');
+  const badDir = path.join(rootDir, 'test', 'fixtures', 'bad');
+  let badPassed = false;
+  let parsedBad = null;
+  try {
+    const out = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${badDir}" --json`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+    parsedBad = JSON.parse(out);
+  } catch (err) {
+    parsedBad = JSON.parse(err.stdout ? err.stdout.toString() : '{}');
+  }
 
-  if (auditOutput.includes('PONTUAÇÃO FINAL DE READINESS MOBILE: 100/100')) {
-    console.log('✅ Auditoria nos templates passou com louvor! Score: 100/100');
+  const expectedRules = ['STACKED_COLUMNS', 'GRID_FIXED_OVERFLOW', 'SAFE_AREA_BOTTOM', 'VIEWPORT_100VH', 'IOS_INPUT_ZOOM', 'FIXED_NAV_COLLISION'];
+  const foundRules = (parsedBad?.findings || []).map((f) => f.ruleId);
+  const missingRules = expectedRules.filter((r) => !foundRules.includes(r));
+
+  if (parsedBad && parsedBad.passed === false && missingRules.length === 0) {
+    console.log(`✅ Fixture 'bad' detectou corretamente ${parsedBad.findings.length} violações incluindo todas as regras mobile críticas`);
   } else {
-    console.log('ℹ️  Auditoria executada com avisos.');
+    console.error(`❌ Fixture 'bad' falhou na detecção! Regras ausentes: ${missingRules.join(', ')}`);
+    hasErrors = true;
   }
 } catch (err) {
-  console.error(`❌ Erro ao executar scripts/mobile-audit.js: ${err.message}`);
+  console.error(`❌ Erro ao validar fixture bad: ${err.message}`);
+  hasErrors = true;
+}
+
+// 5. Testar fixture correta (test/fixtures/good) - deve passar com 100/100
+try {
+  const goodDir = path.join(rootDir, 'test', 'fixtures', 'good');
+  const out = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${goodDir}" --json`, {
+    encoding: 'utf-8',
+    stdio: 'pipe'
+  });
+  const parsedGood = JSON.parse(out);
+  if (parsedGood.passed && parsedGood.score === 100 && parsedGood.findings.length === 0) {
+    console.log('✅ Fixture \'good\' passou com 100/100 e 0 violações');
+  } else {
+    console.error(`❌ Fixture 'good' não obteve 100/100: Score ${parsedGood.score}, findings: ${parsedGood.findings.length}`);
+    hasErrors = true;
+  }
+} catch (err) {
+  console.error(`❌ Erro ao validar fixture good: ${err.message}`);
+  hasErrors = true;
+}
+
+// 6. Executar scripts/mobile-audit.js nos templates
+try {
+  const templatesDir = path.join(rootDir, 'templates');
+  const auditOutput = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${templatesDir}" --json`, {
+    encoding: 'utf-8',
+    stdio: 'pipe'
+  });
+  const parsedTemplates = JSON.parse(auditOutput);
+  if (parsedTemplates.passed) {
+    console.log(`✅ Auditoria nos templates passou com louvor! Score: ${parsedTemplates.score}/100`);
+  } else {
+    console.log(`ℹ️  Auditoria nos templates executada com avisos: Score ${parsedTemplates.score}/100`);
+  }
+} catch (err) {
+  console.error(`❌ Erro ao executar scripts/mobile-audit.js nos templates: ${err.message}`);
   hasErrors = true;
 }
 

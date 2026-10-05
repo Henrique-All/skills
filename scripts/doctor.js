@@ -75,12 +75,13 @@ const hooksJsonPath = path.join(rootDir, 'hooks.json');
 if (fs.existsSync(hooksJsonPath)) {
   try {
     const hj = JSON.parse(fs.readFileSync(hooksJsonPath, 'utf-8'));
-    const hasPre = hj['safety-firewall']?.PreToolUse || hj.hooks?.before_tool_call;
-    const hasPost = hj['code-quality-gate']?.PostToolUse || hj.hooks?.after_tool_call;
-    if (hasPre && hasPost) {
-      report('Manifestos', 'hooks.json (Firewall Ativo)', 'PASS', 'Hooks de PreToolUse (run_command) e PostToolUse (write/replace) configurados');
+    const hasSafety = !!hj['safety-firewall']?.PreToolUse;
+    const hasRouter = !!hj['skill-router']?.PreInvocation;
+    const hasGate = !!hj['ui-quality-gate']?.Stop;
+    if (hasSafety && hasRouter && hasGate) {
+      report('Manifestos', 'hooks.json (Governança Ativa)', 'PASS', 'Hooks de PreToolUse (firewall), PreInvocation (router) e Stop (quality gate) configurados');
     } else {
-      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json presente mas sem todas as travas declaradas');
+      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json presente mas sem todas as travas declaradas (safety, router, gate)');
     }
   } catch (e) {
     report('Manifestos', 'hooks.json', 'FAIL', `Erro de JSON: ${e.message}`);
@@ -89,13 +90,15 @@ if (fs.existsSync(hooksJsonPath)) {
   report('Manifestos', 'hooks.json', 'FAIL', 'hooks.json não encontrado');
 }
 
-// 3. Scripts de Lifecycle Hooks (Firewall no SO)
+// 3. Scripts de Lifecycle Hooks (Firewall e Governança no SO)
 const preCmdPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
-const postWritePath = path.join(rootDir, 'scripts', 'hooks', 'post-write-lint.js');
-if (fs.existsSync(preCmdPath) && fs.existsSync(postWritePath)) {
-  report('Segurança', 'Scripts de Firewall Reativo', 'PASS', 'pre-command-guard.js e post-write-lint.js verificados');
+const routerPath = path.join(rootDir, 'scripts', 'hooks', 'skill-router.js');
+const gatePath = path.join(rootDir, 'scripts', 'hooks', 'ui-quality-gate.js');
+const utilsPath = path.join(rootDir, 'scripts', 'hooks', 'lib', 'hook-utils.js');
+if (fs.existsSync(preCmdPath) && fs.existsSync(routerPath) && fs.existsSync(gatePath) && fs.existsSync(utilsPath)) {
+  report('Segurança', 'Scripts de Lifecycle Hooks', 'PASS', 'pre-command-guard.js, skill-router.js, ui-quality-gate.js e hook-utils.js verificados');
 } else {
-  report('Segurança', 'Scripts de Firewall Reativo', 'FAIL', 'Um ou mais scripts de hook estão ausentes');
+  report('Segurança', 'Scripts de Lifecycle Hooks', 'FAIL', 'Um ou mais scripts de hook estão ausentes');
 }
 
 // 4. Subagentes Especialistas (agents/)

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fixture ruim — visual-check</title>
+  <style>
+    :root { --bg: #0b0b0e; --surface: #16161a; --text: #f1f5f9; }
+    @media (prefers-color-scheme: light) { :root { --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+    /* OVERLAP: botão fixo cobre o título no mobile (sem padding compensatório) */
+    .hamburger { position: fixed; top: 12px; left: 12px; width: 48px; height: 48px; border: 0; border-radius: 10px; background: #334155; color: #fff; }
+    header { padding: 18px 16px; }
+    h1 { margin: 0; font-size: 22px; }
+    /* CONTRAST (tema claro): branco fixo sobre superfície que fica branca */
+    .chip { display: inline-block; margin: 16px; padding: 8px 12px; border-radius: 8px; background: var(--surface); color: #ffffff; }
+    /* H_OVERFLOW: largura fixa maior que o celular */
+    .wide { width: 620px; height: 40px; background: var(--surface); margin: 16px; }
+    /* TOUCH_TARGET */
+    .tiny { width: 24px; height: 24px; margin: 16px; }
+  </style>
+</head>
+<body>
+  <button class="hamburger" aria-label="menu">☰</button>
+  <header><h1>Central de Atendimento</h1></header>
+  <span class="chip">Status: aberto</span>
+  <div class="wide"></div>
+  <button class="tiny" aria-label="fechar">x</button>
+  <p style="margin:16px">Texto normal legível nos dois temas.</p>
+</body>
+</html>

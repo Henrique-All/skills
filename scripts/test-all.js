@@ -32,16 +32,20 @@ try {
   const hooksJsonPath = path.join(rootDir, 'hooks.json');
   if (!fs.existsSync(hooksJsonPath)) throw new Error('hooks.json não encontrado na raiz!');
   const hooksJson = JSON.parse(fs.readFileSync(hooksJsonPath, 'utf-8'));
-  if (!hooksJson['safety-firewall'] || !hooksJson['code-quality-gate']) {
-    throw new Error('hooks.json não contém safety-firewall ou code-quality-gate!');
+  if (!hooksJson['safety-firewall'] || !hooksJson['skill-router'] || !hooksJson['ui-quality-gate']) {
+    throw new Error('hooks.json não contém safety-firewall, skill-router ou ui-quality-gate!');
   }
-  console.log('   ✅ hooks.json configurado com safety-firewall e code-quality-gate');
+  console.log('   ✅ hooks.json configurado com safety-firewall, skill-router e ui-quality-gate');
 
   // scripts/hooks/
   const preGuardPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
-  const postLintPath = path.join(rootDir, 'scripts', 'hooks', 'post-write-lint.js');
+  const skillRouterPath = path.join(rootDir, 'scripts', 'hooks', 'skill-router.js');
+  const uiQualityPath = path.join(rootDir, 'scripts', 'hooks', 'ui-quality-gate.js');
+  const hookUtilsPath = path.join(rootDir, 'scripts', 'hooks', 'lib', 'hook-utils.js');
   if (!fs.existsSync(preGuardPath)) throw new Error('scripts/hooks/pre-command-guard.js não encontrado!');
-  if (!fs.existsSync(postLintPath)) throw new Error('scripts/hooks/post-write-lint.js não encontrado!');
+  if (!fs.existsSync(skillRouterPath)) throw new Error('scripts/hooks/skill-router.js não encontrado!');
+  if (!fs.existsSync(uiQualityPath)) throw new Error('scripts/hooks/ui-quality-gate.js não encontrado!');
+  if (!fs.existsSync(hookUtilsPath)) throw new Error('scripts/hooks/lib/hook-utils.js não encontrado!');
   console.log('   ✅ Scripts de lifecycle hooks verificados com sucesso');
 
   // Testar funcionalidade do firewall pre-command-guard.js
@@ -66,6 +70,26 @@ try {
   if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
   console.log('   ✅ Firewall de segurança testado: Bloqueio estrito de DROP TABLE, git push --force & aprovação de npm test');
 
+  // Executar suíte de testes unitários dos hooks
+  const testHooksPath = path.join(rootDir, 'scripts', 'test-hooks.js');
+  if (fs.existsSync(testHooksPath)) {
+    execSync(`node "${testHooksPath}"`, { stdio: 'pipe' });
+    console.log('   ✅ Suíte de testes de hooks (test-hooks.js) passou em todos os cenários');
+  }
+
+  // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
+  const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
+  const mobileBlocks = fs.readFileSync(path.join(rootDir, 'mobile-converter', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
+  if (craftBlocks !== mobileBlocks) {
+    throw new Error('scripts/lib/style-blocks.js difere entre frontend-craftsman e mobile-converter!');
+  }
+  const craftVisual = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'visual-check.js'), 'utf-8');
+  const mobileVisual = fs.readFileSync(path.join(rootDir, 'mobile-converter', 'scripts', 'visual-check.js'), 'utf-8');
+  if (craftVisual !== mobileVisual) {
+    throw new Error('scripts/visual-check.js difere entre frontend-craftsman e mobile-converter!');
+  }
+  console.log('   ✅ Paridade de código verificada: style-blocks.js e visual-check.js idênticos');
+
 } catch (err) {
   console.error(`   ❌ Falha na validação do Plugin: ${err.message}`);
   hasFailures = true;
@@ -79,6 +103,8 @@ const expectedSubagents = [
   'ui-craftsman.agent.md',
   'falsifier.agent.md',
   'security-auditor.agent.md',
+  'db-sentinel.agent.md',
+  'test-engineer.agent.md'
 ];
 
 for (const agentFile of expectedSubagents) {

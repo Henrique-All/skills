@@ -150,12 +150,13 @@ Os subagentes operam em **janelas de contexto limpas e descartáveis**, permitin
 
 ---
 
-## 🛑 Firewall de Segurança Reativo no SO (`hooks.json`)
+## 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
 
-O monorepo conta com travas de ciclo de vida que interceptam a execução de ferramentas no nível do sistema operacional:
+O monorepo conta com travas de ciclo de vida nativas que interceptam chamadas e orquestram a governança no SO:
 
-- **`pre-command-guard.js`**: Intercepta comandos de terminal antes de executar e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
-- **`post-write-lint.js`**: Validação silenciosa de integridade pós-escrita de arquivos.
+- **`safety-firewall` (`pre-command-guard.js`)**: Intercepta comandos de terminal antes de executar (`PreToolUse`) e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`skill-router` (`skill-router.js`)**: Roteador inteligente (`PreInvocation`) que detecta intenções (UI, Mobile, DB, Segurança) e injeta instruções efêmeras sob demanda, sem obrigar o usuário a digitar comandos avulsos.
+- **`ui-quality-gate` (`ui-quality-gate.js`)**: Portão de qualidade (`Stop`) que bloqueia a conclusão do turno se arquivos de UI/mobile foram editados sem validação estática de contraste/ergonomia ou com falhas bloqueantes.
 
 ---
 
@@ -290,7 +291,9 @@ enterprise-ai-suite/
 │   ├── switch-version.js  # Seletor e trocador de versões remotas sem git clone
 │   └── hooks/             # Scripts executados pelas travas reativas (hooks.json)
 │       ├── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos
-│       └── post-write-lint.js    # Checagem silenciosa pós-edição
+│       ├── skill-router.js       # Roteia proativamente intenções no PreInvocation
+│       ├── ui-quality-gate.js    # Garante qualidade e contraste de UI no Stop
+│       └── lib/                  # Utilitários compartilhados de hooks (hook-utils.js)
 ├── package.json           # Scripts globais e binário orch
 └── README.md              # Este manual completo
 ```
