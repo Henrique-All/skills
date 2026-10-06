@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * install.js - Instalador Central Unificado (Enterprise AI Suite v2.3.0)
+ * install.js - Instalador Central Unificado (Enterprise AI Suite v2.4.0)
  * Suporte a Plugins e Subagentes no Google Antigravity + Retrocompatibilidade Claude Code e Cursor.
  * 
  * Uso:
@@ -28,7 +28,7 @@ if (hasVersionFlag) {
 }
 
 console.log('===============================================================');
-console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.3.0');
+console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.4.0');
 console.log('   (Plugin Oficial + Subagentes + Travas Reativas + Skills)');
 console.log('===============================================================\n');
 

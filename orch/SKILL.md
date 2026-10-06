@@ -3,7 +3,7 @@ name: orch
 description: Atalho mestre do Enterprise AI Suite. Dispara o Hybrid Orchestrator para planejar, governar e coordenar as 6 skills (cartografia, rotas, UI/mobile engineering, falsifier e auditoria de segurança) para qualquer demanda de código.
 ---
 
-# ⚡ /orch — Master Command do Enterprise AI Suite (v2.3.0)
+# ⚡ /orch — Master Command do Enterprise AI Suite (v2.4.0)
 
 Você atua como **Arquiteto de Software Líder e Maestro Regente**.
 

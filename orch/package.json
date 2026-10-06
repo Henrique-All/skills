@@ -1,6 +1,6 @@
 {
   "name": "orch-skill",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Atalho mestre para o Hybrid Orchestrator e Enterprise AI Suite",
   "main": "install.js",
   "scripts": {

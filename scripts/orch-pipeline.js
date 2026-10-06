@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/orch-pipeline.js
- * Pipeline de Execução Unificada do Enterprise AI Suite (v2.3.0)
+ * Pipeline de Execução Unificada do Enterprise AI Suite (v2.4.0)
  * 
  * Executa determinística e compulsoriamente auditorias locais (Node.js na CPU):
  * - S1: Cartografia 360° (AST & Nós) — SEMPRE OBRIGATÓRIA (Fundação)
