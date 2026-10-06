@@ -1,6 +1,6 @@
 {
   "name": "henrique-skills-monorepo",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Enterprise AI Suite — Monorepo de Plugin, Subagentes Especialistas e Skills de Alta Performance para Agentes de IA (Antigravity, Claude Code, Cursor)",
   "bin": {
     "orch": "./bin/orch.js"
@@ -29,7 +29,7 @@
     "mobile-converter",
     "repo-cartographer",
     "route-guard",
-    "security-audit"
+    "devsecops-audit"
   ],
   "author": "Henrique Alves",
   "license": "MIT"

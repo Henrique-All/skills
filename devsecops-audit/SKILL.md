@@ -1,9 +1,9 @@
 ---
-name: security-audit
+name: devsecops-audit
 description: Use ao auditar segurança antes de deploys, PRs ou após alterar autenticação, rotas, cookies, uploads, dependências, JWT, senhas ou banco de dados. Cobre os 18 pilares DevSecOps (OWASP, supply chain, vazamento de segredos, CORS, menor privilégio) em modo somente-leitura com relatórios estruturados e exit codes bloqueantes.
 ---
 
-# 🛡️ Security Audit — Motor de Auditoria DevSecOps Universal (18 Pilares)
+# 🛡️ DevSecOps Audit — Motor de Auditoria DevSecOps Universal (18 Pilares)
 
 Esta skill é o **motor especializado de auditoria de segurança e DevSecOps**. Ela analisa de ponta a ponta o código do Back-end, Front-end, APIs e microsserviços, **detecta padrões de risco conhecidos (OWASP Top 10, CWE)**, riscos de supply chain e falhas de configuração em produção.
 
@@ -23,29 +23,51 @@ Esta skill é o **motor especializado de auditoria de segurança e DevSecOps**. 
 ```
 ──── BACKEND & SERVIDORES ──────────────────────────────────────────────
 [1.  Build & Tipos]          ──> tsc --noEmit / lint sem erros de sintaxe ou tipo
-[2.  Autenticação em Rotas]  ──> Rotas sensíveis exigem middleware de autenticação
+[2.  Autenticação & MFA]     ──> Middlewares em rotas sensíveis, anti-backdoors, sem senhas mestres e sem bypass de MFA
 [3.  Blindagem do Servidor]  ──> Helmet, Rate Limiting, Cookies seguros (HttpOnly+Secure+SameSite),
                                  CORS restrito com lista branca explícita e logout efetivo
 [4.  Tolerância a Falhas]    ──> uncaughtException/unhandledRejection com encerramento controlado
 [5.  JWT Robusto]            ──> algorithms explícito, sem fallback de secret, exp obrigatório
-[6.  Hash de Senhas]         ──> bcrypt/argon2 com custo >= 10; MD5/SHA1/SHA256 sem salt proibidos
-[7.  Validação de Uploads]   ──> Limite de tamanho, lista branca de MIME, nomes sanitizados
-[8.  Sem Vazamento em Erros] ──> stack trace e PII nunca expostos em resposta HTTP nem logs
+[6.  Hash de Senhas]         ──> bcrypt/argon2 com custo >= 10; proibição estrita de comparação em plaintext (===)
+[7.  Uploads & Downloads]    ──> Limite de tamanho, MIME whitelist, proteção contra download de anexos desprotegido
+[8.  Sem Vazamento em Erros] ──> Sem stack trace, sem enumeração de contas corporativas e sem senhas em mensagens de erro
 ──── FRONTEND & CLIENTES ───────────────────────────────────────────────
 [9.  Clientes HTTP]          ──> withCredentials configurado e cancelamento de requisições pendentes
 [10. Gestão de Sessão]       ──> Validação via endpoint /auth/me sem expor tokens no localStorage
 [11. Proteção de Rotas (UX)] ──> Guards/PrivateRoute presentes (ciente de que a segurança real é no backend)
-[12. Headers e CSP]          ──> Content-Security-Policy (evitar unsafe-inline e unsafe-eval)
+[12. Headers, CSP & IPC]     ──> Content-Security-Policy web e restrição obrigatória de shell no Tauri (anti-RCE)
 ──── SERVIÇOS ASSÍNCRONOS & BACKGROUND ──────────────────────────────────
 [13. Renovação de Token]     ──> Renovação baseada no payload exp decodificado do token
-[14. Credenciais & SSRF]     ──> Variáveis de ambiente; URLs de webhooks validadas contra lista branca
+[14. Webhooks & SSRF]        ──> Validação criptográfica de webhooks via HMAC-SHA256, sem segredo estático de fallback
 ──── OWASP & CÓDIGO CRÍTICO ────────────────────────────────────────────
-[15. Padrões de Risco OWASP] ──> Detecção de SQLi, XSS, RCE, LFD/Path Traversal e IDOR
+[15. Padrões OWASP & Sockets]──> Detecção de SQLi, XSS, RCE, IDOR e autorização estrita em salas Socket.IO (anti-BOLA)
 [16. Segredos & Higiene Git] ──> Scanner de chaves de API, tokens e .env commitado no repositório
 ──── SUPPLY CHAIN & INFRA ──────────────────────────────────────────────
 [17. CVEs & Dependências]    ──> npm audit / pip-audit / trivy sem vulnerabilidades High/Critical
 [18. Banco: Menor Privilégio]──> Aplicação conecta sem privilégios de superusuário (root/postgres/sa)
 ```
+
+---
+
+## ⚡ Detecções Avançadas de Lógica de Negócio & AppSec Ofensivo
+
+O motor mecânico do `devsecops-audit` possui regras determinísticas de varredura profunda que superam ferramentas genéricas de SAST:
+
+| Regra / ID | Severidade | Pilar | Vetor de Ataque Mitigado |
+| :--- | :---: | :---: | :--- |
+| **`RULE_AUTH_HARDCODED_MASTER_PASSWORDS`** | 🔴 **CRITICAL** | 2 / 6 | Arrays de senhas mestres/dev (`devMasterPasswords = [...]`), comparação de senha em texto plano (`user.password === password`) e consultas de login com `LIKE '%${email}%'`. |
+| **`RULE_AUTH_MFA_UNIVERSAL_BYPASS`** | 🔴 **CRITICAL** | 2 | Condicionais em fluxos de 2FA/MFA que aceitam códigos estáticos fixos (`code === "999999"` ou `DEV_UNIVERSAL_CODE`) sem validação de HMAC/Token real. |
+| **`RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK`** | 🟠 **HIGH** | 15 | Endpoints REST consumindo `:id` sem validar propriedade do usuário (`req.user.id`) ou permissão de administrador na consulta (BOLA/IDOR). |
+| **`RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY`** | 🟠 **HIGH** | 15 | Atualizações e inserções no banco repassando `req.body` diretamente sem schemas Zod de whitelist (`.pick()`, `.omit()`) ou DTOs explícitos. |
+| **`RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS`** | 🟡 **MEDIUM** | 8 | Respostas de erro HTTP (401/404) que listam e-mails corporativos válidos para enumeração de contas ou fornecem dicas explícitas de senha aos usuários. |
+| **`RULE_WEBHOOK_MISSING_HMAC_SIGNATURE`** | 🟠 **HIGH** | 14 | Rotas de webhook (Meta WhatsApp, Stripe, Mercado Pago) sem validação de assinatura criptográfica HMAC (`createHmac`) ou com secrets em fallback estático. |
+| **`RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS`** | 🟠 **HIGH** | 2 / 15 | Inscrição em salas Socket.IO (`join_ticket`, `join_room`) sem autenticação no handshake ou eventos de presença confiando em `data.userId` enviado pelo cliente. |
+| **`RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD`** | 🟠 **HIGH** | 10 | Chamadas `axios.get(url)` ou `fetch(url)` que consomem URLs fornecidas pelo usuário sem validação e bloqueio de faixas de IP locais/internas (SSRF). |
+| **`RULE_TIMING_ATTACK_STRING_COMPARE`** | 🟡 **MEDIUM** | 6 | Comparação de tokens sensíveis, secrets ou hashes HMAC usando operadores simples `===` ou `==` em vez de `crypto.timingSafeEqual(bufA, bufB)`. |
+| **`RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD`** | 🟠 **HIGH** | 7 | Regras de upload que aceitam o tipo MIME `image/svg+xml` sem sanitização contra tags `<script>` ou sem forçar o header `Content-Disposition: attachment`. |
+| **`RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE`** | 🟠 **HIGH** | 7 | Rotas Express de download de arquivos ou anexos (`/attachments/:filename`) registradas sem middleware de autenticação (`verifyToken`). |
+| **`RULE_JWT_MISSING_ALGORITHM_OPTION`** | 🟡 **MEDIUM** | 5 | Chamadas `jwt.verify(token, secret)` sem a opção explícita `{ algorithms: ['HS256'] }`, prevenindo ataques de confusão de algoritmo. |
+| **`RULE_TAURI_IPC_UNRESTRICTED_CSP`** | 🟠 **HIGH** | 12 | Configurações do Tauri (`tauri.conf.json`) com `"csp": null` combinado com a capacidade `"shell:default"` ou execução de comandos (risco de RCE). |
 
 ---
 

@@ -1,6 +1,6 @@
-# AGENTS.md - Security Audit Protocol
+# AGENTS.md - DevSecOps Audit Protocol
 
-This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo Code, Cline, Aider) to follow the **Security Audit Protocol** — an evidence-oriented DevSecOps security review across 18 core pillars.
+This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo Code, Cline, Aider) to follow the **DevSecOps Audit Protocol** — an evidence-oriented DevSecOps security review across 18 core pillars.
 
 ---
 

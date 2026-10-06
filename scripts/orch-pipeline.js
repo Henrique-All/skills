@@ -86,7 +86,7 @@ try {
 if (!isTargeted || hasSec || hasApi) {
   process.stdout.write('🔒 [2/6] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
   try {
-    const secScript = path.join(rootDir, 'security-audit', 'scripts', 'audit.js');
+    const secScript = path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js');
     if (fs.existsSync(secScript)) {
       const raw = execSync(`node "${secScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);

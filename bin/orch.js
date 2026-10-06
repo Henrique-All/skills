@@ -18,7 +18,7 @@ const commands = {
   init: path.join(rootDir, 'scripts', 'init.js'),
   switch: path.join(rootDir, 'scripts', 'switch-version.js'),
   test: path.join(rootDir, 'scripts', 'test-all.js'),
-  audit: path.join(rootDir, 'security-audit', 'scripts', 'audit.js')
+  audit: path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js')
 };
 
 function printHelp() {

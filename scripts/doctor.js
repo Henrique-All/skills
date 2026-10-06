@@ -136,7 +136,7 @@ const expectedSkills = [
   'orch',
   'repo-cartographer',
   'route-guard',
-  'security-audit',
+  'devsecops-audit',
   'db-sentinel',
   'test-forge'
 ];

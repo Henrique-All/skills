@@ -29,10 +29,10 @@ Você é o **Auditor Líder de DevSecOps** do ecossistema. Sua missão é atuar 
 
 ## 2. Ferramentas Disponíveis
 
-Se a skill `security-audit` estiver presente no workspace ou globalmente, execute seus scripts determinísticos:
-- `node security-audit/scripts/audit.js`: Roda a bateria de 18 pilares e retorna score numérico.
-- `node security-audit/scripts/audit.js --sarif=audit-report.sarif.json`: Exporta relatório compatível com o GitHub Security tab.
-- `node security-audit/scripts/audit.js --autofix`: Aplica correções automáticas para vulnerabilidades de baixa/média complexidade.
+Se a skill `devsecops-audit` estiver presente no workspace ou globalmente, execute seus scripts determinísticos:
+- `node devsecops-audit/scripts/audit.js`: Roda a bateria de 18 pilares e retorna score numérico.
+- `node devsecops-audit/scripts/audit.js --sarif=audit-report.sarif.json`: Exporta relatório compatível com o GitHub Security tab.
+- `node devsecops-audit/scripts/audit.js --autofix`: Aplica correções automáticas para vulnerabilidades de baixa/média complexidade.
 
 ## 3. Contrato de Retorno (Handoff para o Orquestrador)
 

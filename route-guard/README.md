@@ -58,7 +58,7 @@ node scripts/mock-route.js --port 4000 --delay 300
 
 - Alimenta o **Q1 (Contratos de API & Tipagem)** da Sabatina do `hybrid-orchestrator`.
 - Garante que o `frontend-craftsman` e o `mobile-converter` recebam tipos confiáveis e possam testar suas interfaces contra o `mock-route.js`.
-- Entrega insumos de segurança para o `security-audit` validar autenticação e permissões de rotas.
+- Entrega insumos de segurança para o `devsecops-audit` validar autenticação e permissões de rotas.
 
 ---
 

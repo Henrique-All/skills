@@ -41,7 +41,7 @@ Esta release marca o lançamento oficial do monorepo de governança, cartografia
 1. **⚡ \`hybrid-orchestrator\`:** Orquestrador com classificação adaptativa em 3 rotas (Rota A cirúrgica, Rota C híbrida, Rota B adversária), Sabatina dos 4 Quadrantes (Q1 Contratos, Q2 Concorrência, Q3 UI, Q4 Segurança), Trava de Permissão em 2 Turnos e Falsifier.
 2. **🗺️ \`repo-cartographer\`:** Motor de descida em 6 camadas da UI ao Banco, com resolução nativa de aliases (\`@/\`), barrels e ciclos de dependência.
 3. **🛡️ \`route-guard\`:** Análise cirúrgica de rotas no backend e mapeamento de impacto no frontend (Blast Radius).
-4. **🔒 \`security-audit\`:** Motor DevSecOps com os 18 pilares OWASP em modo estritamente somente-leitura e mascaramento de segredos.
+4. **🔒 \`devsecops-audit\`:** Motor DevSecOps com os 18 pilares OWASP em modo estritamente somente-leitura e mascaramento de segredos.
 
 ---
 
@@ -134,7 +134,7 @@ A **Release Definitiva**! Todas as 6 skills do monorepo foram elevadas à **Nota
 3. **📱 \`mobile-converter\` (10.0/10):**
    - Metamorfose Tabela ➔ Cards, Bottom Sheets táteis, iOS Tab Bar, simulador web de smartphone (\`preview-mobile.js\`) e auditoria com Autofix (\`mobile-audit.js --fix\`).
 
-4. **🔒 \`security-audit\` (10.0/10):**
+4. **🔒 \`devsecops-audit\` (10.0/10):**
    - 18 pilares OWASP em modo somente-leitura com mascaramento de segredos.
    - Autofix imediato (\`--fix\`) de reverse tabnabbing e cookies inseguros.
    - Padrão industrial OASIS SARIF v2.1.0 (\`--sarif\`) para integração nativa com GitHub Code Scanning e GitLab SAST.
@@ -176,7 +176,7 @@ Esta release consolida a **harmonia automática entre as 6 skills** e resolve de
      - **Arquitetura & Múltiplos Arquivos:** Dispara \`repo-cartographer\` (gera \`.code-map/handshake.json\` físico e canvas 360°).
      - **Rotas & Endpoints:** Dispara compulsoriamente \`route-guard\` (\`analyze-route.js\`) para calcular o Blast Radius.
      - **UI & Telas:** Dispara compulsoriamente \`frontend-craftsman\` (gera \`DESIGN_SPEC.md\` físico e preview visual).
-     - **Portão DevSecOps:** No Turno 2 pós-execução, dispara compulsoriamente \`security-audit\` (\`audit.js --pilares=...\`) e \`craft-audit.js\`.
+     - **Portão DevSecOps:** No Turno 2 pós-execução, dispara compulsoriamente \`devsecops-audit\` (\`audit.js --pilares=...\`) e \`craft-audit.js\`.
    - O desenvolvedor não precisa mais listar manualmente as 6 skills no prompt.
 
 2. **🌐 Dashboard Visual de Governança no Navegador (\`scripts/preview-plan.js\`):**

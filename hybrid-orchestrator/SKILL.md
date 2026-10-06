@@ -28,7 +28,7 @@ O agente deve ser cirúrgico e consciente de quais skills estão instaladas ante
    - **Sem `repo-cartographer`:** Rastreia dependências via busca textual pontual (`grep_search`), sem gerar `.code-map/`.
    - **Sem `route-guard`:** Mapeia consumidores da rota manualmente e declara no Q1 da Sabatina.
    - **Sem `frontend-craftsman`:** Aplica boas práticas de interface diretamente no código sem gerar `preview.html`.
-   - **Sem `security-audit`:** Faz a revisão dos pilares de segurança semanticamente como `RACIOCINADO` no Turno 2.
+   - **Sem `devsecops-audit`:** Faz a revisão dos pilares de segurança semanticamente como `RACIOCINADO` no Turno 2.
    *O agente nunca trava, nunca alucina caminhos inexistentes e nunca entra em loops de busca inútil.*
 
 ---
@@ -253,12 +253,12 @@ Nas Rotas B e C, antes de aplicar o primeiro diff:
 | Java / Kotlin | `pom.xml`, `build.gradle` | `mvn compile`, `./gradlew classes` | `mvn test`, `./gradlew test` |
 | PHP | `composer.json` | `composer validate`, `phpstan analyse` | `./vendor/bin/phpunit` |
 
-### 7.1 Auditoria de segurança (`security-audit`)
+### 7.1 Auditoria de segurança (`devsecops-audit`)
 
 Se o domínio tocado pela demanda envolver autenticação, rotas/middlewares, cookies/CORS, uploads, senhas ou dependências de pacotes, acrescente à etapa de verificação — independentemente da rota (A, B ou C):
 
 ```bash
-node .agents/skills/security-audit/scripts/audit.js --pilares=<pilares do domínio>
+node .agents/skills/devsecops-audit/scripts/audit.js --pilares=<pilares do domínio>
 ```
 
 Exemplos de `--pilares`: `2,5,10` (auth), `3,12` (cookies/cors), `7,15` (uploads/owasp), `16` (segredos/git), `17` (cves).
@@ -439,7 +439,7 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
 [ ] 1. [Backend] Criar `auth/jwt.ts` com sign/verify/refresh
 [ ] 2. [Backend] Editar `routes/auth.ts` com `/login` e `/refresh`
 [ ] 3. [Backend] Atualizar `middleware/verifyToken.ts`
-[ ] 4. [Verificação] Build + testes + `gid-security-audit --pilares zero-trust,cookies`
+[ ] 4. [Verificação] Build + testes + `devsecops-audit --pilares zero-trust,cookies`
 
 🛑 TRAVA: O plano atende? Responda "OK - Executar Tudo", "OK - Passo a Passo" ou "Ajustes".
      Lembrete: qualquer migração de banco exige confirmação separada.

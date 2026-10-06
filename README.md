@@ -67,7 +67,7 @@ Ao implementar uma funcionalidade completa (*ex: criação de nova tela com banc
 | **Turno 5: Mobile & Ergonomia (`mobile-converter`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
 | **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
 | **Turno 7: Criação de Testes (`test-forge`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
-| **Turno 8: Auditoria DevSecOps (`security-audit`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
+| **Turno 8: Auditoria DevSecOps (`devsecops-audit`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
 | **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
 | ➕ **Subagentes descartáveis** *(leitura pesada)* | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e foram deletados)* |
 | **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
@@ -97,7 +97,7 @@ Você pode acionar as ferramentas tanto por **linguagem natural** quanto diretam
 | **`/test-forge`** 🆕 | Testes de Integração de API Reais e E2E Playwright | `/test-forge Crie os testes de integração para POST /api/orders` |
 | **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° em 6 camadas | `/repo-cartographer Mapeie o fluxo da tela de Checkout até o banco` |
 | **`/route-guard`** | Prevenir quebras de contrato de API e Blast Radius | `/route-guard Analise o impacto de alterar a rota em api/routes` |
-| **`/security-audit`** | Auditoria DevSecOps completa dos 18 pilares OWASP | `/security-audit Execute a auditoria de segurança pré-deploy` |
+| **`/devsecops-audit`** | Auditoria DevSecOps completa dos 18 pilares OWASP | `/devsecops-audit Execute a auditoria de segurança pré-deploy` |
 | **`/hybrid-orchestrator`** | Desenvolver feature com governança rígida e Falsifier | `/hybrid-orchestrator Implemente a regra de frete com rollback seguro` |
 
 ---
@@ -115,7 +115,7 @@ O **Enterprise AI Suite** possui arquitetura de **dupla camada de acionamento**:
 | **Troca de Informações** | Manual (o usuário copia saídas de um comando para o outro). | **Automática via Handshakes:** `.code-map/handshake.json`, `DESIGN_SPEC.md` e SARIF. |
 | **Trava & Sabatina (4Q)** | Não possui (vai direto ao ponto daquela skill). | **Ativa no Turno 1 (Rota B):** Sabatina 4Q e Trava rígida anti-drift antes de editar arquivos. |
 | **Ciclo Adversário (Falsifier)** | Não roda (a menos que no hybrid). | **Obrigatório:** O subagente Falsifier ataca a solução com estresse de 5 vetores. |
-| **Verificação Pós-Código** | Apenas as ferramentas daquela skill. | **Pipeline Quádruplo:** `craft-audit`, `mobile-audit`, `db-audit` e `security-audit`. |
+| **Verificação Pós-Código** | Apenas as ferramentas daquela skill. | **Pipeline Quádruplo:** `craft-audit`, `mobile-audit`, `db-audit` e `devsecops-audit`. |
 | **Opção de Bypass Cirúrgico** | Já é naturalmente direto. | Possui a flag **`/orch --fast`** (aplica Rota A sem travas e com velocidade máxima). |
 
 ---
@@ -129,7 +129,7 @@ O **Enterprise AI Suite** possui arquitetura de **dupla camada de acionamento**:
 | **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, simulador interativo e `mobile-audit.js --fix`. |
 | **[`db-sentinel`](#4--db-sentinel--nota-10010)** 🆕 | **`10.0` / 10** | **Banco de Dados & Migrations Seguras** | Zero-Downtime em 3 passos, detecção de Foreign Keys sem índice, anti-N+1, gerador de seeds tipados e `db-audit.js`. |
 | **[`test-forge`](#5--test-forge--nota-10010)** 🆕 | **`10.0` / 10** | **QA & Testes Reais (Anti-Mock Slop)** | Testes de integração de API em 4 cenários (Supertest/Vitest), Playwright E2E em viewport mobile e `test-audit.js`. |
-| **[`security-audit`](#6--security-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, Autofix seguro (`--fix`), exportação SARIF v2.1.0 e git hook. |
+| **[`devsecops-audit`](#6--devsecops-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, Autofix seguro (`--fix`), exportação SARIF v2.1.0 e git hook. |
 | **[`repo-cartographer`](#7--repo-cartographer--nota-10010)** | **`10.0` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco em 6 camadas, resolução de aliases (`@/`), diagramas Mermaid dinâmicos e canvas web. |
 | **[`route-guard`](#8--route-guard--nota-10010)** | **`10.0` / 10** | **Contratos de Rotas & Zero-Trust** | Blast Radius reverso no front, trava de retrocompatibilidade, gerador Zod/DTO e Mock Server HTTP com CORS. |
 | **[`orch`](#9--orch-comando-mestre--nota-10010)** | **`10.0` / 10** | **Maestro Regente do Ecossistema** | Acionamento centralizado de todas as skills, Rota A rápida (`--fast`) e Rota B com governança soberana. |
@@ -191,7 +191,7 @@ O monorepo conta com travas de ciclo de vida nativas que interceptam chamadas e 
 - Gerador E2E Playwright cobrindo Desktop e Mobile iPhone 15 Pro (`node scripts/forge-e2e.js /checkout`);
 - Auditor de robustez de testes e cálculo do Test Quality Score (`node scripts/test-audit.js test/`).
 
-### 6. 🔒 `security-audit` — Nota: 10.0/10
+### 6. 🔒 `devsecops-audit` — Nota: 10.0/10
 - Auditoria estritamente somente-leitura dos 18 pilares OWASP e DevSecOps (`node scripts/audit.js`);
 - Autofix seguro de links vulneráveis e cookies (`node scripts/audit.js --fix`);
 - Exportação SARIF v2.1.0 para GitHub Code Scanning (`--sarif`);
@@ -282,7 +282,7 @@ enterprise-ai-suite/
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
 ├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust
-├── security-audit/        # Motor DevSecOps com os 18 pilares OWASP
+├── devsecops-audit/        # Motor DevSecOps com os 18 pilares OWASP
 ├── orch/                  # Atalho mestre do ecossistema (/orch e /orch --fast)
 ├── scripts/
 │   ├── doctor.js          # Diagnóstico determinístico de saúde do ecossistema
