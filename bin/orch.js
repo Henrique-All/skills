@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * bin/orch.js
- * CLI Master do Enterprise AI Suite (v2.3.0)
+ * CLI Master do Enterprise AI Suite (v2.4.0)
  * Permite acionar diagnósticos, inicialização de projetos, testes e trocas de versão.
  */
 
@@ -23,7 +23,7 @@ const commands = {
 
 function printHelp() {
   console.log(`
-⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.3.0)
+⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.4.0)
 
 Uso:
   orch <comando> [opções]

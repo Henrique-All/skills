@@ -122,7 +122,7 @@ if (!fs.existsSync(routeGuardConfigPath) || isForce) {
 
   const routeGuardConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.3.0",
+    version: "2.4.0",
     routesDirectory: routesDir,
     clientScanDirectories: ["src", "app", "components", "pages"].filter(d => fs.existsSync(path.join(targetDir, d))),
     framework: stack.backend || stack.frontend || "custom",
@@ -136,13 +136,13 @@ if (!fs.existsSync(routeGuardConfigPath) || isForce) {
   console.log(`   ℹ️  route-guard.config.json já existente`);
 }
 
-// C. audit.config.json para Security Audit
+// C. audit.config.json para DevSecOps Audit
 const auditConfigPath = path.join(targetDir, 'audit.config.json');
 if (!fs.existsSync(auditConfigPath) || isForce) {
   const targetScanDirs = ["src", "app", "pages", "server", "lib"].filter(d => fs.existsSync(path.join(targetDir, d)));
   const auditConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.3.0",
+    version: "2.4.0",
     scanDirectories: targetScanDirs.length > 0 ? targetScanDirs : ["."],
     exclude: ["node_modules", "dist", ".next", ".git", ".agents", ".code-map"],
     pilaresAtivos: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],

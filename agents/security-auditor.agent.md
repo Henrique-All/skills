@@ -2,7 +2,7 @@
 name: security-auditor
 displayName: DevSecOps Security Auditor Subagent
 description: Subagente especialista em auditoria de segurança DevSecOps cobrindo os 18 pilares OWASP, vazamento de segredos, injeção de código, segurança de dependências e exportação em formato SARIF com bloqueio estrito em caso de falhas críticas.
-mode: security-audit
+mode: devsecops-audit
 tools:
   - list_dir
   - grep_search

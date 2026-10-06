@@ -1,4 +1,4 @@
-# ⚡ Enterprise AI Suite (v2.3.0)
+# ⚡ Enterprise AI Suite (v2.4.0)
 
 > **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
@@ -53,7 +53,7 @@ npm test
 
 ## 💰 Eficiência Extrema & Economia de Tokens (78% a 85% de Redução)
 
-> **Engenharia de Contexto Efêmero:** Como a v2.2.0 reduz drasticamente o consumo de tokens faturados na API da LLM enquanto eleva a precisão analítica e a velocidade de entrega.
+> **Engenharia de Contexto Efêmero:** Como a v2.4.0 reduz drasticamente o consumo de tokens faturados na API da LLM enquanto eleva a precisão analítica e a velocidade de entrega.
 
 ### 📊 Simulação Real: Uma Demanda Fullstack Completa (9 Turnos)
 Ao implementar uma funcionalidade completa (*ex: criação de nova tela com banco de dados Prisma, rotas de API, mobile, testes e segurança*), veja a diferença matemática real:
@@ -129,7 +129,7 @@ O **Enterprise AI Suite** possui arquitetura de **dupla camada de acionamento**:
 | **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, simulador interativo e `mobile-audit.js --fix`. |
 | **[`db-sentinel`](#4--db-sentinel--nota-10010)** 🆕 | **`10.0` / 10** | **Banco de Dados & Migrations Seguras** | Zero-Downtime em 3 passos, detecção de Foreign Keys sem índice, anti-N+1, gerador de seeds tipados e `db-audit.js`. |
 | **[`test-forge`](#5--test-forge--nota-10010)** 🆕 | **`10.0` / 10** | **QA & Testes Reais (Anti-Mock Slop)** | Testes de integração de API em 4 cenários (Supertest/Vitest), Playwright E2E em viewport mobile e `test-audit.js`. |
-| **[`devsecops-audit`](#6--devsecops-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & 18 Pilares OWASP** | Modo estritamente somente-leitura, mascaramento de segredos, Autofix seguro (`--fix`), exportação SARIF v2.1.0 e git hook. |
+| **[`devsecops-audit`](#6--devsecops-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & Red Team Engine (13 Regras)** | 13 regras de análise ofensiva determinística (BOLA, MFA bypass, mass assignment, webhooks HMAC, SSRF, SVG XSS), 18 pilares OWASP, modo somente-leitura, SARIF v2.1.0 e anti-colisão Cloudflare. |
 | **[`repo-cartographer`](#7--repo-cartographer--nota-10010)** | **`10.0` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco em 6 camadas, resolução de aliases (`@/`), diagramas Mermaid dinâmicos e canvas web. |
 | **[`route-guard`](#8--route-guard--nota-10010)** | **`10.0` / 10** | **Contratos de Rotas & Zero-Trust** | Blast Radius reverso no front, trava de retrocompatibilidade, gerador Zod/DTO e Mock Server HTTP com CORS. |
 | **[`orch`](#9--orch-comando-mestre--nota-10010)** | **`10.0` / 10** | **Maestro Regente do Ecossistema** | Acionamento centralizado de todas as skills, Rota A rápida (`--fast`) e Rota B com governança soberana. |
@@ -146,17 +146,13 @@ Os subagentes operam em **janelas de contexto limpas e descartáveis**, permitin
 4. **`db-sentinel.agent.md`**: Arquiteto relacional que valida schemas Prisma/Drizzle e impede migrations destrutivas.
 5. **`test-engineer.agent.md`**: Engenheiro de QA que cria testes de integração de API e E2E Playwright reais.
 6. **`falsifier.agent.md`**: Red Teamer adversário que ataca o plano na fase pré-código com 5 vetores de estresse.
-7. **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP com exportação SARIF.
+7. **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP e Red Team Engine (13 regras determinísticas de lógica de negócio) com exportação SARIF.
 
 ---
 
-## 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
+## 🛑 Firewall de Segurança no SO (`hooks.json`)
 
-O monorepo conta com travas de ciclo de vida nativas que interceptam chamadas e orquestram a governança no SO:
-
-- **`safety-firewall` (`pre-command-guard.js`)**: Intercepta comandos de terminal antes de executar (`PreToolUse`) e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
-- **`skill-router` (`skill-router.js`)**: Roteador inteligente (`PreInvocation`) que detecta intenções (UI, Mobile, DB, Segurança) e injeta instruções efêmeras sob demanda, sem obrigar o usuário a digitar comandos avulsos.
-- **`ui-quality-gate` (`ui-quality-gate.js`)**: Portão de qualidade (`Stop`) que bloqueia a conclusão do turno se arquivos de UI/mobile foram editados sem validação estática de contraste/ergonomia ou com falhas bloqueantes.
+O monorepo conta com firewall determinístico de comandos no SO (`pre-command-guard.js`) que intercepta comandos de terminal antes de executar (`PreToolUse`) e bloqueia operações destrutivas (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`). A suite opera em modo desburocratizado com zero intromissão ou ruído no chat.
 
 ---
 
@@ -192,10 +188,25 @@ O monorepo conta com travas de ciclo de vida nativas que interceptam chamadas e 
 - Auditor de robustez de testes e cálculo do Test Quality Score (`node scripts/test-audit.js test/`).
 
 ### 6. 🔒 `devsecops-audit` — Nota: 10.0/10
-- Auditoria estritamente somente-leitura dos 18 pilares OWASP e DevSecOps (`node scripts/audit.js`);
-- Autofix seguro de links vulneráveis e cookies (`node scripts/audit.js --fix`);
-- Exportação SARIF v2.1.0 para GitHub Code Scanning (`--sarif`);
-- Git hook pre-commit bloqueante (`node scripts/install-hook.js`).
+- Motor de Segurança Ofensiva & Red Team com 13 regras determinísticas de lógica de negócio:
+  - 🔑 `RULE_AUTH_HARDCODED_MASTER_PASSWORDS` (CRITICAL): Senhas mestres, plain-text e partial auth (`LIKE '%...%'`);
+  - 🛡️ `RULE_AUTH_MFA_UNIVERSAL_BYPASS` (CRITICAL): Bypasses de segundo fator estáticos;
+  - 🎯 `RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK` (HIGH): Endpoints `:id` sem filtro de posse do usuário (`req.user.id`);
+  - 📦 `RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY` (HIGH): Mutações diretas com `req.body` sem whitelist Zod;
+  - 🚨 `RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS` (MEDIUM): Dicas de senha e enumeração de e-mails corporativos;
+  - 🔗 `RULE_WEBHOOK_MISSING_HMAC_SIGNATURE` (HIGH): Webhooks sem validação HMAC (`crypto.createHmac`);
+  - 🔌 `RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS` (HIGH): Inscrição em salas Socket.IO e presença com `userId` de cliente;
+  - 🌐 `RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD` (HIGH): Fetches externos sem bloqueio de redes privadas/locais;
+  - ⏱️ `RULE_TIMING_ATTACK_STRING_COMPARE` (MEDIUM): Operador `===` em segredos em vez de `crypto.timingSafeEqual()`;
+  - 🖼️ `RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD` (HIGH): Uploads SVG sem sanitização de `<script>` nem header attachment;
+  - 📁 `RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE` (HIGH): Download de arquivos sem middleware de autenticação;
+  - 🗝️ `RULE_JWT_MISSING_ALGORITHM_OPTION` (MEDIUM): `jwt.verify()` sem opção explícita `{ algorithms: ['HS256'] }`;
+  - 🖥️ `RULE_TAURI_IPC_UNRESTRICTED_CSP` (HIGH): Tauri desktop combinando CSP nula com comandos de shell ativos;
+- Auditoria estritamente somente-leitura dos 18 pilares OWASP e DevSecOps (`node devsecops-audit/scripts/audit.js`);
+- Autofix seguro de links vulneráveis e cookies (`node devsecops-audit/scripts/audit.js --fix`);
+- Exportação SARIF v2.1.0 para GitHub Code Scanning (`--sarif`) e JSON estruturado (`--json`);
+- Git hook pre-commit bloqueante (`node devsecops-audit/scripts/install-hook.js`);
+- Coexistência limpa com ferramentas terceiras (resolvido conflito de rota com Cloudflare).
 
 ### 7. 🗺️ `repo-cartographer` — Nota: 10.0/10
 - Rastreamento determinístico em 6 camadas economizando até 90% dos tokens (`node scripts/cartographer.js trace`);
@@ -262,7 +273,7 @@ npm test
 
 ```
 enterprise-ai-suite/
-├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.3.0)
+├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.4.0)
 ├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
 ├── bin/
 │   └── orch.js            # CLI Master da Suite (run, doctor, init, switch, test, audit)
@@ -273,7 +284,7 @@ enterprise-ai-suite/
 │   ├── db-sentinel.agent.md    # Modelagem relacional e migrations seguras
 │   ├── test-engineer.agent.md  # Testes de integração de API e E2E Playwright
 │   ├── falsifier.agent.md      # Subagente adversário para estresse pré-código
-│   └── security-auditor.agent.md # Auditoria DevSecOps dos 18 pilares OWASP (SARIF)
+│   └── security-auditor.agent.md # DevSecOps & Red Team Engine (13 regras, SARIF)
 ├── rules/                 # 📜 Regras Globais (Zero-Trust, Anti-AI Slop)
 ├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
 ├── mobile-converter/      # Adaptação mobile tátil, Bottom Sheets, Tab Bar e dvh
@@ -282,18 +293,15 @@ enterprise-ai-suite/
 ├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
 ├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
 ├── route-guard/           # Guardião de contratos de API e Zero-Trust
-├── devsecops-audit/        # Motor DevSecOps com os 18 pilares OWASP
+├── devsecops-audit/        # Motor DevSecOps Red Team (13 regras de lógica de negócio)
 ├── orch/                  # Atalho mestre do ecossistema (/orch e /orch --fast)
 ├── scripts/
 │   ├── doctor.js          # Diagnóstico determinístico de saúde do ecossistema
 │   ├── init.js            # Autoconfiguração inteligente por detecção de stack
 │   ├── test-all.js        # Test runner universal (Plugin + 7 Subagentes + 9 Skills)
 │   ├── switch-version.js  # Seletor e trocador de versões remotas sem git clone
-│   └── hooks/             # Scripts executados pelas travas reativas (hooks.json)
-│       ├── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos
-│       ├── skill-router.js       # Roteia proativamente intenções no PreInvocation
-│       ├── ui-quality-gate.js    # Garante qualidade e contraste de UI no Stop
-│       └── lib/                  # Utilitários compartilhados de hooks (hook-utils.js)
+│   └── hooks/             # Firewall de segurança no SO (PreToolUse)
+│       └── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos no SO
 ├── package.json           # Scripts globais e binário orch
 └── README.md              # Este manual completo
 ```
