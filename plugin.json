@@ -1,7 +1,7 @@
 {
   "name": "enterprise-ai-suite",
   "displayName": "Enterprise AI Engineering Suite",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Ecossistema de Governança, Cartografia Arquitetural, Design Engineering e DevSecOps com Orquestrador e Enxame de Subagentes Especialistas para Google Antigravity, Claude Code e Cursor.",
   "author": {
     "name": "Henrique Alves"

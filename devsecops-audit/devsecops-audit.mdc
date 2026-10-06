@@ -1,0 +1,115 @@
+---
+description: Motor de auditoria DevSecOps e Segurança Ofensiva (Red Team) com 18 pilares e detecção determinística de lógica de negócio (BOLA, MFA Bypass, Webhooks HMAC, SSRF, Mass Assignment, SVG XSS, Timing Attacks, Tauri CSP).
+globs: **/*
+alwaysApply: false
+---
+
+# 🛡️ DevSecOps & Red Team Audit Rule (`devsecops-audit`)
+
+Você atua como **Arquiteto Principal de Segurança Ofensiva (Red Team) e DevSecOps**. Esta regra guia a auditoria de código-fonte de ponta a ponta, combinando análise estática mecânica ultrarrápida (0 tokens, execução em Node.js local) com a mentalidade analítica de um hacker de elite.
+
+---
+
+## 🎯 Princípios Inegociáveis
+
+1. **Modo Estritamente Somente-Leitura:** A auditoria nunca altera arquivos arbitrariamente sem instrução expressa. Vulnerabilidades são detectadas, classificadas e fundamentadas com evidências mascaradas e remediações prontas.
+2. **Portão Bloqueante (Zero-Trust):** Qualquer achado classificado como **CRITICAL** ou **HIGH** gera **Exit Code 1**, bloqueando pipelines de CI/CD e exigindo correção antes do deploy.
+3. **Proteção de Segredos:** Tokens, hashes, chaves privadas e senhas são **sempre mascarados** nos relatórios (`sk-pr****xyz`).
+4. **Sem Falsos Mocks:** Todas as validações devem ser comprovadas com saída determinística dos scripts ou revisão semântica documentada.
+
+---
+
+## 🚨 Matriz das 13 Regras de Análise Ofensiva & Lógica de Negócio
+
+### 1. 🛡️ Controle de Acesso & Autenticação (BOLA, Backdoors & Bypasses)
+
+#### `RULE_AUTH_HARDCODED_MASTER_PASSWORDS` (🔴 CRITICAL)
+- **Vetor de Ataque:** Backdoors inseridos em desenvolvimento para facilitar testes, listas de senhas universais (`["admin123", "999999", "admin"]`), comparações de senha em texto plano (`user.password === password`) ou buscas parciais (`WHERE email LIKE '%${email}%'`).
+- **Detecção:** Identifica arrays atribuídos a variáveis `master*`, `devPass*`, `bypass*`, uso do operador `===` para validar campos de senha sem bcrypt/argon2, e cláusulas SQL/ORM com wildcard em credenciais.
+- **Defesa:** Compare senhas exclusivamente com `bcrypt.compare()` ou `argon2.verify()`, elimine qualquer senha universal e exija correspondência exata (`=` ou `findUnique`) para login.
+
+#### `RULE_AUTH_MFA_UNIVERSAL_BYPASS` (🔴 CRITICAL)
+- **Vetor de Ataque:** Condicionais que aceitam códigos estáticos universais (`"999999"`, `"000000"`, `"123456"`, `DEV_UNIVERSAL_CODE`) para validação de segundo fator (2FA/OTP), permitindo sequestro de contas por força bruta trivial.
+- **Detecção:** Identifica condicionais `if (code === "999999" || ...)` no fluxo de OTP/MFA sem verificação de token efêmero/TOTP.
+- **Defesa:** Valide o OTP exclusivamente contra algoritmos HMAC criptográficos (RFC 6238 TOTP) ou hashes com expiração efêmera em banco com rate-limit agressivo.
+
+#### `RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK` (🟠 HIGH)
+- **Vetor de Ataque:** Quebra de Autorização em Nível de Objeto (OWASP API Top 10 #1). Endpoints recebem `:id` e executam `SELECT`, `UPDATE` ou `DELETE` no banco com apenas `WHERE id = $1`, permitindo que um usuário acesse ou modifique dados de terceiros trocando o ID.
+- **Detecção:** Identifica consultas e mutações ORM (`findUnique`, `update`, `delete`) ou SQL baseadas puramente em `req.params.id` sem validação de propriedade (`req.user.id`, `tenantId`, `role === 'admin'`).
+- **Defesa:** Sempre restrinja o escopo da consulta incluindo o proprietário: `{ where: { id: req.params.id, userId: req.user.id } }` ou use middleware de guard de posse (`ensureOwnership`).
+
+#### `RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY` (🟠 HIGH)
+- **Vetor de Ataque:** Repasse direto do objeto `req.body` para o banco de dados (ex: `prisma.user.update({ data: req.body })`), permitindo escalada de privilégios injetando campos como `isAdmin: true`, `role: "superuser"` ou `verified: true`.
+- **Detecção:** Identifica chamadas de criação/atualização no banco consumindo `req.body` diretamente sem validação de schema Zod (`.pick()`, `.omit()`) ou DTOs explícitos.
+- **Defesa:** Desestruture estritamente os campos permitidos ou aplique validação de whitelist via Zod: `const safeData = userUpdateSchema.parse(req.body)`.
+
+#### `RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS` (🟡 MEDIUM)
+- **Vetor de Ataque:** Respostas de erro HTTP que discriminam se um e-mail existe ("Usuário não encontrado" vs "Senha incorreta"), listam e-mails corporativos válidos ou revelam senhas de teste aos usuários.
+- **Detecção:** Strings de mensagem em rotas de auth contendo `"a senha é"`, `"password is"` ou listas de contas/e-mails válidos.
+- **Defesa:** Retorne mensagens padronizadas e genéricas: `res.status(401).json({ message: "E-mail ou senha inválidos" })`.
+
+---
+
+### 2. 🌐 Rede, Webhooks & Comunicação Assíncrona
+
+#### `RULE_WEBHOOK_MISSING_HMAC_SIGNATURE` (🟠 HIGH / 🔴 CRITICAL)
+- **Vetor de Ataque:** Endpoints de webhook (WhatsApp Cloud API, Stripe, Mercado Pago) que aceitam payloads `POST` sem checar se a requisição partiu realmente do provedor via assinatura criptográfica (`x-hub-signature-256`, `stripe-signature`), permitindo forjar pagamentos e eventos falsos.
+- **Detecção:** Rotas de webhook sem uso de `crypto.createHmac` ou SDK `constructEvent`, ou uso de segredos em fallback estático (`process.env.SECRET || '...'`).
+- **Defesa:** Calcule o HMAC-SHA256 sobre o raw body da requisição e compare com a assinatura recebida usando `crypto.timingSafeEqual()`.
+
+#### `RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS` (🟠 HIGH)
+- **Vetor de Ataque:** Eventos do Socket.IO (`join_ticket`, `join_room`, `presence`) que inscrevem o socket em salas de dados privados sem verificar claims de autenticação, ou que confiam em `data.userId` enviado pelo cliente.
+- **Detecção:** Listeners `socket.on("join_ticket", ...)` ou `socket.join(...)` sem checagem de `socket.data.user` / handshake auth, ou eventos de presença confiando em `data.userId`.
+- **Defesa:** Autentique o handshake do socket via middleware (`io.use(socketAuthMiddleware)`) e vincule salas e presença estritamente a claims autenticadas (`socket.data.userId`).
+
+#### `RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD` (🟠 HIGH)
+- **Vetor de Ataque:** Funcionalidades de download de mídia, webhooks ou avatars que consomem URLs fornecidas pelo usuário usando `axios.get(url)` ou `fetch(url)` sem restringir o IP de destino, permitindo ao atacante acessar metadados de nuvem (`http://169.254.169.254/latest/meta-data/`) ou serviços na rede local (`localhost:6379`, `192.168.0.1`).
+- **Detecção:** Chamadas HTTP consumindo parâmetros do usuário sem checagem de IP interno/privado.
+- **Defesa:** Resolva o DNS antes da requisição, valide contra lista branca de domínios e bloqueie resoluções para faixas locais/privadas (`127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.169.254`).
+
+---
+
+### 3. 📦 Criptografia, Arquivos & Clientes Desktop
+
+#### `RULE_TIMING_ATTACK_STRING_COMPARE` (🟡 MEDIUM)
+- **Vetor de Ataque:** Comparação de tokens secretos, assinaturas de webhook ou hashes usando `===` ou `==`. O tempo de execução do operador varia conforme o número de caracteres correspondentes, permitindo extrair a assinatura caractere por caractere via timing attacks.
+- **Detecção:** Comparações diretas de variáveis nomeadas como `signature`, `hmac`, `secretToken` usando `===`.
+- **Defesa:** Utilize `crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))`.
+
+#### `RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD` (🟠 HIGH)
+- **Vetor de Ataque:** Upload de arquivos com MIME `image/svg+xml` aceitos sem sanitização. Como SVGs são documentos XML, podem conter tags `<script>` ou eventos `onload="alert(1)"` executados quando o arquivo é aberto diretamente no navegador.
+- **Detecção:** Middlewares de upload que aceitam extensões `.svg` ou MIME `image/svg+xml` sem uso de sanitizador (`DOMPurify`) e sem header `Content-Disposition: attachment`.
+- **Defesa:** Sanitize o arquivo SVG no upload ou configure o servidor de arquivos para enviar `Content-Disposition: attachment` e `Content-Type: application/octet-stream`.
+
+#### `RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE` (🟠 HIGH)
+- **Vetor de Ataque:** Rotas Express para download de arquivos/anexos (`/attachments/:filename`, `/files/:id`) registradas sem middleware de autenticação, permitindo enumeração pública de documentos sensíveis.
+- **Detecção:** Rotas de download sem middlewares como `verifyToken` ou `requireAuth`.
+- **Defesa:** Aplique obrigatoriamente middleware de autenticação antes de qualquer controller que sirva arquivos do disco.
+
+#### `RULE_JWT_MISSING_ALGORITHM_OPTION` (🟡 MEDIUM)
+- **Vetor de Ataque:** Chamadas `jwt.verify(token, secret)` sem a opção explícita `{ algorithms: ['HS256'] }`. Permite ataques de confusão de chave pública/privada (RSA vs HMAC) e exploração do algoritmo `none`.
+- **Detecção:** Chamadas `jwt.verify` sem o objeto de opções com `algorithms: [...]`.
+- **Defesa:** Especifique os algoritmos autorizados: `jwt.verify(token, secret, { algorithms: ['HS256'] })`.
+
+#### `RULE_TAURI_IPC_UNRESTRICTED_CSP` (🟠 HIGH / 🔴 CRITICAL)
+- **Vetor de Ataque:** Em aplicações desktop Tauri, definir `"csp": null` desativa a proteção contra injeção de scripts no webview. Se combinado com a permissão de `"shell:default"` ou execução de comandos, qualquer XSS resulta em Execução Remota de Código (RCE) no SO host.
+- **Detecção:** `tauri.conf.json` com `"csp": null` e permissões de shell ativas no allowlist ou capabilities.
+- **Defesa:** Defina uma CSP restritiva no `tauri.conf.json` e restrinja as capacidades de shell apenas para binários específicos com argumentos controlados.
+
+---
+
+## 🚀 Execução da Auditoria
+
+```bash
+# Auditoria completa do projeto (18 pilares + 13 regras avançadas):
+node scripts/audit.js
+
+# Exportação no formato SARIF v2.1.0 para GitHub Security Tab:
+node scripts/audit.js --sarif
+
+# Autofix seguro de vulnerabilidades triviais (cookies, rel="noopener"):
+node scripts/audit.js --fix
+
+# Auditoria seletiva por pilares:
+node scripts/audit.js --pilares=2,5,7,12,14,15
+```

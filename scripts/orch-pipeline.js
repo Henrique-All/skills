@@ -86,7 +86,7 @@ try {
 if (!isTargeted || hasSec || hasApi) {
   process.stdout.write('🔒 [2/6] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
   try {
-    const secScript = path.join(rootDir, 'security-audit', 'scripts', 'audit.js');
+    const secScript = path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js');
     if (fs.existsSync(secScript)) {
       const raw = execSync(`node "${secScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);
@@ -120,22 +120,28 @@ if (!isTargeted || hasFront) {
   try {
     const craftScript = path.join(rootDir, 'frontend-craftsman', 'scripts', 'craft-audit.js');
     if (fs.existsSync(craftScript)) {
-      execSync(`node "${craftScript}" "${projectDir}" --json`, { stdio: 'pipe' });
+      const raw = execSync(`node "${craftScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
+      const data = JSON.parse(raw);
+      results.uiCraft.score = data.score ?? 100;
+      results.uiCraft.issues = (data.findings || []).length;
+      results.uiCraft.status = data.passed ? 'APROVADO' : 'ALERTA';
+      console.log(`✅ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
+    } else {
+      results.uiCraft.status = 'IGNORADO';
+      console.log('⏭️ Script não encontrado');
     }
-    results.uiCraft.score = 100;
-    results.uiCraft.status = 'APROVADO';
-    console.log('✅ 100/100');
   } catch (e) {
     try {
       const raw = e.stdout ? e.stdout.toString() : '';
       const data = JSON.parse(raw);
-      results.uiCraft.score = data.score;
-      results.uiCraft.issues = data.findings ? data.findings.length : 0;
-      results.uiCraft.status = data.status || 'ALERTA';
-      console.log(`⚠️ Score: ${data.score}/100 (${results.uiCraft.issues} arquivos com AI-slop)`);
+      results.uiCraft.score = data.score ?? 0;
+      results.uiCraft.issues = (data.findings || []).length;
+      results.uiCraft.status = results.uiCraft.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+      console.log(`⚠️ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
     } catch {
-      results.uiCraft.status = 'VERIFICADO';
-      console.log('✅ Concluído');
+      results.uiCraft.score = 0;
+      results.uiCraft.status = 'FALHA';
+      console.log('❌ Falha na execução do craft-audit');
     }
   }
 } else {
@@ -148,16 +154,29 @@ if (!isTargeted || hasMobile || hasFront) {
   try {
     const mobScript = path.join(rootDir, 'mobile-converter', 'scripts', 'mobile-audit.js');
     if (fs.existsSync(mobScript)) {
-      const out = execSync(`node "${mobScript}" "${projectDir}"`, { stdio: 'pipe' }).toString();
-      const scoreMatch = out.match(/PONTUAÇÃO FINAL DE READINESS MOBILE:\s*(\d+)\/100/);
-      results.mobile.score = scoreMatch ? parseInt(scoreMatch[1], 10) : 85;
-      results.mobile.status = results.mobile.score >= 85 ? 'APROVADO' : 'ATENÇÃO';
-      console.log(`✅ Score: ${results.mobile.score}/100`);
+      const raw = execSync(`node "${mobScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
+      const data = JSON.parse(raw);
+      results.mobile.score = data.score ?? 100;
+      results.mobile.issues = (data.findings || []).length;
+      results.mobile.status = data.passed ? 'APROVADO' : 'ATENÇÃO';
+      console.log(`✅ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
+    } else {
+      results.mobile.status = 'IGNORADO';
+      console.log('⏭️ Script não encontrado');
     }
   } catch (e) {
-    results.mobile.score = 60;
-    results.mobile.status = 'ATENÇÃO';
-    console.log('⚠️ Score: <85/100');
+    try {
+      const raw = e.stdout ? e.stdout.toString() : '';
+      const data = JSON.parse(raw);
+      results.mobile.score = data.score ?? 0;
+      results.mobile.issues = (data.findings || []).length;
+      results.mobile.status = results.mobile.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+      console.log(`⚠️ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
+    } catch {
+      results.mobile.score = 0;
+      results.mobile.status = 'FALHA';
+      console.log('❌ Falha na execução do mobile-audit');
+    }
   }
 } else {
   console.log('📱 [4/6] Ergonomia Mobile... ⏭️  Ignorada (flag direcionada ativa)');

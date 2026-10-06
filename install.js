@@ -73,12 +73,14 @@ function deployAntigravityPlugin(targetDir, label) {
       }
     }
 
-    // Copia pastas essenciais do plugin
+    // Copia pastas essenciais do plugin (limpando para evitar arquivos obsoletos)
     const dirsToCopy = ['agents', 'rules', 'scripts'];
     for (const dir of dirsToCopy) {
       const srcSub = path.join(rootDir, dir);
+      const destSub = path.join(targetDir, dir);
       if (fs.existsSync(srcSub)) {
-        copyRecursiveSync(srcSub, path.join(targetDir, dir));
+        if (fs.existsSync(destSub)) fs.rmSync(destSub, { recursive: true, force: true });
+        copyRecursiveSync(srcSub, destSub);
       }
     }
 

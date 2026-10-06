@@ -18,12 +18,12 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 
 ---
 
-## Routing (Active Governance by Default)
+## Routing (Pragmatic Direct by Default)
 
 | Route | Trigger | Planning & Gate Required |
 | :--- | :--- | :--- |
-| **A (Surgical direct)** | Explicit `--fast` or `--quick` (non-critical) | No |
-| **B (Default / Governance)** | Invoking `@hybrid-orchestrator` (default without flag) or `--deep`/`--swarm` | **Full Planning + Mandatory Approval Gate (STOP in Turn 1)** |
+| **A (Surgical direct — DEFAULT)** | Everyday code tasks, bug fixes, UI adjustments, component edits | **No (direct resolution in code)** |
+| **B (Governance / Architecture)** | Explicit invocation of `/plan`, `/orch`, or critical multi-system re-architectures | Full Planning + Approval Gate |
 
 ---
 

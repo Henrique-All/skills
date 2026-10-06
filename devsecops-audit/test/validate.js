@@ -1,17 +1,17 @@
 /**
- * test/validate.js - Validador de Integridade da Skill Security Audit
+ * test/validate.js - Validador de Integridade da Skill DevSecOps Audit
  */
 
 const fs = require('fs');
 const path = require('path');
 
-console.log('🧪 Validando arquivos da skill security-audit...\n');
+console.log('🧪 Validando arquivos da skill devsecops-audit...\n');
 
 const rootDir = path.resolve(__dirname, '..');
 const requiredFiles = [
   'SKILL.md',
   'install.js',
-  'security-audit.mdc',
+  'devsecops-audit.mdc',
   'AGENTS.md',
   'README.md',
   'package.json',
@@ -67,7 +67,7 @@ try {
   } else {
     const frontmatterEnd = skillContent.indexOf('---', 3);
     const frontmatter = skillContent.slice(3, frontmatterEnd);
-    if (!frontmatter.includes('name: security-audit')) {
+    if (!frontmatter.includes('name: devsecops-audit')) {
       console.error('❌ SKILL.md: nome inválido no frontmatter.');
       hasErrors = true;
     } else {
@@ -100,6 +100,15 @@ try {
       hasErrors = true;
     }
   }
+}
+
+// 5. Testar as 13 Regras Avançadas de AppSec & Red Team (rules.test.js)
+try {
+  execSync(`node "${path.join(__dirname, 'rules.test.js')}"`, { stdio: 'inherit' });
+  console.log('✅ Bateria de testes das 13 regras avançadas de AppSec/Red Team aprovada');
+} catch (err) {
+  console.error('❌ Falha nos testes de regras de AppSec:', err.message);
+  hasErrors = true;
 }
 
 if (hasErrors) {

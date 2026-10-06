@@ -75,12 +75,14 @@ const hooksJsonPath = path.join(rootDir, 'hooks.json');
 if (fs.existsSync(hooksJsonPath)) {
   try {
     const hj = JSON.parse(fs.readFileSync(hooksJsonPath, 'utf-8'));
-    const hasPre = hj['safety-firewall']?.PreToolUse || hj.hooks?.before_tool_call;
-    const hasPost = hj['code-quality-gate']?.PostToolUse || hj.hooks?.after_tool_call;
-    if (hasPre && hasPost) {
-      report('Manifestos', 'hooks.json (Firewall Ativo)', 'PASS', 'Hooks de PreToolUse (run_command) e PostToolUse (write/replace) configurados');
+    const hasSafety = !!hj['safety-firewall']?.PreToolUse;
+    const hasIntrusive = !!hj['skill-router'] || !!hj['ui-quality-gate'];
+    if (hasSafety && !hasIntrusive) {
+      report('Manifestos', 'hooks.json (Safety Firewall Ativo)', 'PASS', 'PreToolUse (firewall de comandos destrutivos no SO) configurado sem intromissão no chat');
+    } else if (hasSafety && hasIntrusive) {
+      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json contém interceptadores ativos no chat');
     } else {
-      report('Manifestos', 'hooks.json', 'WARN', 'hooks.json presente mas sem todas as travas declaradas');
+      report('Manifestos', 'hooks.json', 'FAIL', 'hooks.json sem safety-firewall');
     }
   } catch (e) {
     report('Manifestos', 'hooks.json', 'FAIL', `Erro de JSON: ${e.message}`);
@@ -91,11 +93,10 @@ if (fs.existsSync(hooksJsonPath)) {
 
 // 3. Scripts de Lifecycle Hooks (Firewall no SO)
 const preCmdPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
-const postWritePath = path.join(rootDir, 'scripts', 'hooks', 'post-write-lint.js');
-if (fs.existsSync(preCmdPath) && fs.existsSync(postWritePath)) {
-  report('Segurança', 'Scripts de Firewall Reativo', 'PASS', 'pre-command-guard.js e post-write-lint.js verificados');
+if (fs.existsSync(preCmdPath)) {
+  report('Segurança', 'Safety Firewall (SO)', 'PASS', 'pre-command-guard.js verificado e ativo contra DROP TABLE / rm -rf');
 } else {
-  report('Segurança', 'Scripts de Firewall Reativo', 'FAIL', 'Um ou mais scripts de hook estão ausentes');
+  report('Segurança', 'Safety Firewall (SO)', 'FAIL', 'pre-command-guard.js ausente');
 }
 
 // 4. Subagentes Especialistas (agents/)
@@ -135,7 +136,7 @@ const expectedSkills = [
   'orch',
   'repo-cartographer',
   'route-guard',
-  'security-audit',
+  'devsecops-audit',
   'db-sentinel',
   'test-forge'
 ];

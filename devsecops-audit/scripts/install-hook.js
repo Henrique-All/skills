@@ -43,12 +43,12 @@ if (!fs.existsSync(gitHooksDir)) {
 function installHook(targetDir) {
   const hookFile = path.join(targetDir, 'pre-commit');
   const hookScript = `#!/bin/sh
-# Git Pre-Commit Hook instalado pelo Security Audit DevSecOps
-echo "🔍 Executando Security Audit pré-commit..."
+# Git Pre-Commit Hook instalado pelo DevSecOps Audit
+echo "🔍 Executando DevSecOps Audit pré-commit..."
 node -e "
 const { execSync } = require('child_process');
 try {
-  execSync('node security-audit/scripts/audit.js', { stdio: 'inherit' });
+  execSync('node devsecops-audit/scripts/audit.js', { stdio: 'inherit' });
 } catch (err) {
   console.error('\\n🛑 COMMIT BLOQUEADO: Foram encontrados achados críticos de segurança.');
   console.error('Corrija as vulnerabilidades ou use .audit-exceptions.json para exceções justificadas.\\n');

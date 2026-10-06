@@ -177,61 +177,90 @@ flowchart TD
 ### 🛑 Regras Rígidas do Acordo Simbiótico (Trava Obrigatória de Turno):
 
 1. **Detecção Silenciosa & Sem Atrito:**
-   - O agente verifica se `hybrid-orchestrator` existe em `.agents/skills/hybrid-orchestrator` ou no catálogo global (`~/.gemini/config/skills/`, `~/.claude/skills/`).
+## ☀️ 6. Coerência Estrita Dual-Theme (Light Mode Coherence)
 
-2. **Geração Física do `DESIGN_SPEC.md` & Preview no Navegador (Turno 1):**
-   - 🚨 **GRAVAÇÃO FÍSICA OBRIGATÓRIA:** Cria/atualiza o arquivo real `DESIGN_SPEC.md` na raiz do projeto usando a ferramenta `write_to_file`. É **terminantemente proibido** apenas simular o spec em texto no chat.
-   - 🌐 **PREVIEW VISUAL NO NAVEGADOR:** Executa `node scripts/preview-spec.js DESIGN_SPEC.md` para gerar `.craft/preview.html` e abrir no navegador padrão do usuário, fornecendo o link direto clicável no chat: `[Abrir Preview Visual da UI](file:///.../.craft/preview.html)`.
-   - 🚨 **REGRA DE PARADA MANDATÓRIA (STOP):** Ao concluir a escrita do `DESIGN_SPEC.md` e gerar o preview, você **DEVE PARAR DE CHAMAR FERRAMENTAS IMEDIATAMENTE** e encerrar a sua resposta no chat.
-   - ⛔ **PROIBIÇÃO EXPRESSA:** É **ESTRITAMENTE PROIBIDO** criar, editar ou alterar arquivos de código (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`, etc.) no mesmo turno em que o `DESIGN_SPEC.md` foi gerado!
+O erro mais comum em IAs é desenvolver com foco exclusivo no Dark Mode e quebrar totalmente o Light Mode.
+**Regras Inegociáveis de Coerência Dual-Theme:**
 
-3. **Handoff Formal para o `hybrid-orchestrator`:**
-   - Se o `hybrid-orchestrator` estiver presente, encerre a mensagem do Turno 1 com a seguinte pergunta bloqueante:
-     > *"🎨 **Especificação visual gerada em `DESIGN_SPEC.md`!**  
-     > Você aprova as diretrizes visuais acima?  
-     > Responda **'OK'** (ou envie seus ajustes) para que o **`hybrid-orchestrator`** assuma a execução técnica no próximo turno (com snapshot atômico `git stash`, Sabatina Q1-Q4, implementação com física de molas e ataque Falsifier)."*
-   - **Somente após a confirmação expressa do usuário ("OK" / "Aprovo") no Turno 2:**
-     - O controle é transferido formalmente para o ciclo do `hybrid-orchestrator`.
-     - O Orchestrator cria o snapshot de segurança (`node scripts/snapshot.js create`), preenche o Q3 da Sabatina com o `DESIGN_SPEC.md`, aplica os diffs atômicos e roda o pipeline pós-execução (`node scripts/craft-audit.js` com Score >= 90).
+1. **PROIBIDO Texto Branco Fixo (`color: #fff`, `color: white`, `text-white`):**
+   - Nunca use texto branco fixo sobre superfícies que mudam com o tema. No tema claro, o fundo vira branco ou cinza-claro e o texto fica invisível (branco no branco).
+   - Use tokens semânticos (`theme.colors.text`) ou ternárias: `isLight(theme) ? '#0f172a' : '#f8fafc'`. Em Tailwind: `text-zinc-900 dark:text-white`.
+
+2. **PROIBIDO Superfícies Fantasma (`bg-white/5`, `rgba(255, 255, 255, 0.05)`):**
+   - Branco translúcido é excelente no dark mode para criar relevo sutil. No tema claro, ele desaparece completamente sobre fundos brancos/claros, deixando cards e botões sem borda nem contorno.
+   - Use ternárias: `isLight(theme) ? '#ffffff' : 'rgba(255, 255, 255, 0.04)'` e bordas `isLight(theme) ? '#e2e8f0' : 'rgba(255, 255, 255, 0.08)'`. Em Tailwind: `bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10`.
+
+3. **Contraste WCAG AA Obrigatório nos Dois Modos:**
+   - Todo texto deve alcançar contraste mínimo de 4.5:1 (ou 3:1 para títulos grandes) tanto no tema escuro quanto no tema claro.
+   - `craft-audit.js` e `visual-check.js` validam matematicamente a luminância relativa e barram contrastes insuficientes.
+
+---
+
+## 🔄 Fluxo de Trabalho & Resolução Autônoma
+
+O agente atua com governança completa e proativa, sem exigir comandos avulsos (`/front`, `/orch`):
+
+1. **Ajustes Rápidos, Bugs de UI e Manutenção:**
+   - Identifique os arquivos de estilo afetados.
+   - Aplique as correções diretamente no código preservando coerência dual-theme e ergonomia.
+   - Execute `node scripts/craft-audit.js <caminho>` para garantir Score ≥ 85 sem violações de Light Mode.
+   - Execute `node scripts/visual-check.js <url_ou_html>` para medição visual com Playwright quando um servidor ou preview estiver ativo.
+
+2. **Novas Telas ou Redesigns Estruturais:**
+   - Pode-se gerar um `DESIGN_SPEC.md` com `node scripts/generate-spec.js` para alinhar paleta, tipografia e componentes com o usuário.
+   - Gere o preview visual instantâneo com `node scripts/preview-spec.js`.
+   - Proceda com a implementação refinada, garantindo molas Framer Motion e dual-theme.
 
 ---
 
 ## 🛠️ Ferramentas da Skill
 
-### 1. Preview Visual Instantâneo (`preview-spec.js`)
-Gera e abre no navegador uma página HTML interativa com os botões táteis, cards com spotlight e a paleta real:
+### 1. Auditoria Estática Dual-Theme (`craft-audit.js v3.0.0`)
+Audita arquivos CSS, Styled-Components e Tailwind contra vícios de IA, texto branco no claro e superfícies fantasma:
 ```bash
-node scripts/preview-spec.js DESIGN_SPEC.md
+node frontend-craftsman/scripts/craft-audit.js src/ --json
 ```
 
-### 2. Gerador de Especificação Visual (`generate-spec.js`)
-Gera o `DESIGN_SPEC.md` formatado pronto para apresentar ao usuário:
+### 2. Verificação Visual Headless (`visual-check.js v1.0.0`)
+Executa o Playwright em modo headless para auditar a interface renderizada real em 4 combinações (Desktop/Mobile × Light/Dark):
+- Mede o contraste WCAG real computado pelo browser em todos os elementos de texto.
+- Detecta sobreposição física de elementos via `document.elementFromPoint`.
+- Detecta estouro horizontal de viewport (scroll indesejado).
+- Valida se os touch targets atendem ao mínimo de 44×44px no mobile.
 ```bash
-node scripts/generate-spec.js "Nome da Tela / Módulo" --preset=linear-dark
-```
-*Presets disponíveis:* `linear-dark`, `supabase-emerald`, `raycast-obsidian`, `apple-neutral`, `stripe-clean-light`, `apple-pure-light`.
+# Auditar arquivo HTML local:
+node frontend-craftsman/scripts/visual-check.js .craft/preview.html
 
-### 3. Auditoria de Artesanato Visual (`craft-audit.js`)
-Analisa os arquivos do frontend e aponta os vícios de IA:
+# Auditar servidor de desenvolvimento local:
+node frontend-craftsman/scripts/visual-check.js http://localhost:3000 --json
+```
+
+### 3. Preview Visual Instantâneo (`preview-spec.js`)
+Gera e abre no navegador uma página HTML interativa com botões táteis, cards e paletas reais:
 ```bash
-node scripts/craft-audit.js src/
+node frontend-craftsman/scripts/preview-spec.js DESIGN_SPEC.md
 ```
-*Gera o Craftsmanship Score (0-100) com lista de linhas a corrigir.*
 
-### 4. Gerador de Tokens de Paleta (`craft-palette.js`)
-Exporta tokens refinados para Tailwind CSS v3, Tailwind CSS v4 (`@theme`) ou CSS Modules:
+### 4. Gerador de Especificação Visual (`generate-spec.js`)
+Gera a especificação formal de design:
+```bash
+node frontend-craftsman/scripts/generate-spec.js "Nome da Tela" --preset=linear-dark
+```
+
+### 5. Gerador de Tokens de Paleta (`craft-palette.js`)
+Exporta tokens refinados para Tailwind v3, Tailwind v4 (@theme) ou CSS Variables:
 ```bash
 # Tailwind v3
-node scripts/craft-palette.js linear-dark
+node frontend-craftsman/scripts/craft-palette.js linear-dark
 
 # Tailwind v4 (@theme CSS-First)
-node scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
+node frontend-craftsman/scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
 
 # CSS Custom Properties (:root)
-node scripts/craft-palette.js supabase-emerald --format=css
+node frontend-craftsman/scripts/craft-palette.js supabase-emerald --format=css
 ```
 
-### 5. Catálogo de Componentes Artesanais (`templates/`)
+### 6. Catálogo de Componentes Artesanais (`templates/`)
 A skill inclui templates prontos para copiar e colar:
 - `AnimatedTabs.tsx`: Navegação com pílula deslizante `layoutId`.
 - `SpotlightCard.tsx`: Card escuro com iluminação radial sensível ao ponteiro.
@@ -243,12 +272,13 @@ A skill inclui templates prontos para copiar e colar:
 
 ## 📋 Checklist de Validação Final (Critérios de Aceite)
 
-Antes de considerar qualquer tela pronta:
-- [ ] `DESIGN_SPEC.md` gerado e aprovado pelo usuário antes do início do código.
-- [ ] Nenhum gradiente roxo-neon/índigo foi usado sem aprovação expressa.
+Antes de considerar qualquer tela ou ajuste pronto:
+- [ ] **Coerência Dual-Theme:** Nenhum texto branco sobre fundo claro; nenhuma superfície/borda fantasma translúcida invisível no modo claro; contraste WCAG AA 4.5:1 em ambos os temas.
+- [ ] Nenhum gradiente roxo-neon/índigo genérico usado sem aprovação expressa.
 - [ ] Todos os botões possuem feedback tátil no clique (`whileTap={{ scale: 0.98 }}` ou `:active:scale-95`).
 - [ ] Abas e seletores de visualização utilizam `layoutId` para movimento contínuo.
 - [ ] Cards possuem bordas sutis de 1px com opacidade precisa e inner highlight superior.
 - [ ] Textos de títulos utilizam `tracking-tight` com peso tipográfico ponderado.
 - [ ] Estados vazios e de carregamento possuem layouts dedicados (Skeletons content-aware com `ContentSkeleton.tsx`).
-- [ ] `craft-audit.js` executado com score **>= 90/100**.
+- [ ] `craft-audit.js` executado com score **>= 85/100** e zero erros.
+- [ ] `visual-check.js` executado sem sobreposição de elementos ou quebras de contraste quando houver servidor/preview.

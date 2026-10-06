@@ -4,7 +4,7 @@
  * Compatível com Windows, macOS e Linux.
  * 
  * Uso:
- *   node install.js                       -> Instala no workspace atual (.agents/skills/security-audit)
+ *   node install.js                       -> Instala no workspace atual (.agents/skills/devsecops-audit)
  *   node install.js --global              -> Instala no perfil global de todos os agentes detectados
  *   node install.js --global --target=gemini   -> Instala no perfil global do Antigravity/Gemini
  *   node install.js --global --target=claude   -> Instala no perfil global do Claude Code
@@ -18,7 +18,7 @@ const path = require('path');
 const os = require('os');
 
 console.log('===============================================================');
-console.log('🛡️  INSTALADOR - SECURITY AUDIT SKILL (UNIVERSAL)');
+console.log('🛡️  INSTALADOR - DEVSECOPS AUDIT SKILL (UNIVERSAL)');
 console.log('===============================================================\n');
 
 const args = process.argv.slice(2);
@@ -32,26 +32,26 @@ const homeDir = os.homedir();
 const AGENT_TARGETS = {
   gemini: {
     label: 'Google Antigravity / Gemini CLI',
-    dir: path.join(homeDir, '.gemini', 'config', 'skills', 'security-audit'),
+    dir: path.join(homeDir, '.gemini', 'config', 'skills', 'devsecops-audit'),
     type: 'dir',
   },
   claude: {
     label: 'Claude Code',
-    dir: path.join(homeDir, '.claude', 'skills', 'security-audit'),
+    dir: path.join(homeDir, '.claude', 'skills', 'devsecops-audit'),
     type: 'dir',
   },
   cursor: {
     label: 'Cursor Rules',
     dir: path.join(homeDir, '.cursor', 'rules'),
-    fileTarget: 'security-audit.mdc',
+    fileTarget: 'devsecops-audit.mdc',
     type: 'cursor_rule',
-    note: 'Regra instalada em ~/.cursor/rules/security-audit.mdc para acionamento contextual no Cursor.',
+    note: 'Regra instalada em ~/.cursor/rules/devsecops-audit.mdc para acionamento contextual no Cursor.',
   },
 };
 
 const sourceDir = __dirname;
 const skillMdPath = path.join(sourceDir, 'SKILL.md');
-const mdcPath = path.join(sourceDir, 'security-audit.mdc');
+const mdcPath = path.join(sourceDir, 'devsecops-audit.mdc');
 
 function copyRecursiveSync(src, dest) {
   const exists = fs.existsSync(src);
@@ -98,13 +98,13 @@ function installCursorRule(targetDir, label, note) {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
-    const destFile = path.join(targetDir, 'security-audit.mdc');
+    const destFile = path.join(targetDir, 'devsecops-audit.mdc');
     if (fs.existsSync(mdcPath)) {
       fs.copyFileSync(mdcPath, destFile);
       console.log(`   ✅ Regra instalada com sucesso em: ${destFile}`);
       if (note) console.log(`   ℹ️  ${note}`);
     } else {
-      console.error(`   ⚠️ Arquivo security-audit.mdc não encontrado em ${sourceDir}`);
+      console.error(`   ⚠️ Arquivo devsecops-audit.mdc não encontrado em ${sourceDir}`);
     }
   } catch (err) {
     console.error(`   ❌ Falha ao instalar regra no Cursor: ${err.message}`);
@@ -113,8 +113,8 @@ function installCursorRule(targetDir, label, note) {
 
 // 1. Instalação Local (no Workspace)
 if (!isGlobal || isBoth) {
-  const localTarget = path.resolve(process.cwd(), '.agents', 'skills', 'security-audit');
-  console.log('📍 MODO: Instalação no Workspace Local (.agents/skills/security-audit)');
+  const localTarget = path.resolve(process.cwd(), '.agents', 'skills', 'devsecops-audit');
+  console.log('📍 MODO: Instalação no Workspace Local (.agents/skills/devsecops-audit)');
   installDirectory(localTarget, 'Workspace Local (.agents)', 'Disponível imediatamente para este repositório.');
 }
 
@@ -142,10 +142,10 @@ if (isGlobal || isBoth) {
 }
 
 console.log('\n===============================================================');
-console.log('🎉 INSTALAÇÃO DO SECURITY AUDIT CONCLUÍDA!');
+console.log('🎉 INSTALAÇÃO DO DEVSECOPS AUDIT CONCLUÍDA!');
 console.log('Como acionar com qualquer Agente de IA:');
 console.log('  1. Auditoria Completa:');
-console.log('     "Execute a auditoria de segurança pré-deploy com a skill security-audit."');
+console.log('     "Execute a auditoria de segurança pré-deploy com a skill devsecops-audit."');
 console.log('  2. Auditoria Seletiva:');
-console.log('     "Audite os pilares de autenticação e cookies com security-audit."');
+console.log('     "Audite os pilares de autenticação e cookies com devsecops-audit."');
 console.log('===============================================================\n');

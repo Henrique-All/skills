@@ -5,6 +5,42 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.4.0] - 2026-10-06 — 🛡️ DevSecOps & Red Team Engine (13 Regras de Análise Ofensiva) + Renomeação Anti-Colisão Cloudflare
+
+### 🛡️ 1. Motor de Análise Ofensiva & DevSecOps Red Team
+- **13 Novas Regras Determinísticas Locais (0 tokens, < 100ms em CPU):**
+  - **`RULE_AUTH_HARDCODED_MASTER_PASSWORDS`** (CRITICAL): Detecta credenciais mestres/dev hardcoded (`devMasterPasswords = [...]`), plain-text `===` em senhas e queries com `LIKE '%${email}%'`.
+  - **`RULE_AUTH_MFA_UNIVERSAL_BYPASS`** (CRITICAL): Detecta bypass de 2FA/MFA com OTP estático fixo (`code === "999999"` ou `DEV_UNIVERSAL_CODE`).
+  - **`RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK`** (HIGH): Detecta endpoints REST `:id` com consultas ao DB sem validação de posse do usuário (`req.user.id`).
+  - **`RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY`** (HIGH): Detecta mutações ORM/SQL consumindo `req.body` diretamente sem schemas Zod de whitelist (`.pick()`, `.omit()`).
+  - **`RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS`** (MEDIUM): Detecta mensagens 401/404 que discriminam e-mails corporativos válidos para enumeração ou fornecem dicas de senha.
+  - **`RULE_WEBHOOK_MISSING_HMAC_SIGNATURE`** (HIGH): Detecta rotas de webhooks externos sem validação HMAC (`createHmac`) ou com secrets de fallback.
+  - **`RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS`** (HIGH): Detecta inscrição em salas Socket.IO sem handshake autenticado ou presença confiando em `data.userId` de cliente.
+  - **`RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD`** (HIGH): Detecta chamadas `axios.get(url)` ou `fetch(url)` de URLs externas sem bloqueio de redes privadas/locais (`127.0.0.1`, `169.254.169.254`).
+  - **`RULE_TIMING_ATTACK_STRING_COMPARE`** (MEDIUM): Detecta comparação de hashes/tokens usando operadores `===` em vez de `crypto.timingSafeEqual()`.
+  - **`RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD`** (HIGH): Detecta uploads aceitando SVG sem sanitização contra `<script>` nem header `Content-Disposition: attachment`.
+  - **`RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE`** (HIGH): Detecta rotas Express de download de anexos (`/attachments/:filename`) registradas sem middleware de autenticação (`verifyToken`).
+  - **`RULE_JWT_MISSING_ALGORITHM_OPTION`** (MEDIUM): Detecta `jwt.verify()` sem opção explícita `{ algorithms: ['HS256'] }`, prevenindo ataques de confusão de algoritmo.
+  - **`RULE_TAURI_IPC_UNRESTRICTED_CSP`** (HIGH): Detecta `tauri.conf.json` combinando `"csp": null` com permissão ativa de shell (prevenção de RCE).
+
+### 🏷️ 2. Eliminação de Conflito de Nomes com o Ecossistema Cloudflare
+- **Renomeação da Skill de Segurança:** A skill `security-audit` foi oficialmente renomeada para **`devsecops-audit`** (e comando `/devsecops-audit`).
+- **Resolução de Ambiguidade:** Previne colisões com a skill oficial da Cloudflare (`cloudflare/security-audit-skill`), permitindo coexistência perfeita e sem conflito de rotas.
+- **Sincronização Total:** Submódulos, agentes (`security-auditor.agent.md`), scripts de CI/CD e testes unitários 100% atualizados.
+
+---
+
+## [2.3.1] - 2026-10-05 — 🚀 Desburocratização Radical, Zero Atrito no Chat & Densidade Real de Software
+
+### ⚡ Desburocratização & Fim do "Process Theater"
+- **Zero Intromissão no Chat:** Removidos do `hooks.json` os hooks `skill-router` (`PreInvocation`) e `ui-quality-gate` (`Stop`). O chat volta a ser 100% limpo, sem injeção de avisos de sistema ou bloqueios de parada de turno. Mantido apenas o `safety-firewall` (`pre-command-guard.js`) no SO para bloquear comandos destrutivos (`DROP TABLE`, `rm -rf`, `git push --force`).
+- **Via Rápida Pragmática como Padrão (Route A):** Tarefas cotidianas (ajustes de tela, correções de bugs, pequenas refatorações, estilização) são resolvidas diretamente no código, com zero cerimônia (sem paradas forçadas para `DESIGN_SPEC.md`, sem Sabatinas 4Q forçadas e sem painéis HTML desnecessários). Planejamento formal fica restrito a quando o usuário invocar explicitamente `/plan` ou `/orch`.
+- **Densidade Real de Software (Anti-Landing Page Bloat):** Atualizada a `rules/02-anti-ai-slop.md` e `agents/ui-craftsman.agent.md` proibindo o estilo de "landing page / Dribbble" (`rounded-3xl`, paddings inflados `p-8`/`p-10`, sombras neon desnecessárias) em softwares corporativos e ferramentas de trabalho. Foco em alta densidade, botões normais (32-38px) e tipografia sóbria.
+- **Defensive CSS:** Regra inegociável contra quebra de layout: proibição de remoção de `min-width: 0`, preservação da cadeia flex/overflow e preservação rigorosa de callbacks e eventos (`onClick`, `onClose`).
+- **Reescrita Arquitetural do `adapt-screen.js`:** Transforma o script em um analisador que detecta layouts multi-coluna e gera código pronto para arquitetura Master-Detail real (com estado de alternância, botão `← Voltar` tátil e Bottom Sheet para detalhes secundários), erradicando a preguiça de apenas empilhar colunas.
+
+---
+
 ## [2.3.0] - 2026-10-05 — 🎨 Dual-Theme (Modo Claro + Escuro), Master-Detail Mobile & Fim dos Comandos Avulsos
 
 ### 🚀 Novas Funcionalidades & Arquitetura

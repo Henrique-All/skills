@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fixture boa — visual-check</title>
+  <style>
+    :root { --bg: #0b0b0e; --surface: #16161a; --text: #f1f5f9; --muted: #cbd5e1; --border: rgba(255,255,255,0.12); }
+    @media (prefers-color-scheme: light) { :root { --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --muted: #475569; --border: #e2e8f0; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+    .hamburger { position: fixed; top: 12px; left: 12px; width: 48px; height: 48px; border: 0; border-radius: 10px; background: #334155; color: #fff; }
+    header { padding: 18px 16px 18px 72px; min-height: 48px; box-sizing: border-box; }
+    h1 { margin: 0; font-size: 22px; }
+    .chip { display: inline-block; margin: 16px; padding: 8px 12px; border-radius: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .wide { width: 100%; max-width: 620px; height: 40px; background: var(--surface); margin: 16px 0; }
+    .ok { min-width: 44px; min-height: 44px; margin: 16px; }
+    p { margin: 16px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <button class="hamburger" aria-label="menu">☰</button>
+  <header><h1>Central de Atendimento</h1></header>
+  <span class="chip">Status: aberto</span>
+  <div class="wide"></div>
+  <button class="ok" aria-label="fechar">x</button>
+  <p>Texto secundário legível nos dois temas.</p>
+</body>
+</html>

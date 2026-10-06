@@ -9,38 +9,14 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo d
 
 ---
 
-## 1. Regras
+## 1. Princípios Operacionais — Pragmatismo e Zero Cerimônia Inútil
 
-1. **Classifique antes de editar.** Nenhum arquivo é modificado antes de a demanda ser classificada em uma das Rotas A, B ou C.
-2. **Alinhamento antes do código.** Para demandas de Rota B ou C, execute as Fases de Planejamento (seção 3) e obtenha a Trava de Permissão antes de escrever qualquer código.
-3. **Escopo fechado.** Altere apenas os arquivos mapeados. Sem refatorações, renomeações ou "melhorias" não pedidas. Se perceber algo relevante fora do escopo, mencione no fim da resposta sem alterar.
-4. **Criticidade sobrescreve velocidade.** Demandas críticas (seção 2.2) exigem validação adversária mesmo com `--fast`.
-5. **Banco de dados — operações destrutivas proibidas em execução direta.** O agente nunca **executa** operações destrutivas nem aplica migrações contra uma conexão de produção. Só as **redigirá** mediante pedido explícito e separado, acompanhadas de plano de reversão. São operações proibidas de execução autônoma: `DROP TABLE`, `DROP COLUMN`, `TRUNCATE TABLE`, `DELETE` sem `WHERE`, `UPDATE` sem `WHERE`, `ALTER COLUMN` que estreita tipo, `prisma migrate reset`, `db push --force-reset` ou equivalentes. Renomear coluna ou mudar tipo não é aditivo: exige o padrão expandir/contrair (criar novo campo, migrar dados, remover em migração separada posterior).
-6. **Honestidade sobre validação.** Nunca declare um cenário "testado" ou "mitigado" sem evidência. Marque como **EXECUTADO** (comando + resultado real) ou **RACIOCINADO** (análise sem execução).
-7. **Use as ferramentas do projeto.** Descubra como o projeto compila, testa e lida com lint antes de sugerir comandos (seção 7).
-8. **Pergunte só o essencial.** Se faltar informação crítica, faça no máximo 2 perguntas antes de começar. Caso contrário, declare a suposição em uma linha e siga.
-
-### 1.1 O Maestro Regente do Ecossistema (Harmonia das Skills e Subagentes v2.2.0)
-
-O `hybrid-orchestrator` atua como o **Maestro Regente** de todo o ecossistema. O desenvolvedor **não precisa digitar o nome de todas as skills no prompt**. O Orchestrator analisa a demanda e orquestra compulsoriamente os especialistas necessários:
-
-- 🤖 **Modo Multi-Agente (com Subagentes no Antigravity):** Em plataformas com suporte a subagentes, o Orchestrator delega tarefas pesadas para os subagentes especialistas (`agents/cartographer.agent.md`, `agents/route-guard.agent.md`, `agents/ui-craftsman.agent.md`, `agents/falsifier.agent.md`, `agents/security-auditor.agent.md`). Cada subagente processa em contexto isolado e devolve apenas o handoff sintético em JSON, preservando o contexto principal limpo.
-- ⚙️ **Modo Procedural Direto (Fallback Mono-Agente):** Em ambientes de thread única (Claude Code, Cursor), o Orchestrator executa os scripts determinísticos das skills diretamente sem perder consistência.
-
-**Delegação por Domínio:**
-- 🗺️ **Se a demanda envolve fluxo, múltiplos arquivos ou arquitetura:** Dispara o `cartographer` (ou `repo-cartographer`). Salva `.code-map/handshake.json` no disco e roda `node scripts/preview-graph.js`, gerando `.code-map/graph.html` e abrindo no navegador.
-- 🛡️ **Se a demanda toca em rotas, endpoints, controllers ou APIs:** Dispara o `route-guard`. Executa `node scripts/analyze-route.js <método> <rota>` para calcular o Blast Radius (quantas telas front-end quebram) e travar no Q1 da Sabatina.
-- 🎨 **Se a demanda toca em interface, telas, modais ou front-end:** Dispara o `ui-craftsman` (ou `frontend-craftsman` / `mobile-converter`). Salva o arquivo real `DESIGN_SPEC.md` no disco e roda `node scripts/preview-spec.js DESIGN_SPEC.md`, gerando `.craft/preview.html` e abrindo no navegador.
-- 🎯 **Fase 2 — Validação Adversária com Falsifier:** O `falsifier` submete o plano a 5 vetores de estresse pré-código (race conditions, falhas de rede, transações parciais, edge cases e IDOR) para blindagem mandatória.
-- ⚡ **Painel Unificado de Governança no Turno 1:** Roda `node scripts/preview-plan.js` gerando `.plan/plan.html` com o dashboard interativo (Grafo 360°, Design Preview, Sabatina dos 4 Quadrantes e Checklist) e abrindo no navegador.
-- 🔒 **Turno 2 — Portões DevSecOps Pós-Execução Invioláveis:**
-  - Se tocou em backend, rotas, auth, cookies, senhas, banco ou dependências: dispara o `security-auditor` (`node scripts/audit.js`). Se houver falhas críticas/altas (Exit Code 1), o Orchestrator **bloqueia o commit e exige correção imediata**.
-  - Se tocou em UI: roda compulsoriamente `node scripts/craft-audit.js` e `node scripts/mobile-audit.js` (Score >= 90).
-
-### 1.2 Princípio da Tangibilidade Absoluta (Anti-Alucinação de Chat)
-
-1. 🚨 **PROIBIÇÃO DE ARTEFATOS FANTASMAS:** É terminantemente **proibido** declarar no chat que arquivos foram `[CRIADO]` (ex: `.code-map/handshake.json`, `DESIGN_SPEC.md`, `.plan/plan.html`) sem criá-los fisicamente no disco usando as ferramentas do agente (`write_to_file`).
-2. 🌐 **PREVIEWS VISUAIS REAIS NO NAVEGADOR:** Sempre que uma skill possuir visualizador HTML (`preview-graph.js`, `preview-spec.js`, `preview-plan.js`), o agente DEVE executar o comando para abrir no navegador padrão do usuário e fornecer os links diretos clicáveis (`file:///...`) no chat. O usuário **nunca** deve receber apenas um paredão de texto no chat; ele deve ver seus painéis visuais abrindo na tela!
+1. **Via Rápida Pragmática (Regra Padrão):** Para ajustes de tela, correções de bugs, estilização, responsividade mobile, pequenas refatorações ou modificações pontuais de endpoints, **resolva o problema diretamente no código**. NUNCA force geração de `DESIGN_SPEC.md`, Sabatinas de 4 Quadrantes, `preview-plan.js` ou paradas de turno artificiais.
+2. **Planejamento Apenas Sob Demanda:** O protocolo formal de planejamento e o Falsifier só entram em ação quando o usuário explicitamente invocar `/plan`, `/orch` ou em migrações arquiteturais complexas que toquem múltiplos subsistemas críticos (ex.: troca total de motor de pagamentos ou reescrita de autenticação).
+3. **Escopo Fechado e Código Defensivo:** Altere apenas os arquivos necessários. Preserve o design system existente do projeto, respeite modelos flexíveis (`min-width: 0`, `overflow: hidden`) e mantenha eventos (`onClick`, `onClose`) intactos.
+4. **Banco de Dados — Proteção Estrita:** O agente nunca executa operações destrutivas autônomas (`DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `prisma migrate reset`). Renomear coluna ou alterar tipo exige padrão expandir/contrair.
+5. **Honestidade Absoluta:** Nunca declare nada como "testado" sem ter rodado o comando real. Marque sempre como **EXECUTADO** ou **RACIOCINADO**.
+6. **Zero Intromissão no Chat:** O agente responde de forma limpa, técnica e concisa, sem poluir o chat com relatórios ou metadados desnecessários.
 
 ### 1.3 Detecção Silenciosa & Fallback Elegante (Zero Caçadas no Disco)
 
@@ -52,7 +28,7 @@ O agente deve ser cirúrgico e consciente de quais skills estão instaladas ante
    - **Sem `repo-cartographer`:** Rastreia dependências via busca textual pontual (`grep_search`), sem gerar `.code-map/`.
    - **Sem `route-guard`:** Mapeia consumidores da rota manualmente e declara no Q1 da Sabatina.
    - **Sem `frontend-craftsman`:** Aplica boas práticas de interface diretamente no código sem gerar `preview.html`.
-   - **Sem `security-audit`:** Faz a revisão dos pilares de segurança semanticamente como `RACIOCINADO` no Turno 2.
+   - **Sem `devsecops-audit`:** Faz a revisão dos pilares de segurança semanticamente como `RACIOCINADO` no Turno 2.
    *O agente nunca trava, nunca alucina caminhos inexistentes e nunca entra em loops de busca inútil.*
 
 ---
@@ -277,12 +253,12 @@ Nas Rotas B e C, antes de aplicar o primeiro diff:
 | Java / Kotlin | `pom.xml`, `build.gradle` | `mvn compile`, `./gradlew classes` | `mvn test`, `./gradlew test` |
 | PHP | `composer.json` | `composer validate`, `phpstan analyse` | `./vendor/bin/phpunit` |
 
-### 7.1 Auditoria de segurança (`security-audit`)
+### 7.1 Auditoria de segurança (`devsecops-audit`)
 
 Se o domínio tocado pela demanda envolver autenticação, rotas/middlewares, cookies/CORS, uploads, senhas ou dependências de pacotes, acrescente à etapa de verificação — independentemente da rota (A, B ou C):
 
 ```bash
-node .agents/skills/security-audit/scripts/audit.js --pilares=<pilares do domínio>
+node .agents/skills/devsecops-audit/scripts/audit.js --pilares=<pilares do domínio>
 ```
 
 Exemplos de `--pilares`: `2,5,10` (auth), `3,12` (cookies/cors), `7,15` (uploads/owasp), `16` (segredos/git), `17` (cves).
@@ -463,7 +439,7 @@ O template é dividido em **dois turnos**. O primeiro termina na Trava; o segund
 [ ] 1. [Backend] Criar `auth/jwt.ts` com sign/verify/refresh
 [ ] 2. [Backend] Editar `routes/auth.ts` com `/login` e `/refresh`
 [ ] 3. [Backend] Atualizar `middleware/verifyToken.ts`
-[ ] 4. [Verificação] Build + testes + `gid-security-audit --pilares zero-trust,cookies`
+[ ] 4. [Verificação] Build + testes + `devsecops-audit --pilares zero-trust,cookies`
 
 🛑 TRAVA: O plano atende? Responda "OK - Executar Tudo", "OK - Passo a Passo" ou "Ajustes".
      Lembrete: qualquer migração de banco exige confirmação separada.

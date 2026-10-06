@@ -1,4 +1,4 @@
-# 🛡️ Security Audit — Motor de Auditoria DevSecOps Universal (18 Pilares)
+# 🛡️ DevSecOps Audit — Motor de Auditoria DevSecOps Universal (18 Pilares)
 
 > Motor especializado de auditoria de segurança de código, supply chain e conformidade OWASP.
 > Projetado para atuar em modo somente-leitura com relatórios estruturados e exit codes determinísticos para pipelines de CI/CD.
@@ -25,6 +25,21 @@
 16. **Segredos & Higiene Git:** Scanner regex de chaves de API, chaves privadas e verificação de `.env` rastreado no Git.
 17. **Supply Chain & CVEs:** `npm audit --omit=dev` e checagem de lockfiles com integridade.
 18. **Banco de Dados: Menor Privilégio:** Aplicação conectando sem permissões de superusuário (`root`, `postgres`, `sa`).
+
+### ⚡ Detecções Avançadas de Lógica de Negócio (AppSec Ofensivo & Red Team)
+- 🔑 **`RULE_AUTH_HARDCODED_MASTER_PASSWORDS`** (CRITICAL): Senhas mestres (`devMasterPasswords = [...]`), plaintext `===` e `LIKE '%${email}%'`.
+- 🛡️ **`RULE_AUTH_MFA_UNIVERSAL_BYPASS`** (CRITICAL): Bypass de segundo fator com OTP estático (`code === "999999"` / `DEV_UNIVERSAL_CODE`).
+- 🎯 **`RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK`** (HIGH): Endpoints `:id` com consultas ao DB sem validação de propriedade (`req.user.id`).
+- 📦 **`RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY`** (HIGH): Mutações no banco repassando `req.body` sem whitelist Zod (`.pick()`, `.omit()`).
+- 🚨 **`RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS`** (MEDIUM): Dicas de senha ou enumeração de e-mails corporativos em erros 401/404.
+- 🔗 **`RULE_WEBHOOK_MISSING_HMAC_SIGNATURE`** (HIGH): Webhooks externos sem validação criptográfica HMAC (`createHmac`) ou com fallback estático.
+- 🔌 **`RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS`** (HIGH): Entrada em salas Socket.IO ou presença confiando em `data.userId` arbitrário.
+- 🌐 **`RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD`** (HIGH): `axios.get(url)` ou `fetch(url)` de URLs externas sem bloqueio de redes privadas/locais.
+- ⏱️ **`RULE_TIMING_ATTACK_STRING_COMPARE`** (MEDIUM): Comparação de secrets/hashes com `===` em vez de `crypto.timingSafeEqual()`.
+- 🖼️ **`RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD`** (HIGH): Uploads aceitando SVG sem sanitização de `<script>` nem header attachment.
+- 📁 **`RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE`** (HIGH): Rotas Express de download de anexos sem middleware de autenticação.
+- 🗝️ **`RULE_JWT_MISSING_ALGORITHM_OPTION`** (MEDIUM): `jwt.verify()` sem opção explícita `{ algorithms: ['HS256'] }`.
+- 🖥️ **`RULE_TAURI_IPC_UNRESTRICTED_CSP`** (HIGH): `tauri.conf.json` com `"csp": null` combinado com permissões ativas de shell.
 
 ---
 

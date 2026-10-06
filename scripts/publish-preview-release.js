@@ -53,7 +53,7 @@ const previewRelease = {
 | **Turno 5: Mobile & Ergonomia (\`mobile-converter\`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
 | **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
 | **Turno 7: Criação de Testes (\`test-forge\`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
-| **Turno 8: Auditoria DevSecOps (\`security-audit\`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
+| **Turno 8: Auditoria DevSecOps (\`devsecops-audit\`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
 | **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
 | ➕ **Subagentes descartáveis** | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e fecharam)* |
 | **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
@@ -87,9 +87,10 @@ const previewRelease = {
 - **\`falsifier.agent.md\`**: Red Teamer adversário com 5 vetores de estresse.
 - **\`security-auditor.agent.md\`**: Portão DevSecOps dos 18 pilares OWASP (SARIF).
 
-#### 4. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
-- **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
-- **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
+#### 4. 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
+- **`pre-command-guard.js`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`skill-router.js`**: Roteia proativamente intenções no PreInvocation sem exigir comandos avulsos.
+- **`ui-quality-gate.js`**: Valida contraste e ergonomia no Stop para impedir entrega de telas quebradas.
 
 #### 5. 🎛️ Ferramentas CLI Master (\`bin/orch.js\`)
 - **\`npm run doctor\`**: Diagnóstico determinístico de saúde do ecossistema e subagentes;
@@ -110,7 +111,7 @@ const previewRelease = {
 | **Handshakes** | Manual (copiar e colar no prompt) | **Automático:** \`.code-map/handshake.json\`, \`DESIGN_SPEC.md\` e SARIF |
 | **Trava & 4Q** | Não possui (vai direto ao ponto) | **Ativa no Turno 1:** Sabatina 4Q e bloqueio antes de tocar em código (bypass com \`--fast\`) |
 | **Falsifier** | Não roda (a não ser no hybrid) | **Obrigatório:** Subagente adversário ataca com 5 vetores de estresse |
-| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Quádruplo:** \`craft-audit\`, \`mobile-audit\`, \`db-audit\` e \`security-audit\` |
+| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Quádruplo:** \`craft-audit\`, \`mobile-audit\`, \`db-audit\` e \`devsecops-audit\` |
 | **Quando Usar?** | Alterações pontuais, redesign de 1 componente, auditoria pré-commit, validar 1 schema | Features completas de ponta a ponta, mudanças críticas em banco/rotas/telas |
 
 ---

@@ -53,7 +53,7 @@ const officialRelease = {
 | **Turno 5: Mobile & Ergonomia (\`mobile-converter\`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
 | **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
 | **Turno 7: Criação de Testes (\`test-forge\`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
-| **Turno 8: Auditoria DevSecOps (\`security-audit\`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
+| **Turno 8: Auditoria DevSecOps (\`devsecops-audit\`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
 | **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
 | ➕ **Subagentes descartáveis** | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e fecharam)* |
 | **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
@@ -92,9 +92,10 @@ const officialRelease = {
 - Gerador E2E Playwright com validação ergonômica mobile (\`scripts/forge-e2e.js\`);
 - Auditor de qualidade de testes e cálculo do Test Quality Score (\`scripts/test-audit.js\`).
 
-#### 5. 🛑 Firewall de Segurança Reativo no Sistema Operacional (\`hooks.json\`)
-- **\`pre-command-guard.js\`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (\`DROP TABLE\`, \`rm -rf /\`, \`Remove-Item -Recurse -Force\`, \`git push --force\`, \`prisma migrate reset\`).
-- **\`post-write-lint.js\`**: Validação silenciosa de integridade pós-escrita de arquivos.
+#### 5. 🛑 Firewall de Segurança e Governança Ativa (`hooks.json`)
+- **`pre-command-guard.js`**: Intercepta comandos de terminal e bloqueia no SO comandos destrutivos (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`).
+- **`skill-router.js`**: Roteia proativamente intenções no PreInvocation sem exigir comandos avulsos.
+- **`ui-quality-gate.js`**: Valida contraste e ergonomia no Stop para impedir entrega de telas quebradas.
 
 #### 6. ⚡ Atalho Mestre \`/orch\` & Ferramentas CLI Master (\`bin/orch.js\`)
 - Permite invocar a governança completa ou cirúrgica (\`/orch\` ou \`/orch --fast\`);
@@ -106,7 +107,7 @@ const officialRelease = {
 #### 7. 🚀 Modernizações de Ponta (Especificações 2026)
 - **\`frontend-craftsman\`**: View Transitions API nativa (\`document.startViewTransition\`), CSS Container Queries (\`@container\`) e navegação por teclado acessível WAI-ARIA (\`ArrowLeft\`/\`ArrowRight\`, \`role="tablist"\`).
 - **\`mobile-converter\`**: Feedback Háptico tátil via Web Vibration API (\`navigator.vibrate\`) em Bottom Sheets e Tab Bar; auditoria de PWA (\`theme-color\`, \`apple-mobile-web-app-capable\`).
-- **\`security-audit\`**: Detecção de rotas de auth sem Rate Limiting (\`MISSING_RATE_LIMIT_ON_AUTH\`), detecção de IDOR em queries de ID diretas sem escopo de tenant/usuário (\`POTENTIAL_IDOR_UNSCOPED_QUERY\`), e verificação de Helmet/CSP.
+- **\`devsecops-audit\`**: Detecção de rotas de auth sem Rate Limiting (\`MISSING_RATE_LIMIT_ON_AUTH\`), detecção de IDOR em queries de ID diretas sem escopo de tenant/usuário (\`POTENTIAL_IDOR_UNSCOPED_QUERY\`), e verificação de Helmet/CSP.
 - **\`route-guard\`**: Exportação automatizada de especificações OpenAPI 3.0.3 / Swagger JSON com a flag \`--openapi\`.
 
 ---
@@ -122,7 +123,7 @@ const officialRelease = {
 | **Handshakes** | Manual (copiar e colar no prompt) | **Automático:** \`.code-map/handshake.json\`, \`DESIGN_SPEC.md\` e SARIF |
 | **Trava & 4Q** | Não possui (vai direto ao ponto) | **Ativa no Turno 1:** Sabatina 4Q e bloqueio antes de tocar em código (bypass com \`--fast\`) |
 | **Falsifier** | Não roda (a não ser no hybrid) | **Obrigatório:** Subagente adversário ataca com 5 vetores de estresse |
-| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Quádruplo:** \`craft-audit\`, \`mobile-audit\`, \`db-audit\` e \`security-audit\` |
+| **Pós-Código** | Apenas as ferramentas daquela skill | **Pipeline Quádruplo:** \`craft-audit\`, \`mobile-audit\`, \`db-audit\` e \`devsecops-audit\` |
 | **Quando Usar?** | Alterações pontuais, redesign de 1 componente, auditoria pré-commit, validar 1 schema | Features completas de ponta a ponta, mudanças críticas em banco/rotas/telas |
 
 ---

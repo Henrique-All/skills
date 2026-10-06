@@ -166,4 +166,4 @@ if (stack.backend || stack.frontend === 'Next.js') {
   console.log(`   🛡️ ${colors.cyan}/route-guard Analise o impacto antes de alterar endpoints da API${colors.reset}`);
 }
 console.log(`   ⚡ ${colors.cyan}/orch --fast <tarefa cirúrgica rápida sem burocracia>${colors.reset}`);
-console.log(`   🔒 ${colors.cyan}/security-audit Audite o projeto contra os 18 pilares DevSecOps pré-deploy${colors.reset}\n`);
+console.log(`   🔒 ${colors.cyan}/devsecops-audit Audite o projeto contra os 18 pilares DevSecOps pré-deploy${colors.reset}\n`);
