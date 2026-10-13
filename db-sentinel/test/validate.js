@@ -68,22 +68,57 @@ model Order {
 
 fs.writeFileSync(tmpSchemaPath, tmpSchemaContent);
 
-try {
-  // Teste db-audit
-  execSync(`node "${path.join(skillDir, 'scripts', 'db-audit.js')}" "${tmpSchemaPath}" --json`, { encoding: 'utf-8' });
-  console.log('✅ Execução bem-sucedida: scripts/db-audit.js');
+const tmpDrizzlePath = path.join(skillDir, 'test', 'temp_drizzle.ts');
+const tmpDrizzleContent = `import { pgTable, uuid, text } from 'drizzle-orm/pg-core';
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey()
+});
+export const posts = pgTable('posts', {
+  id: uuid('id').primaryKey(),
+  authorId: uuid('author_id').references(() => users.id),
+  title: text('title')
+});
+`;
+fs.writeFileSync(tmpDrizzlePath, tmpDrizzleContent);
 
-  // Teste generate-seed
+try {
+  // Teste db-audit (Prisma)
+  const prismaAuditRaw = execSync(`node "${path.join(skillDir, 'scripts', 'db-audit.js')}" "${tmpSchemaPath}" --json`, { encoding: 'utf-8' });
+  const prismaAudit = JSON.parse(prismaAuditRaw);
+  if (prismaAudit.findings.some(f => f.rule === 'MISSING_FOREIGN_KEY_INDEX')) {
+    console.error('❌ db-audit.js reportou falso positivo de FK em Order (que já possui @@index([userId]))');
+    process.exit(1);
+  }
+  console.log('✅ Execução bem-sucedida: scripts/db-audit.js (Prisma)');
+
+  // Teste db-audit (Drizzle .ts)
+  const drizzleAuditRaw = execSync(`node "${path.join(skillDir, 'scripts', 'db-audit.js')}" "${tmpDrizzlePath}" --json`, { encoding: 'utf-8' });
+  const drizzleAudit = JSON.parse(drizzleAuditRaw);
+  if (!drizzleAudit.findings.some(f => f.rule === 'MISSING_FOREIGN_KEY_INDEX')) {
+    console.error('❌ db-audit.js falhou ao detectar FK sem índice em schema Drizzle (.ts)');
+    process.exit(1);
+  }
+  console.log('✅ Execução bem-sucedida: scripts/db-audit.js (Drizzle ORM .ts)');
+
+  // Teste generate-seed (com --out separado por espaço e validação de relação 1:N + FK)
   const tmpSeedPath = path.join(skillDir, 'test', 'temp_seed.ts');
-  execSync(`node "${path.join(skillDir, 'scripts', 'generate-seed.js')}" "${tmpSchemaPath}" --out="${tmpSeedPath}"`, { encoding: 'utf-8' });
+  execSync(`node "${path.join(skillDir, 'scripts', 'generate-seed.js')}" "${tmpSchemaPath}" --out "${tmpSeedPath}"`, { encoding: 'utf-8' });
   if (fs.existsSync(tmpSeedPath)) {
-    console.log('✅ Execução bem-sucedida: scripts/generate-seed.js');
+    const seedContent = fs.readFileSync(tmpSeedPath, 'utf-8');
+    if (seedContent.includes('orders:')) {
+      console.error('❌ generate-seed.js incluiu campo virtual 1:N (orders) nos dados escalares!');
+      process.exit(1);
+    }
+    if (!seedContent.includes("userId: 'demo-uuid-1-001'")) {
+      console.error('❌ generate-seed.js não vinculou Order.userId ao ID de User!');
+      process.exit(1);
+    }
+    console.log('✅ Execução bem-sucedida: scripts/generate-seed.js (1:N filtrado e FK consistente)');
     fs.unlinkSync(tmpSeedPath);
   }
 } finally {
-  if (fs.existsSync(tmpSchemaPath)) {
-    fs.unlinkSync(tmpSchemaPath);
-  }
+  if (fs.existsSync(tmpSchemaPath)) fs.unlinkSync(tmpSchemaPath);
+  if (fs.existsSync(tmpDrizzlePath)) fs.unlinkSync(tmpDrizzlePath);
 }
 
 console.log('\n🎉 Todos os componentes da skill db-sentinel validados com 100% de integridade!');

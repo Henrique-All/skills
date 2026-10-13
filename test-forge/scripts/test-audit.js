@@ -8,8 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetDir = process.argv[2] || process.cwd();
+const cleanArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const targetDir = cleanArgs[0] ? path.resolve(cleanArgs[0]) : process.cwd();
 const isJson = process.argv.includes('--json');
+const isStrict = process.argv.includes('--strict');
 
 const colors = {
   reset: '\x1b[0m',
@@ -24,6 +26,9 @@ const colors = {
 function findTestFiles(dir) {
   const results = [];
   if (!fs.existsSync(dir)) return results;
+  if (!fs.statSync(dir).isDirectory()) {
+    return /\.(test|spec)\.(ts|js|tsx|jsx)$/.test(dir) ? [dir] : [];
+  }
 
   function walk(current) {
     const entries = fs.readdirSync(current, { withFileTypes: true });
@@ -66,6 +71,7 @@ testFiles.forEach(file => {
   lines.forEach((line, idx) => {
     const lineNum = idx + 1;
     const trimmed = line.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return;
 
     // Contagem de mocks
     if (/vi\.mock\(|jest\.mock\(|\.spyOn\(/.test(trimmed)) {
@@ -89,6 +95,15 @@ testFiles.forEach(file => {
       });
     }
   });
+
+  if (fileAsserts === 0) {
+    findings.push({
+      severity: 'HIGH',
+      file,
+      line: 1,
+      message: 'Arquivo de teste sem nenhuma asserção ativa (expect/assert).'
+    });
+  }
 
   // Alerta de Mock-Heavy (mais de 4 mocks para poucas asserções)
   if (fileMocks >= 4 && fileAsserts <= 3) {

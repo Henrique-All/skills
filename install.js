@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * install.js - Instalador Central Unificado (Enterprise AI Suite v2.4.0)
+ * install.js - Instalador Central Unificado (Enterprise AI Suite v2.5.0)
  * Suporte a Plugins e Subagentes no Google Antigravity + Retrocompatibilidade Claude Code e Cursor.
  * 
  * Uso:
@@ -28,7 +28,7 @@ if (hasVersionFlag) {
 }
 
 console.log('===============================================================');
-console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.4.0');
+console.log('🚀 INSTALADOR CENTRAL UNIFICADO — ENTERPRISE AI SUITE v2.5.0');
 console.log('   (Plugin Oficial + Subagentes + Travas Reativas + Skills)');
 console.log('===============================================================\n');
 
@@ -74,7 +74,7 @@ function deployAntigravityPlugin(targetDir, label) {
     }
 
     // Copia pastas essenciais do plugin (limpando para evitar arquivos obsoletos)
-    const dirsToCopy = ['agents', 'rules', 'scripts'];
+    const dirsToCopy = ['agents', 'rules', 'scripts', 'bin'];
     for (const dir of dirsToCopy) {
       const srcSub = path.join(rootDir, dir);
       const destSub = path.join(targetDir, dir);
@@ -86,13 +86,14 @@ function deployAntigravityPlugin(targetDir, label) {
 
     // Empacota as skills dentro de <targetDir>/skills/
     const targetSkillsDir = path.join(targetDir, 'skills');
-    if (!fs.existsSync(targetSkillsDir)) {
-      fs.mkdirSync(targetSkillsDir, { recursive: true });
+    if (fs.existsSync(targetSkillsDir)) {
+      fs.rmSync(targetSkillsDir, { recursive: true, force: true });
     }
+    fs.mkdirSync(targetSkillsDir, { recursive: true });
 
     const entries = fs.readdirSync(rootDir, { withFileTypes: true });
     const skills = entries
-      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && e.name !== 'scripts' && e.name !== 'agents' && e.name !== 'rules' && e.name !== 'adapters')
+      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !['node_modules', 'scripts', 'agents', 'rules', 'adapters', 'bin'].includes(e.name))
       .filter((e) => fs.existsSync(path.join(rootDir, e.name, 'SKILL.md')))
       .map((e) => e.name);
 
@@ -103,33 +104,59 @@ function deployAntigravityPlugin(targetDir, label) {
     }
 
     console.log(`   ✅ Plugin "${label}" instalado com sucesso com ${skills.length} skills e subagentes!`);
+    return skills;
   } catch (err) {
     console.error(`   ❌ Falha ao instalar Plugin em ${label}: ${err.message}`);
+    return [];
+  }
+}
+
+// Remove cópias avulsas duplicadas no Antigravity quando o Plugin Oficial já contém as skills
+function deduplicateAntigravitySkills(baseSkillsDir, skillNames, label) {
+  if (!fs.existsSync(baseSkillsDir)) return;
+  let removed = 0;
+  for (const skillName of skillNames) {
+    const dupPath = path.join(baseSkillsDir, skillName);
+    if (fs.existsSync(dupPath)) {
+      try {
+        fs.rmSync(dupPath, { recursive: true, force: true });
+        removed++;
+      } catch {}
+    }
+  }
+  // Remove também pasta legada security-audit se existir
+  const legacySec = path.join(baseSkillsDir, 'security-audit');
+  if (fs.existsSync(legacySec)) {
+    try { fs.rmSync(legacySec, { recursive: true, force: true }); removed++; } catch {}
+  }
+  if (removed > 0) {
+    console.log(`🧹 Desduplicação (${label}): ${removed} cópia(s) avulsa(s) redundante(s) removida(s) (skills servidas pelo Plugin Oficial).`);
   }
 }
 
 // 1. INSTALAÇÃO DO PLUGIN OFICIAL DO ANTIGRAVITY
 const targetWorkspace = process.env.TARGET_WORKSPACE || process.cwd();
+let installedSkillNames = [];
 
 if (!isGlobal || isBoth) {
   const localPluginDir = path.join(targetWorkspace, '.agents', 'plugins', 'enterprise-ai-suite');
-  deployAntigravityPlugin(localPluginDir, 'Workspace Local (.agents/plugins/enterprise-ai-suite)');
+  installedSkillNames = deployAntigravityPlugin(localPluginDir, 'Workspace Local (.agents/plugins/enterprise-ai-suite)');
 }
 
 if (isGlobal || isBoth) {
   const globalPluginDir = path.join(homeDir, '.gemini', 'config', 'plugins', 'enterprise-ai-suite');
-  deployAntigravityPlugin(globalPluginDir, 'Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite)');
+  installedSkillNames = deployAntigravityPlugin(globalPluginDir, 'Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite)');
 }
 
-// 2. INSTALAÇÃO DAS SKILLS INDIVIDUAIS (Retrocompatibilidade Claude Code, Cursor e Skills isoladas)
+// 2. INSTALAÇÃO DAS SKILLS INDIVIDUAIS (Retrocompatibilidade Claude Code e Cursor)
 if (!isPluginOnly) {
   console.log('\n---------------------------------------------------------------');
-  console.log('🔄 Sincronizando Skills Individuais (Antigravity, Claude, Cursor)...');
+  console.log('🔄 Sincronizando Skills Individuais (Claude Code & Cursor)...');
   console.log('---------------------------------------------------------------');
 
   const entries = fs.readdirSync(rootDir, { withFileTypes: true });
   const skillsToInstall = entries
-    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && e.name !== 'scripts' && e.name !== 'agents' && e.name !== 'rules')
+    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !['node_modules', 'scripts', 'agents', 'rules', 'bin'].includes(e.name))
     .filter((e) => fs.existsSync(path.join(rootDir, e.name, 'install.js')))
     .map((e) => e.name);
 
@@ -144,10 +171,20 @@ if (!isPluginOnly) {
   }
 }
 
+// 3. DESDUPLICAÇÃO NO ANTIGRAVITY (Evita registro duplo entre Plugin Oficial e .agents/skills)
+if (!rawArgs.includes('--keep-duplicates')) {
+  if (!isGlobal || isBoth) {
+    deduplicateAntigravitySkills(path.join(targetWorkspace, '.agents', 'skills'), installedSkillNames, '.agents/skills');
+  }
+  if (isGlobal || isBoth) {
+    deduplicateAntigravitySkills(path.join(homeDir, '.gemini', 'config', 'skills'), installedSkillNames, '~/.gemini/config/skills');
+  }
+}
+
 console.log('\n===============================================================');
 console.log('🎉 INSTALAÇÃO E SINCRONIZAÇÃO CONCLUÍDAS COM SUCESSO!');
-console.log('Ambientes configurados:');
-console.log('  1. Google Antigravity: Plugin Oficial + Subagentes + Hooks');
+console.log('Ambientes configurados (Zero Duplicidade):');
+console.log('  1. Google Antigravity: Plugin Oficial + Subagentes + Hooks (Desduplicado)');
 console.log('  2. Claude Code: Skills sincronizadas em ~/.claude/skills/');
 console.log('  3. Cursor / Windsurf: Regras sincronizadas em ~/.cursor/rules/');
 console.log('===============================================================\n');

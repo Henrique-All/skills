@@ -8,9 +8,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetArg = process.argv[2];
-const isJson = process.argv.includes('--json');
-
 const colors = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
@@ -21,6 +18,23 @@ const colors = {
   gray: '\x1b[90m'
 };
 
+function collectSqlFilesRecursively(dir) {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        results = results.concat(collectSqlFilesRecursively(full));
+      } else if (ent.name.endsWith('.sql')) {
+        results.push(full);
+      }
+    }
+  } catch (e) {}
+  return results;
+}
+
 function findSchemaFiles(dir = process.cwd()) {
   const candidates = [];
   const commonPaths = [
@@ -29,6 +43,7 @@ function findSchemaFiles(dir = process.cwd()) {
     'src/db/schema.ts',
     'drizzle/schema.ts',
     'src/schema.ts',
+    'db/schema.ts',
     'db/schema.sql'
   ];
 
@@ -38,8 +53,30 @@ function findSchemaFiles(dir = process.cwd()) {
       candidates.push(full);
     }
   }
+
+  const migrationDirs = [
+    'prisma/migrations',
+    'drizzle',
+    'migrations',
+    'supabase/migrations',
+    'db/migrations'
+  ];
+
+  for (const mDir of migrationDirs) {
+    const fullMDir = path.join(dir, mDir);
+    for (const sqlFile of collectSqlFilesRecursively(fullMDir)) {
+      if (!candidates.includes(sqlFile)) {
+        candidates.push(sqlFile);
+      }
+    }
+  }
+
   return candidates;
 }
+
+const cleanArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const targetArg = cleanArgs[0];
+const isJson = process.argv.includes('--json');
 
 const targetFiles = targetArg && fs.existsSync(targetArg)
   ? (fs.statSync(targetArg).isDirectory() ? findSchemaFiles(path.resolve(targetArg)) : [path.resolve(targetArg)])
@@ -70,75 +107,135 @@ targetFiles.forEach((file) => {
   // 1. ANÁLISE PRISMA (.prisma)
   if (ext === '.prisma' || file.endsWith('schema.prisma')) {
     let currentModel = null;
-    let modelFields = [];
     let modelIndexes = [];
+    let inlineUniqueFields = new Set();
     let relations = [];
+    let hotFilterFields = [];
 
     lines.forEach((line, idx) => {
       const trimmed = line.trim();
       const lineNum = idx + 1;
+      if (trimmed.startsWith('//')) return;
 
       // Início de modelo
       const modelMatch = trimmed.match(/^model\s+([A-Za-z0-9_]+)\s*\{/);
       if (modelMatch) {
         currentModel = modelMatch[1];
-        modelFields = [];
         modelIndexes = [];
+        inlineUniqueFields = new Set();
         relations = [];
+        hotFilterFields = [];
       } else if (trimmed === '}' && currentModel) {
         // Fim de modelo: Validar chaves estrangeiras sem índice
         relations.forEach(rel => {
-          const hasIndex = modelIndexes.some(idx => idx.includes(rel.fk));
-          if (!hasIndex) {
+          const hasBlockIndex = modelIndexes.some(idxStr => idxStr.includes(rel.fk));
+          const hasInlineUnique = inlineUniqueFields.has(rel.fk);
+          if (!hasBlockIndex && !hasInlineUnique) {
             addFinding(
               'HIGH',
               'MISSING_FOREIGN_KEY_INDEX',
-              `Modelo "${currentModel}" possui relação com "${rel.target}" pela FK "${rel.fk}", mas não há índice @@index([${rel.fk}]). Isso forçará Sequential Scans no banco.`,
+              `Modelo "${currentModel}" possui relação com "${rel.target}" pela FK "${rel.fk}", mas não há índice @@index([${rel.fk}]) nem @unique. Isso forçará Sequential Scans no banco.`,
               file,
               rel.line,
               `Adicione @@index([${rel.fk}]) ao modelo ${currentModel}.`
             );
           }
         });
+
+        // Validar campos de filtro frequente sem índice no modelo
+        hotFilterFields.forEach(hf => {
+          const hasBlockIndex = modelIndexes.some(idxStr => idxStr.includes(hf.fieldName));
+          const hasInlineUnique = inlineUniqueFields.has(hf.fieldName);
+          if (!hasBlockIndex && !hasInlineUnique) {
+            addFinding(
+              'MEDIUM',
+              'POTENTIAL_HOT_FILTER_UNINDEXED',
+              `Campo de alta seletividade "${hf.fieldName}" no modelo "${currentModel}" pode necessitar de índice para filtros rápidos.`,
+              file,
+              hf.line,
+              `Considere adicionar @@index([${hf.fieldName}]) se este campo for consultado frequentemente.`
+            );
+          }
+        });
+
         currentModel = null;
       } else if (currentModel) {
+        // Captura @unique ou @id inline no próprio campo
+        const fieldParts = trimmed.split(/\s+/);
+        const fieldName = fieldParts[0];
+        if (fieldName && !fieldName.startsWith('@@') && (trimmed.includes('@unique') || trimmed.includes('@id'))) {
+          inlineUniqueFields.add(fieldName);
+        }
+
         // Captura campos e relações
         const relMatch = trimmed.match(/@relation\(.*fields:\s*\[([^\]]+)\].*\)/);
         if (relMatch) {
           const fks = relMatch[1].split(',').map(s => s.trim());
-          const parts = trimmed.split(/\s+/);
-          const target = parts[1];
+          const target = (fieldParts[1] || '').replace(/[?[\]]/g, '');
           fks.forEach(fk => relations.push({ fk, target, line: lineNum }));
         }
 
-        // Captura índices declarados
-        if (trimmed.startsWith('@@index(') || trimmed.startsWith('@@unique(')) {
+        // Captura índices declarados no bloco do modelo
+        if (trimmed.startsWith('@@index(') || trimmed.startsWith('@@unique(') || trimmed.startsWith('@@id(')) {
           modelIndexes.push(trimmed);
         }
 
-        // Alerta: Campos de auditoria ou filtros padrão sem índice
-        if (/^(status|tenantId|accountId|organizationId)\s+/.test(trimmed) && !trimmed.includes('@unique')) {
-          const fieldName = trimmed.split(/\s+/)[0];
-          addFinding(
-            'MEDIUM',
-            'POTENTIAL_HOT_FILTER_UNINDEXED',
-            `Campo de alta seletividade "${fieldName}" no modelo "${currentModel}" pode necessitar de índice para filtros rápidos.`,
-            file,
-            lineNum,
-            `Considere adicionar @@index([${fieldName}]) se este campo for consultado frequentemente.`
-          );
+        // Registra campos de auditoria ou filtros padrão para checar no fechamento do model
+        if (/^(status|tenantId|accountId|organizationId)\s+/.test(trimmed)) {
+          hotFilterFields.push({ fieldName, line: lineNum });
         }
       }
     });
   }
 
-  // 2. ANÁLISE SQL / DRIZZLE (.sql, .ts)
-  if (ext === '.sql') {
+  // 2. ANÁLISE DRIZZLE ORM (.ts)
+  if (ext === '.ts') {
+    // Detecta tabelas Drizzle: pgTable / mysqlTable / sqliteTable
+    const tableRegex = /(?:pgTable|mysqlTable|sqliteTable)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*\{([\s\S]*?)\}(?:\s*,\s*\(([^)]*)\)\s*=>\s*([\s\S]*?))?\)/g;
+    let tMatch;
+    while ((tMatch = tableRegex.exec(content)) !== null) {
+      const tableName = tMatch[1];
+      const columnsBlock = tMatch[2] || '';
+      const indexesBlock = tMatch[4] || '';
+      const tableStartLine = content.slice(0, tMatch.index).split('\n').length;
+
+      const colLines = columnsBlock.split('\n');
+      colLines.forEach((colLine, cIdx) => {
+        const trimmedCol = colLine.trim();
+        if (trimmedCol.startsWith('//')) return;
+        const colMatch = trimmedCol.match(/^([A-Za-z0-9_]+)\s*:\s*.*?\breferences\s*\(/);
+        if (colMatch) {
+          const colPropName = colMatch[1];
+          const isInlineUnique = /\.unique\s*\(/.test(trimmedCol) || /\.primaryKey\s*\(/.test(trimmedCol);
+          const isIndexedInTable = new RegExp(`(?:index|uniqueIndex)\\s*\\([^)]*\\)\\s*\\.on\\s*\\([^)]*\\b${colPropName}\\b`).test(indexesBlock);
+          if (!isInlineUnique && !isIndexedInTable) {
+            addFinding(
+              'HIGH',
+              'MISSING_FOREIGN_KEY_INDEX',
+              `Tabela Drizzle "${tableName}" possui FK "${colPropName}" com .references(), mas sem index().on(table.${colPropName}).`,
+              file,
+              tableStartLine + cIdx,
+              `Adicione index('${tableName}_${colPropName}_idx').on(table.${colPropName}) no 3º argumento de ${tableName}.`
+            );
+          }
+        }
+      });
+    }
+  }
+
+  // 3. ANÁLISE SQL & MIGRATIONS (.sql e SQL embarcado em .ts)
+  if (ext === '.sql' || ext === '.ts') {
+    const reportedNotNullLines = new Set();
+    const reportedDropLines = new Set();
+
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
+      const trimmed = line.trim();
+      if (trimmed.startsWith('--') || trimmed.startsWith('//') || trimmed.startsWith('*')) return;
       const upper = line.toUpperCase();
 
-      if (/ALTER\s+TABLE\s+.*\s+ADD\s+COLUMN\s+.*\s+NOT\s+NULL/.test(upper) && !upper.includes('DEFAULT')) {
+      if (/ALTER\s+TABLE\s+.*\s+ADD\s+(?:COLUMN\s+)?.*\s+NOT\s+NULL/.test(upper) && !upper.includes('DEFAULT')) {
+        reportedNotNullLines.add(lineNum);
         addFinding(
           'CRITICAL',
           'NOT_NULL_WITHOUT_DEFAULT',
@@ -149,7 +246,8 @@ targetFiles.forEach((file) => {
         );
       }
 
-      if (/DROP\s+COLUMN/.test(upper) || /DROP\s+TABLE/.test(upper)) {
+      if ((/DROP\s+COLUMN\b/.test(upper) || /DROP\s+TABLE\b/.test(upper)) && !/DROP\s+TABLE\s+IF\s+EXISTS\s+#/i.test(upper)) {
+        reportedDropLines.add(lineNum);
         addFinding(
           'HIGH',
           'DESTRUCTIVE_DDL',
@@ -160,6 +258,36 @@ targetFiles.forEach((file) => {
         );
       }
     });
+
+    // Suporte a instruções SQL multi-linha em arquivos .sql
+    if (ext === '.sql') {
+      const statements = content.split(';');
+      let charOffset = 0;
+      for (const stmt of statements) {
+        const cleanStmt = stmt
+          .split('\n')
+          .filter(l => !l.trim().startsWith('--'))
+          .join(' ')
+          .toUpperCase();
+        const stmtLine = content.slice(0, charOffset).split('\n').length;
+        charOffset += stmt.length + 1;
+
+        if (
+          /ALTER\s+TABLE\s+\S+\s+ADD\s+(?:COLUMN\s+)?\S+\s+[^;]*\bNOT\s+NULL\b/.test(cleanStmt) &&
+          !/\bDEFAULT\b/.test(cleanStmt) &&
+          !Array.from(reportedNotNullLines).some(l => Math.abs(l - stmtLine) <= 5)
+        ) {
+          addFinding(
+            'CRITICAL',
+            'NOT_NULL_WITHOUT_DEFAULT',
+            'Adição multi-linha de coluna NOT NULL sem valor DEFAULT detectada.',
+            file,
+            stmtLine,
+            'Crie a coluna como NULLABLE, faça o backfill dos dados, e depois aplique a constraint NOT NULL.'
+          );
+        }
+      }
+    }
   }
 });
 

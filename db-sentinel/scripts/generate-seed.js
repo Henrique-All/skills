@@ -8,9 +8,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const schemaArg = process.argv[2] || 'prisma/schema.prisma';
-const outArg = process.argv.find(a => a.startsWith('--out='));
-const outPath = outArg ? path.resolve(outArg.split('=')[1]) : path.resolve(process.cwd(), 'prisma', 'seed.ts');
+const args = process.argv.slice(2);
+let outFileVal = null;
+const outEqArg = args.find(a => a.startsWith('--out='));
+const outIdx = args.indexOf('--out');
+if (outEqArg) {
+  outFileVal = outEqArg.split('=')[1];
+} else if (outIdx >= 0 && args[outIdx + 1]) {
+  outFileVal = args[outIdx + 1];
+}
+
+const positionalArgs = args.filter((a, i) => !a.startsWith('--') && (outIdx < 0 || i !== outIdx + 1));
+const schemaArg = positionalArgs[0] || 'prisma/schema.prisma';
+const outPath = outFileVal ? path.resolve(outFileVal) : path.resolve(process.cwd(), 'prisma', 'seed.ts');
 
 if (!fs.existsSync(schemaArg)) {
   console.error(`❌ Arquivo de schema não encontrado: ${schemaArg}`);
@@ -20,6 +30,31 @@ if (!fs.existsSync(schemaArg)) {
 const content = fs.readFileSync(schemaArg, 'utf-8');
 const lines = content.split('\n');
 
+const PRISMA_SCALARS = new Set([
+  'String', 'Int', 'Float', 'Boolean', 'DateTime', 'Decimal', 'BigInt', 'Json', 'Bytes'
+]);
+
+// 1ª Passagem: Coletar nomes de todos os models e enums para distinguir relações 1:N / 1:1 sem @relation explícito
+const modelNames = new Set();
+const enumMap = new Map();
+let currentEnum = null;
+
+lines.forEach(line => {
+  const trimmed = line.trim();
+  const mMatch = trimmed.match(/^model\s+([A-Za-z0-9_]+)\s*\{/);
+  if (mMatch) modelNames.add(mMatch[1]);
+
+  const eMatch = trimmed.match(/^enum\s+([A-Za-z0-9_]+)\s*\{/);
+  if (eMatch) {
+    currentEnum = eMatch[1];
+    enumMap.set(currentEnum, []);
+  } else if (trimmed === '}' && currentEnum) {
+    currentEnum = null;
+  } else if (currentEnum && trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('@@')) {
+    enumMap.get(currentEnum).push(trimmed.split(/\s+/)[0]);
+  }
+});
+
 const models = [];
 let currentModel = null;
 
@@ -27,7 +62,7 @@ lines.forEach(line => {
   const trimmed = line.trim();
   const modelMatch = trimmed.match(/^model\s+([A-Za-z0-9_]+)\s*\{/);
   if (modelMatch) {
-    currentModel = { name: modelMatch[1], fields: [] };
+    currentModel = { name: modelMatch[1], fields: [], fkTargets: new Map() };
   } else if (trimmed === '}' && currentModel) {
     models.push(currentModel);
     currentModel = null;
@@ -35,20 +70,47 @@ lines.forEach(line => {
     const parts = trimmed.split(/\s+/);
     if (parts.length >= 2) {
       const fieldName = parts[0];
-      const fieldType = parts[1];
-      const isId = trimmed.includes('@id');
-      const isUnique = trimmed.includes('@unique');
-      const isRelation = trimmed.includes('@relation');
-      const isOptional = fieldType.endsWith('?');
+      const rawType = parts[1];
+      const baseType = rawType.replace(/[?[\]]/g, '');
+      const isArray = rawType.includes('[]');
+      const isOptional = rawType.endsWith('?');
+      const isId = /\b@id\b/.test(trimmed);
+      const isUnique = /\b@unique\b/.test(trimmed);
+
+      // Se possui @relation(fields: [userId], references: [id]), mapeia userId -> TargetModel
+      const relFieldsMatch = trimmed.match(/@relation\([^)]*fields:\s*\[([^\]]+)\]/);
+      if (relFieldsMatch && modelNames.has(baseType)) {
+        const fkCols = relFieldsMatch[1].split(',').map(s => s.trim());
+        fkCols.forEach(fk => currentModel.fkTargets.set(fk, baseType));
+      }
+
+      // É campo virtual de relação se tem @relation, se aponta para outro Model, ou se é array de Model (ex: orders Order[])
+      const isRelation =
+        trimmed.includes('@relation') ||
+        modelNames.has(baseType) ||
+        (isArray && !PRISMA_SCALARS.has(baseType));
+
       currentModel.fields.push({
         name: fieldName,
-        type: fieldType.replace('?', ''),
+        type: baseType,
+        isArray,
         isId,
         isUnique,
         isRelation,
         isOptional
       });
     }
+  }
+});
+
+// Mapa de ID sintético gerado para cada Model (garante integridade referencial das FKs)
+const modelSeedIdMap = new Map();
+models.forEach((m, idx) => {
+  const idField = m.fields.find(f => f.isId);
+  if (idField && idField.type === 'Int') {
+    modelSeedIdMap.set(m.name, `1`);
+  } else {
+    modelSeedIdMap.set(m.name, `'demo-uuid-${idx + 1}-001'`);
   }
 });
 
@@ -78,20 +140,26 @@ models.forEach((m, idx) => {
 
   regularFields.forEach(f => {
     let mockVal = `'Exemplo ${f.name}'`;
-    if (f.isId && (f.type === 'String' || f.type.toLowerCase().includes('uuid'))) {
-      mockVal = `'demo-uuid-${idx + 1}-001'`;
-    } else if (f.isId && f.type === 'Int') {
-      mockVal = `1`;
+    const targetModelName = m.fkTargets.get(f.name);
+
+    if (f.isId) {
+      mockVal = modelSeedIdMap.get(m.name) || `'demo-uuid-${idx + 1}-001'`;
+    } else if (targetModelName && modelSeedIdMap.has(targetModelName)) {
+      mockVal = modelSeedIdMap.get(targetModelName);
+    } else if (enumMap.has(f.type) && enumMap.get(f.type).length > 0) {
+      mockVal = `'${enumMap.get(f.type)[0]}'`;
     } else if (f.name.toLowerCase().includes('email')) {
       mockVal = `'usuario${idx + 1}@exemplo.com'`;
     } else if (f.name.toLowerCase().includes('name') || f.name.toLowerCase().includes('nome')) {
       mockVal = `'Carlos Henrique ${idx + 1}'`;
     } else if (f.type === 'Boolean') {
       mockVal = `true`;
-    } else if (f.type === 'Int' || f.type === 'Float' || f.type === 'Decimal') {
+    } else if (f.type === 'Int' || f.type === 'Float' || f.type === 'Decimal' || f.type === 'BigInt') {
       mockVal = `100`;
     } else if (f.type === 'DateTime') {
       mockVal = `new Date()`;
+    } else if (f.type === 'Json') {
+      mockVal = `{}`;
     }
 
     seedCode += `      ${f.name}: ${mockVal},\n`;
@@ -102,7 +170,7 @@ models.forEach((m, idx) => {
 
   for (const item of ${modelLower}Data) {
     try {
-      // Upsert para idempotência
+      // Upsert/create idempotente
       // @ts-ignore
       await prisma.${modelLower}.create({ data: item });
     } catch (e) {

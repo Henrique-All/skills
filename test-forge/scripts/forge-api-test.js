@@ -8,11 +8,25 @@
 const fs = require('fs');
 const path = require('path');
 
-const method = (process.argv[2] || 'GET').toUpperCase();
-const route = process.argv[3] || '/api/example';
-const outArg = process.argv.find(a => a.startsWith('--out='));
+const args = process.argv.slice(2);
+let outFileVal = null;
+const outEqArg = args.find(a => a.startsWith('--out='));
+const outIdx = args.indexOf('--out');
+if (outEqArg) {
+  outFileVal = outEqArg.split('=')[1];
+} else if (outIdx >= 0 && args[outIdx + 1]) {
+  outFileVal = args[outIdx + 1];
+}
+
+const positionalArgs = args.filter((a, i) => !a.startsWith('--') && (outIdx < 0 || i !== outIdx + 1));
+const method = (positionalArgs[0] || 'GET').toUpperCase();
+const route = positionalArgs[1] || '/api/example';
 const defaultFilename = `${route.replace(/[^a-zA-Z0-9]/g, '_').replace(/^_+/, '')}.integration.test.ts`;
-const outPath = outArg ? path.resolve(outArg.split('=')[1]) : path.resolve(process.cwd(), 'test', defaultFilename);
+const outPath = outFileVal ? path.resolve(outFileVal) : path.resolve(process.cwd(), 'test', defaultFilename);
+
+const httpMethod = method.toLowerCase();
+const successStatus = method === 'POST' ? 201 : 200;
+const validPayloadLine = method !== 'GET' ? `\n      .send({ title: 'Item de Teste', quantity: 2 })` : '';
 
 const testContent = `/**
  * ${path.basename(outPath)}
@@ -20,57 +34,50 @@ const testContent = `/**
  * Valida requisições HTTP reais sem mocks fantasmas.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-// Substitua pela importação da sua aplicação Express / Fastify / NestJS
-// import { app } from '../src/app';
-
-const app = {} as any; // Instância real do servidor da aplicação
+// Importe a instância real da sua aplicação Express / Fastify / NestJS:
+import { app } from '../src/app';
 
 describe('Integration Test: ${method} ${route}', () => {
   const authToken = 'Bearer demo-test-token-header';
 
-  // 1. Caminho Feliz (200 / 201)
+  // 1. Caminho Feliz (${successStatus})
   it('deve responder com sucesso quando o payload for válido', async () => {
-    // const res = await request(app)
-    //   .${method.toLowerCase()}('${route}')
-    //   .set('Authorization', authToken)
-    //   ${method !== 'GET' ? '.send({ title: "Item de Teste", quantity: 2 })' : ''};
+    const res = await request(app)
+      .${httpMethod}('${route}')
+      .set('Authorization', authToken)${validPayloadLine};
 
-    // expect(res.status).toBe(${method === 'POST' ? 201 : 200});
-    // expect(res.body).toHaveProperty('id');
-    expect(true).toBe(true);
+    expect(res.status).toBe(${successStatus});
+    expect(res.body).toBeDefined();
   });
-
+${method !== 'GET' ? `
   // 2. Erro de Validação de Schema (400)
-  ${method !== 'GET' ? `it('deve responder 400 Bad Request quando campos obrigatórios estiverem ausentes', async () => {
-    // const res = await request(app)
-    //   .${method.toLowerCase()}('${route}')
-    //   .set('Authorization', authToken)
-    //   .send({}); // Payload vazio propositalmente
+  it('deve responder 400 Bad Request quando campos obrigatórios estiverem ausentes', async () => {
+    const res = await request(app)
+      .${httpMethod}('${route}')
+      .set('Authorization', authToken)
+      .send({});
 
-    // expect(res.status).toBe(400);
-    // expect(res.body).toHaveProperty('error');
-    expect(true).toBe(true);
-  });` : ''}
-
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+` : ''}
   // 3. Bloqueio de Autenticação (401)
   it('deve rejeitar com 401 Unauthorized quando não houver token de autenticação', async () => {
-    // const res = await request(app)
-    //   .${method.toLowerCase()}('${route}');
+    const res = await request(app)
+      .${httpMethod}('${route}');
 
-    // expect(res.status).toBe(401);
-    expect(true).toBe(true);
+    expect(res.status).toBe(401);
   });
 
   // 4. Cenário de Limite / Não Encontrado (404 ou 409)
   it('deve tratar adequadamente registros inexistentes ou conflitos', async () => {
-    // const res = await request(app)
-    //   .${method.toLowerCase()}('${route}/registro-inexistente-999')
-    //   .set('Authorization', authToken);
+    const res = await request(app)
+      .${httpMethod}('${route}/registro-inexistente-999')
+      .set('Authorization', authToken);
 
-    // expect([404, 400, 422]).toContain(res.status);
-    expect(true).toBe(true);
+    expect([404, 409, 400, 422]).toContain(res.status);
   });
 });
 `;

@@ -2,12 +2,11 @@
   "safety-firewall": {
     "PreToolUse": [
       {
-        "matcher": "run_command",
+        "matcher": "run_command|execute_command|bash",
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/pre-command-guard.js",
-            "timeout": 5
+            "command": "node scripts/hooks/pre-command-guard.js"
           }
         ]
       }

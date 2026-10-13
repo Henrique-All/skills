@@ -38,19 +38,17 @@ if (toolName === 'run_command' && args.CommandLine) {
 
   // 1. Padrões Terminantemente Proibidos (Hard Deny)
   const hardDenyPatterns = [
-    /drop\s+database/i,
-    /drop\s+table/i,
-    /truncate\s+table/i,
-    /rm\s+-rf\s+[\/\\]/i,
-    /rm\s+-rf\s+~/i,
-    /rmdir\s+\/s\s+\/q\s+[c-zC-Z]:\\/i,
-    /remove-item\s+.*-recurse.*-force\s+([c-zC-Z]:\\|\/|~)/i,
-    /git\s+push\s+.*--force/i,
-    /git\s+push\s+.*-f\b/i,
-    /prisma\s+migrate\s+reset\s+--force/i,
-    /db\s+push\s+--force-reset/i,
-    /format\s+[c-zC-Z]:/i,
-    /mkfs\b/i,
+    /\bdrop\s+database\b/i,
+    /\bdrop\s+table\b/i,
+    /\btruncate\s+table\b/i,
+    /\brm\s+(?:-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r|-r\s+-f|-f\s+-r)\b\s*(?:[\/\\]|~|\*(?:\s|$)|\.(?:\s|$)|\.\.(?:\s|$))/i,
+    /\brmdir\s+\/s\s+\/q\s+[c-zC-Z]:\\/i,
+    /\bremove-item\s+.*-recurse.*-force\s+([c-zC-Z]:\\|\/|~|\.(?:\s|$)|\*)/i,
+    /\bgit\s+push\b(?=.*(?:\s--force\b|\s-f\b))(?!.*--force-with-lease)(?!.*--force-if-includes)/i,
+    /\bprisma\s+migrate\s+reset\b.*--force/i,
+    /\bdb\s+push\b.*--force-reset/i,
+    /\bformat\s+[c-zC-Z]:/i,
+    /\bmkfs\b/i,
   ];
 
   for (const pattern of hardDenyPatterns) {
@@ -67,10 +65,10 @@ if (toolName === 'run_command' && args.CommandLine) {
 
   // 2. Padrões de Alto Impacto (Exigem Confirmação Forçada do Usuário)
   const forceAskPatterns = [
-    /git\s+reset\s+--hard/i,
-    /git\s+clean\s+-fd/i,
-    /docker\s+system\s+prune/i,
-    /npx\s+rimraf/i,
+    /\bgit\s+reset\s+--hard\b/i,
+    /\bgit\s+clean\s+-[a-zA-Z]*f/i,
+    /\bdocker\s+system\s+prune\b/i,
+    /\bnpx\s+rimraf\b/i,
   ];
 
   for (const pattern of forceAskPatterns) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/orch-pipeline.js
- * Pipeline de Execução Unificada do Enterprise AI Suite (v2.4.0)
+ * Pipeline de Execução Unificada do Enterprise AI Suite (v2.5.0)
  * 
  * Executa determinística e compulsoriamente auditorias locais (Node.js na CPU):
  * - S1: Cartografia 360° (AST & Nós) — SEMPRE OBRIGATÓRIA (Fundação)
@@ -35,7 +35,15 @@ const hasTest = args.includes('--test');
 
 const isTargeted = hasFront || hasMobile || hasDb || hasSec || hasApi || hasTest;
 
-const targetArg = args.find((a) => !a.startsWith('--') && !a.includes(' ') && fs.existsSync(a));
+function isExistingDir(candidate) {
+  try {
+    return Boolean(candidate) && fs.existsSync(candidate) && fs.statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+const targetArg = args.find((a) => !a.startsWith('--') && isExistingDir(a));
 const projectDir = targetArg ? path.resolve(targetArg) : process.cwd();
 const demand = args.filter((a) => a !== targetArg && !a.startsWith('--')).join(' ') || 'Orquestração e Desenvolvimento do Projeto';
 
@@ -55,72 +63,80 @@ if (isTargeted) {
   ].filter(Boolean).join(', ');
   console.log(`🎯 Modo Filtrado via Flag: ${activeFlags}`);
 } else {
-  console.log('🎯 Modo Completo: Todas as 6 skills serão executadas compulsoriamente.');
+  console.log('🎯 Modo Completo: Todas as disciplinas serão executadas compulsoriamente.');
 }
 console.log('');
 
 const results = {
-  cartography: { status: 'OK', layers: 6 },
+  cartography: { status: 'OK', layers: 6, nodes: 0, edges: 0, cycles: 0 },
   security: { status: isTargeted && !hasSec && !hasApi ? 'IGNORADO' : 'PENDENTE', findings: 0, critical: 0, high: 0 },
   uiCraft: { status: isTargeted && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 },
   mobile: { status: isTargeted && !hasMobile && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 },
-  database: { status: isTargeted && !hasDb ? 'IGNORADO' : 'PENDENTE', issues: 0, missingIndexes: 0 },
-  falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0 }
+  database: { status: isTargeted && !hasDb ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, missingIndexes: 0 },
+  falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0 },
+  testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 }
 };
 
 // 1. CARTOGRAFIA 360° (SEMPRE OBRIGATÓRIA - FUNDAÇÃO ARQUITETURAL)
-process.stdout.write('🗺️  [1/6] Executando Cartografia 360° & AST (Fundação)... ');
+process.stdout.write('🗺️  [1/7] Executando Cartografia 360° & AST (Fundação)... ');
 try {
   const cartScript = path.join(rootDir, 'repo-cartographer', 'scripts', 'cartographer.js');
   if (fs.existsSync(cartScript)) {
-    execSync(`node "${cartScript}" init "${projectDir}"`, { stdio: 'pipe' });
+    execSync(`node "${cartScript}" init "${projectDir}"`, { cwd: projectDir, stdio: 'pipe' });
   }
-  results.cartography.status = 'CONCLUÍDO';
-  console.log('✅ OK');
+  const graphPath = path.join(projectDir, '.code-map', 'graph.json');
+  if (fs.existsSync(graphPath)) {
+    const graphData = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    results.cartography.nodes = (graphData.nodes || []).length;
+    results.cartography.edges = (graphData.edges || []).length;
+    results.cartography.cycles = graphData.metadata?.cyclesFound || 0;
+  }
+  results.cartography.status = results.cartography.cycles > 0 ? 'CICLOS DETECTADOS' : 'CONCLUÍDO';
+  console.log(`✅ OK (${results.cartography.nodes} nós, ${results.cartography.edges} conexões, ${results.cartography.cycles} ciclos)`);
 } catch (e) {
   results.cartography.status = 'ALERTA';
   console.log('⚠️ Alerta');
 }
 
-// 2. SEGURANÇA (SECURITY AUDIT)
+// 2. SEGURANÇA (DEVSECOPS AUDIT)
+function parseSecurityOutput(raw) {
+  const data = JSON.parse(raw);
+  results.security.findings = data.summary?.totalFindings ?? 0;
+  results.security.critical = data.summary?.critical ?? 0;
+  results.security.high = data.summary?.high ?? 0;
+  results.security.status = results.security.critical > 0 ? 'CRÍTICO' : results.security.high > 0 ? 'ALTO' : 'OK';
+}
+
 if (!isTargeted || hasSec || hasApi) {
-  process.stdout.write('🔒 [2/6] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
+  process.stdout.write('🔒 [2/7] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
   try {
     const secScript = path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js');
     if (fs.existsSync(secScript)) {
-      const raw = execSync(`node "${secScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
-      const data = JSON.parse(raw);
-      results.security.findings = data.summary.totalFindings;
-      results.security.critical = data.summary.critical;
-      results.security.high = data.summary.high;
-      results.security.status = data.summary.critical > 0 ? 'CRÍTICO' : data.summary.high > 0 ? 'ALTO' : 'OK';
+      const raw = execSync(`node "${secScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      parseSecurityOutput(raw);
     }
     console.log(`✅ ${results.security.findings} apontamentos (${results.security.critical} críticos)`);
   } catch (e) {
     try {
       const raw = e.stdout ? e.stdout.toString() : '';
-      const data = JSON.parse(raw);
-      results.security.findings = data.summary.totalFindings;
-      results.security.critical = data.summary.critical;
-      results.security.high = data.summary.high;
-      results.security.status = data.summary.critical > 0 ? 'CRÍTICO' : 'ALTO';
-      console.log(`⚠️ ${results.security.findings} apontamentos (${results.security.critical} críticos)`);
+      parseSecurityOutput(raw);
+      console.log(`⚠️ ${results.security.findings} apontamentos (${results.security.critical} críticos, ${results.security.high} altos)`);
     } catch {
-      results.security.status = 'OK';
-      console.log('✅ OK');
+      results.security.status = 'FALHA';
+      console.log('❌ Falha na execução do devsecops-audit');
     }
   }
 } else {
-  console.log('🔒 [2/6] Auditoria DevSecOps... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🔒 [2/7] Auditoria DevSecOps... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 3. UI CRAFTSMAN (CRAFT AUDIT)
 if (!isTargeted || hasFront) {
-  process.stdout.write('🎨 [3/6] Executando Auditoria de Design Engineering (Anti-Slop)... ');
+  process.stdout.write('🎨 [3/7] Executando Auditoria de Design Engineering (Anti-Slop)... ');
   try {
     const craftScript = path.join(rootDir, 'frontend-craftsman', 'scripts', 'craft-audit.js');
     if (fs.existsSync(craftScript)) {
-      const raw = execSync(`node "${craftScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
+      const raw = execSync(`node "${craftScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);
       results.uiCraft.score = data.score ?? 100;
       results.uiCraft.issues = (data.findings || []).length;
@@ -145,16 +161,16 @@ if (!isTargeted || hasFront) {
     }
   }
 } else {
-  console.log('🎨 [3/6] Design Engineering... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🎨 [3/7] Design Engineering... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 4. MOBILE CONVERTER (MOBILE AUDIT)
 if (!isTargeted || hasMobile || hasFront) {
-  process.stdout.write('📱 [4/6] Executando Auditoria de Ergonomia Mobile (44px+, dvh)... ');
+  process.stdout.write('📱 [4/7] Executando Auditoria de Ergonomia Mobile (44px+, dvh)... ');
   try {
     const mobScript = path.join(rootDir, 'mobile-converter', 'scripts', 'mobile-audit.js');
     if (fs.existsSync(mobScript)) {
-      const raw = execSync(`node "${mobScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
+      const raw = execSync(`node "${mobScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);
       results.mobile.score = data.score ?? 100;
       results.mobile.issues = (data.findings || []).length;
@@ -179,48 +195,102 @@ if (!isTargeted || hasMobile || hasFront) {
     }
   }
 } else {
-  console.log('📱 [4/6] Ergonomia Mobile... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('📱 [4/7] Ergonomia Mobile... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 5. BANCO DE DADOS (DB SENTINEL)
+function parseDbOutput(raw) {
+  const data = JSON.parse(raw);
+  if (data.error) {
+    results.database.status = 'SEM SCHEMA';
+    results.database.score = 100;
+    return;
+  }
+  results.database.score = data.score ?? 100;
+  results.database.issues = (data.findings || []).length;
+  results.database.missingIndexes = (data.findings || []).filter((f) => f.rule === 'MISSING_FOREIGN_KEY_INDEX').length;
+  const hasCritical = (data.findings || []).some((f) => f.severity === 'CRITICAL');
+  results.database.status = hasCritical ? 'CRÍTICO' : results.database.missingIndexes > 0 ? 'FALTA ÍNDICE' : results.database.issues > 0 ? 'ALERTA' : 'OK';
+}
+
 if (!isTargeted || hasDb) {
-  process.stdout.write('🗄️  [5/6] Executando Auditoria de Banco de Dados & Índices... ');
+  process.stdout.write('🗄️  [5/7] Executando Auditoria de Banco de Dados & Índices... ');
   try {
     const dbScript = path.join(rootDir, 'db-sentinel', 'scripts', 'db-audit.js');
     if (fs.existsSync(dbScript)) {
-      const out = execSync(`node "${dbScript}" "${projectDir}" --json`, { stdio: 'pipe' }).toString();
-      const data = JSON.parse(out);
-      results.database.issues = (data.findings || []).length;
-      results.database.missingIndexes = (data.findings || []).filter((f) => f.rule === 'MISSING_FOREIGN_KEY_INDEX').length;
-      results.database.status = results.database.missingIndexes > 0 ? 'FALTA ÍNDICE' : 'OK';
-      console.log(`✅ ${results.database.missingIndexes} Foreign Keys sem índice`);
+      const out = execSync(`node "${dbScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      parseDbOutput(out);
+      console.log(`✅ Score: ${results.database.score}/100 (${results.database.missingIndexes} FKs sem índice)`);
     }
   } catch (e) {
-    results.database.status = 'OK';
-    console.log('✅ OK');
+    try {
+      const raw = e.stdout ? e.stdout.toString() : '';
+      parseDbOutput(raw);
+      console.log(`⚠️ Score: ${results.database.score}/100 (${results.database.issues} apontamentos, ${results.database.missingIndexes} FKs sem índice)`);
+    } catch {
+      results.database.status = 'FALHA';
+      console.log('❌ Falha na execução do db-audit');
+    }
   }
 } else {
-  console.log('🗄️  [5/6] Banco de Dados & Índices... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🗄️  [5/7] Banco de Dados & Índices... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 6. ADVERSARY FALSIFIER
+function parseFalsifierOutput(out) {
+  const failedMatch = out.match(/encontrou (\d+) vulnerabilidade/);
+  results.falsifier.vectorsFailed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
+  results.falsifier.status = results.falsifier.vectorsFailed > 0 ? 'VULNERÁVEL' : 'SEGURO';
+}
+
 if (!isTargeted || hasDb || hasApi) {
-  process.stdout.write('⚡ [6/6] Executando Falsifier (5 Vetores de Estresse Concorrente)... ');
+  process.stdout.write('⚡ [6/7] Executando Falsifier (5 Vetores de Estresse Concorrente)... ');
   try {
     const falsifyScript = path.join(rootDir, 'hybrid-orchestrator', 'scripts', 'falsify.js');
     if (fs.existsSync(falsifyScript)) {
-      const out = execSync(`node "${falsifyScript}" "${projectDir}"`, { stdio: 'pipe' }).toString();
-      const failedMatch = out.match(/encontrou (\d+) vulnerabilidade/);
-      results.falsifier.vectorsFailed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
-      results.falsifier.status = results.falsifier.vectorsFailed > 0 ? 'VULNERÁVEL' : 'SEGURO';
+      const out = execSync(`node "${falsifyScript}" "${projectDir}"`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      parseFalsifierOutput(out);
       console.log(`✅ ${results.falsifier.vectorsFailed} vetores identificados`);
     }
   } catch (e) {
-    results.falsifier.status = 'OK';
-    console.log('✅ OK');
+    const raw = e.stdout ? e.stdout.toString() : '';
+    if (raw) {
+      parseFalsifierOutput(raw);
+      console.log(`⚠️ ${results.falsifier.vectorsFailed} vetores identificados`);
+    } else {
+      results.falsifier.status = 'FALHA';
+      console.log('❌ Falha na execução do falsify.js');
+    }
   }
 } else {
-  console.log('⚡ [6/6] Adversary Falsifier... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('⚡ [6/7] Adversary Falsifier... ⏭️  Ignorada (flag direcionada ativa)');
+}
+
+// 7. TEST FORGE (QUALIDADE DE TESTES & ANTI-MOCK SLOP)
+if (!isTargeted || hasTest) {
+  process.stdout.write('🧪 [7/7] Executando Test Forge (Auditoria Anti-Mock Slop)... ');
+  try {
+    const testScript = path.join(rootDir, 'test-forge', 'scripts', 'test-audit.js');
+    if (fs.existsSync(testScript)) {
+      const out = execSync(`node "${testScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      const data = JSON.parse(out);
+      if (data.error) {
+        results.testForge.status = 'SEM TESTES';
+        results.testForge.score = 0;
+        console.log('ℹ️ Nenhum arquivo .test/.spec encontrado');
+      } else {
+        results.testForge.score = data.score ?? 100;
+        results.testForge.issues = (data.findings || []).length;
+        results.testForge.status = results.testForge.score >= 85 ? 'APROVADO' : 'ATENÇÃO';
+        console.log(`✅ Score: ${results.testForge.score}/100 (${results.testForge.issues} apontamentos)`);
+      }
+    }
+  } catch (e) {
+    results.testForge.status = 'FALHA';
+    console.log('❌ Falha na execução do test-audit');
+  }
+} else {
+  console.log('🧪 [7/7] Test Forge (Anti-Mock Slop)... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // GERAÇÃO CONSOLIDADA DO .plan/PLAN.md
@@ -241,12 +311,13 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite
 
 | Especialista | Status | Métrica / Score | Diagnóstico Técnico |
 | :--- | :---: | :---: | :--- |
-| 🗺️ **Repo Cartographer** | **${results.cartography.status}** | 6 Camadas | AST e grafo mapeados em \`.code-map/graph.json\` (Base Obrigatória) |
-| 🔒 **Security Auditor (OWASP)** | **${results.security.status}** | ${results.security.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.security.findings} apontamentos`} | ${results.security.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.security.critical} críticos, ${results.security.high} altos (RBAC / Auth / Headers)`} |
-| 🎨 **UI Craftsman (Anti-Slop)** | **${results.uiCraft.status}** | ${results.uiCraft.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.uiCraft.score}/100`} | ${results.uiCraft.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.uiCraft.issues} arquivos com vícios de IA ou falta de mola tátil`} |
-| 📱 **Mobile Converter** | **${results.mobile.status}** | ${results.mobile.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.mobile.score}/100`} | ${results.mobile.status === 'IGNORADO' ? 'Não requisitado na flag' : 'Touch targets, Safe Areas e Viewport dvh'} |
-| 🗄️ **DB Sentinel** | **${results.database.status}** | ${results.database.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.database.missingIndexes} FKs sem index`} | ${results.database.status === 'IGNORADO' ? 'Não requisitado na flag' : 'Prevenção de Sequential Scans em consultas relacionais'} |
-| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${results.falsifier.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.falsifier.vectorsFailed} vetores`} | ${results.falsifier.status === 'IGNORADO' ? 'Não requisitado na flag' : 'Testes de concorrência, timeouts e transações atômicas'} |
+| 🗺️ **Repo Cartographer** | **${results.cartography.status}** | ${results.cartography.nodes} nós / ${results.cartography.edges} arestas | AST e grafo mapeados em \`.code-map/graph.json\` (${results.cartography.cycles} ciclos) |
+| 🔒 **DevSecOps Auditor** | **${results.security.status}** | ${results.security.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.security.findings} apontamentos`} | ${results.security.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.security.critical} críticos, ${results.security.high} altos (OWASP / RBAC / Auth)`} |
+| 🎨 **UI Craftsman (Anti-Slop)** | **${results.uiCraft.status}** | ${results.uiCraft.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.uiCraft.score}/100`} | ${results.uiCraft.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.uiCraft.issues} apontamentos de contraste dual-theme ou estética`} |
+| 📱 **Mobile Converter** | **${results.mobile.status}** | ${results.mobile.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.mobile.score}/100`} | ${results.mobile.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.mobile.issues} apontamentos (Touch targets 44px+, Safe Areas, 100dvh)`} |
+| 🗄️ **DB Sentinel** | **${results.database.status}** | ${results.database.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.database.score}/100`} | ${results.database.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.database.missingIndexes} FKs sem índice (${results.database.issues} alertas totais)`} |
+| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${results.falsifier.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.falsifier.vectorsFailed} vetores`} | ${results.falsifier.status === 'IGNORADO' ? 'Não requisitado na flag' : 'Testes de concorrência, N+1, timeouts e transações atômicas'} |
+| 🧪 **Test Forge** | **${results.testForge.status}** | ${results.testForge.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.testForge.score}/100`} | ${results.testForge.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.testForge.issues} alertas de mocks excessivos ou asserções triviais`} |
 
 ---
 
@@ -254,18 +325,18 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite
 
 | Quadrante | Diagnóstico do Pipeline | Resolução da Arquitetura |
 | :--- | :--- | :--- |
-| **Q1: Contratos & Tipagem** | APIs e endpoints de chamados | Validação estrita de contratos Zod/DTO e isolamento de escopo por usuário |
-| **Q2: Concorrência & Fila** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${results.falsifier.vectorsFailed} pontos de estresse`} | Proteção atômica contra duplo clique e race condition de múltiplos atendentes |
-| **Q3: Design & Mobile UX** | Craft: ${results.uiCraft.score}/100 • Mobile: ${results.mobile.score}/100 | Substituição de botões clichês por micro-interações táteis, menus rápidos e física de molas |
-| **Q4: Segurança & RBAC** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : `${results.security.critical} falhas críticas de acesso`} | Aplicação de Zero-Trust: ocultação estrita de filas gerais para operadores não-admin |
+| **Q1: Contratos & Tipagem** | ${results.cartography.nodes} módulos rastreados no grafo AST | Validação estrita de contratos (Zod/DTO), preservação de payloads e zero breaking changes |
+| **Q2: Dados & Concorrência** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${results.falsifier.vectorsFailed} vetores de estresse • ${results.database.missingIndexes} FKs sem índice`} | Transações atômicas em escritas múltiplas, prevenção de N+1 e indexação de chaves estrangeiras |
+| **Q3: Design Dual-Theme & Mobile** | Craft: ${results.uiCraft.score}/100 • Mobile: ${results.mobile.score}/100 | Coerência obrigatória Light/Dark mode (WCAG AA), fluxo Master-Detail mobile, 100dvh e alvos >= 44px |
+| **Q4: Segurança & Zero-Trust** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : `${results.security.critical} críticos • ${results.security.high} altos`} | Isolamento de propriedade (anti-BOLA/IDOR), sanitização de inputs e bloqueio de segredos hardcoded |
 
 ---
 
-## 📋 3. Checklist de Execução Governança
+## 📋 3. Checklist de Execução & Governança
 
-- [ ] Execução focada nos requisitos da demanda
-- [ ] Preservação da integridade de contratos e interfaces existentes
-- [ ] Validação visual e testes táteis pós-código
+- [ ] Execução cirúrgica focada nos requisitos da demanda ("${demand}")
+- [ ] Preservação da integridade de contratos de API, eventos e layouts existentes
+- [ ] Coerência visual nos temas Claro e Escuro + responsividade mobile verificada
 `;
 
 fs.writeFileSync(path.join(planDir, 'PLAN.md'), planMd, 'utf8');

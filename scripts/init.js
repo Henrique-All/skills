@@ -122,7 +122,7 @@ if (!fs.existsSync(routeGuardConfigPath) || isForce) {
 
   const routeGuardConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.4.0",
+    version: "2.5.0",
     routesDirectory: routesDir,
     clientScanDirectories: ["src", "app", "components", "pages"].filter(d => fs.existsSync(path.join(targetDir, d))),
     framework: stack.backend || stack.frontend || "custom",
@@ -140,14 +140,30 @@ if (!fs.existsSync(routeGuardConfigPath) || isForce) {
 const auditConfigPath = path.join(targetDir, 'audit.config.json');
 if (!fs.existsSync(auditConfigPath) || isForce) {
   const targetScanDirs = ["src", "app", "pages", "server", "lib"].filter(d => fs.existsSync(path.join(targetDir, d)));
+  const excludeDirs = ["node_modules", "dist", "build", ".next", ".git", ".agents", ".code-map"];
   const auditConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.4.0",
+    version: "2.5.0",
+    autoDetect: true,
     scanDirectories: targetScanDirs.length > 0 ? targetScanDirs : ["."],
-    exclude: ["node_modules", "dist", ".next", ".git", ".agents", ".code-map"],
+    exclude: excludeDirs,
     pilaresAtivos: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
     bloquearCommitEm: ["CRITICO", "ALTO"],
-    autofixSeguro: true
+    autofixSeguro: true,
+    rules: {
+      minBcryptRounds: 10,
+      secretsScan: {
+        ignorePaths: excludeDirs,
+        regexPatterns: [
+          "AKIA[0-9A-Z]{16}",
+          "AIza[0-9A-Za-z\\-_]{35}",
+          "-----BEGIN (?:RSA |EC )?PRIVATE KEY-----",
+          "ghp_[0-9a-zA-Z]{36}",
+          "sk-proj-[a-zA-Z0-9_-]{30,}"
+        ]
+      }
+    },
+    exceptionsFile: ".audit-exceptions.json"
   };
 
   fs.writeFileSync(auditConfigPath, JSON.stringify(auditConfig, null, 2));

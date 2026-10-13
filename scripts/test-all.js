@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.4.0)
+ * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.5.0)
  * Executa testes de integridade das skills, do Plugin oficial, dos Subagentes e dos Hooks.
  */
 
@@ -9,7 +9,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.4.0');
+console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.5.0');
 console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
@@ -59,13 +59,25 @@ try {
   );
   if (JSON.parse(testDenyForce).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "git push --force"!');
 
+  const testAllowForceWithLease = execSync(
+    `node "${preGuardPath}"`,
+    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin feat/branch --force-with-lease' } } }), encoding: 'utf-8' }
+  );
+  if (JSON.parse(testAllowForceWithLease).decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "git push --force-with-lease"!');
+
+  const testDenyRmDot = execSync(
+    `node "${preGuardPath}"`,
+    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'rm -rf .' } } }), encoding: 'utf-8' }
+  );
+  if (JSON.parse(testDenyRmDot).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "rm -rf ."!');
+
   const testAllow = execSync(
     `node "${preGuardPath}"`,
     { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'npm test' } } }), encoding: 'utf-8' }
   );
   const testAllowJson = JSON.parse(testAllow);
   if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
-  console.log('   ✅ Firewall de segurança testado: Bloqueio estrito de DROP TABLE, git push --force & aprovação de npm test');
+  console.log('   ✅ Firewall de segurança testado: Bloqueio de DROP TABLE, git push --force, rm -rf . & aprovação de --force-with-lease e npm test');
 
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
