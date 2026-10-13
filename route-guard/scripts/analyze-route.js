@@ -58,36 +58,64 @@ function getProjectFiles(dir, ignores = ['node_modules', '.git', 'dist', 'build'
   return results;
 }
 
+// Carregar route-guard.config.json (se existir)
+let routeConfig = {};
+const configPath = path.join(targetDir, 'route-guard.config.json');
+if (fs.existsSync(configPath)) {
+  try {
+    routeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  } catch (e) {}
+}
+
 const allFiles = getProjectFiles(targetDir);
 const codeFiles = allFiles.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
 
-// 1. Procurar onde a rota está declarada no backend
+function normalizeRoutePattern(routeStr) {
+  return routeStr
+    .replace(/\/+/g, '/')
+    .replace(/\/$/, '')
+    .replace(/\[([^\]]+)\]/g, ':$1') || '/';
+}
+
+const normalizedInput = normalizeRoutePattern(inputEndpoint);
+const strippedInput = normalizeRoutePattern(inputEndpoint.replace(/^\/api(?:\/v\d+)?/, '') || '/');
+
+function endpointsMatch(declaredEndpoint) {
+  const normDecl = normalizeRoutePattern(declaredEndpoint);
+  if (normDecl === normalizedInput || normDecl === strippedInput) return true;
+  if (normDecl.endsWith(normalizedInput) || normalizedInput.endsWith(normDecl)) return true;
+  // Compara convertendo segmentos dinâmicos (:id) em curingas
+  const regexStr = '^' + normDecl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:[a-zA-Z0-9_]+/g, '[^/]+') + '$';
+  try {
+    if (new RegExp(regexStr, 'i').test(normalizedInput)) return true;
+  } catch (e) {}
+  return false;
+}
+
+// 1. Procurar onde a rota está declarada no backend (Express/Fastify, Next.js App Router, NestJS)
 const backendMatches = [];
-const routeDeclRegex = /(?:router|app)\.(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
+const routeDeclRegex = /(?:router|app|fastify)\.(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
 
 for (const file of codeFiles) {
   try {
     const content = fs.readFileSync(file, 'utf-8');
-    let match;
+    const relFile = path.relative(targetDir, file).replace(/\\/g, '/');
     const lines = content.split('\n');
 
+    // 1A. Express / Fastify / Hono
+    let match;
+    routeDeclRegex.lastIndex = 0;
     while ((match = routeDeclRegex.exec(content)) !== null) {
       const method = match[1].toUpperCase();
       const endpoint = match[2];
 
-      const isMatch = (inputMethod === 'ALL' || inputMethod === method) &&
-        (inputEndpoint === endpoint || endpoint.endsWith(inputEndpoint) || inputEndpoint.endsWith(endpoint));
-
-      if (isMatch) {
-        // Encontra número da linha
-        const offset = match.index;
-        const lineNum = content.slice(0, offset).split('\n').length;
+      if ((inputMethod === 'ALL' || inputMethod === method) && endpointsMatch(endpoint)) {
+        const lineNum = content.slice(0, match.index).split('\n').length;
         const lineContent = lines[lineNum - 1] || '';
-
-        const hasAuth = /verifyToken|auth|requireAuth|authenticate/i.test(lineContent) || /router\.use\s*\(\s*(?:verifyToken|auth)/i.test(content);
+        const hasAuth = /verifyToken|auth|requireAuth|authenticate|jwt|protect/i.test(lineContent) || /router\.use\s*\(\s*(?:verifyToken|auth)/i.test(content);
 
         backendMatches.push({
-          file: path.relative(targetDir, file).replace(/\\/g, '/'),
+          file: relFile,
           line: lineNum,
           method,
           endpoint,
@@ -95,31 +123,92 @@ for (const file of codeFiles) {
         });
       }
     }
+
+    // 1B. Next.js App Router (app/.../route.ts|js)
+    const nextRouteMatch = relFile.match(/(?:^|\/)(?:src\/)?app(\/.*)\/route\.(?:ts|tsx|js|jsx)$/);
+    if (nextRouteMatch) {
+      const inferredEndpoint = normalizeRoutePattern(nextRouteMatch[1]);
+      if (endpointsMatch(inferredEndpoint)) {
+        const nextExportRegex = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH)\b|export\s+const\s+(GET|POST|PUT|DELETE|PATCH)\s*=/g;
+        let nMatch;
+        while ((nMatch = nextExportRegex.exec(content)) !== null) {
+          const method = (nMatch[1] || nMatch[2]).toUpperCase();
+          if (inputMethod === 'ALL' || inputMethod === method) {
+            const lineNum = content.slice(0, nMatch.index).split('\n').length;
+            const hasAuth = /getServerSession|auth\(|verifyToken|cookies\(\)|headers\(\)\.get\(['"]authorization/i.test(content);
+            backendMatches.push({
+              file: relFile,
+              line: lineNum,
+              method,
+              endpoint: inferredEndpoint,
+              hasAuth
+            });
+          }
+        }
+      }
+    }
+
+    // 1C. NestJS (@Controller + @Get/@Post/@Put/@Delete/@Patch)
+    const ctrlMatch = content.match(/@Controller\s*\(\s*['"`]?([^'"`)]*)['"`]?\s*\)/);
+    if (ctrlMatch) {
+      const basePath = '/' + (ctrlMatch[1] || '').replace(/^\/+/, '');
+      const nestMethodRegex = /@(Get|Post|Put|Delete|Patch)\s*\(\s*(?:['"`]([^'"`]*)['"`])?\s*\)/g;
+      let nm;
+      while ((nm = nestMethodRegex.exec(content)) !== null) {
+        const method = nm[1].toUpperCase();
+        const subPath = nm[2] ? '/' + nm[2].replace(/^\/+/, '') : '';
+        const fullEndpoint = normalizeRoutePattern(basePath + subPath);
+        if ((inputMethod === 'ALL' || inputMethod === method) && endpointsMatch(fullEndpoint)) {
+          const lineNum = content.slice(0, nm.index).split('\n').length;
+          const hasAuth = /@UseGuards|AuthGuard|JwtAuthGuard|Roles/i.test(content);
+          backendMatches.push({
+            file: relFile,
+            line: lineNum,
+            method,
+            endpoint: fullEndpoint,
+            hasAuth
+          });
+        }
+      }
+    }
   } catch (e) {}
 }
 
 // 2. Procurar consumidores no Frontend / Clientes HTTP
 const callers = [];
-const cleanPattern = inputEndpoint.replace(/^\/api/, '').replace(/:[a-zA-Z0-9_]+/g, '');
+// Constrói regex que casa tanto a rota literal quanto interpolações de parâmetros (:id -> ${...} ou valor)
+const staticPrefix = normalizedInput.split('/:')[0];
+const dynamicConsumerRegex = new RegExp(
+  normalizedInput
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/:[a-zA-Z0-9_]+/g, '(?:\\$\\{[^}]+\\}|[a-zA-Z0-9_-]+|:id)'),
+  'i'
+);
 
 for (const file of codeFiles) {
   try {
-    const content = fs.readFileSync(file, 'utf-8');
-    if (content.includes(inputEndpoint) || (cleanPattern.length > 3 && content.includes(cleanPattern))) {
-      // Ignora se for o próprio arquivo onde a rota foi declarada
-      if (backendMatches.some((m) => file.replace(/\\/g, '/').endsWith(m.file))) continue;
+    const relFile = path.relative(targetDir, file).replace(/\\/g, '/');
+    if (backendMatches.some((m) => m.file === relFile)) continue;
 
-      const lines = content.split('\n');
-      lines.forEach((line, idx) => {
-        if (line.includes(inputEndpoint) || (cleanPattern.length > 3 && line.includes(cleanPattern))) {
-          callers.push({
-            file: path.relative(targetDir, file).replace(/\\/g, '/'),
-            line: idx + 1,
-            snippet: line.trim()
-          });
-        }
-      });
-    }
+    const content = fs.readFileSync(file, 'utf-8');
+    if (!content.includes(staticPrefix) && !dynamicConsumerRegex.test(content)) continue;
+
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+      if (
+        line.includes(inputEndpoint) ||
+        dynamicConsumerRegex.test(line) ||
+        (staticPrefix.length > 4 && line.includes(staticPrefix) && /(?:fetch|axios|api\.|useQuery|useSWR|useMutation|http)/i.test(line))
+      ) {
+        callers.push({
+          file: relFile,
+          line: idx + 1,
+          snippet: trimmed
+        });
+      }
+    });
   } catch (e) {}
 }
 

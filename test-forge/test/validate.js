@@ -46,15 +46,25 @@ const tmpApiTest = path.join(skillDir, 'test', 'temp.api.test.ts');
 const tmpE2eTest = path.join(skillDir, 'test', 'temp.e2e.spec.ts');
 
 try {
-  execSync(`node "${path.join(skillDir, 'scripts', 'forge-api-test.js')}" POST /api/test --out="${tmpApiTest}"`, { encoding: 'utf-8' });
+  execSync(`node "${path.join(skillDir, 'scripts', 'forge-api-test.js')}" POST /api/test --out "${tmpApiTest}"`, { encoding: 'utf-8' });
   console.log('✅ Execução bem-sucedida: scripts/forge-api-test.js');
 
-  execSync(`node "${path.join(skillDir, 'scripts', 'forge-e2e.js')}" /test-page --out="${tmpE2eTest}"`, { encoding: 'utf-8' });
-  console.log('✅ Execução bem-sucedida: scripts/forge-e2e.js');
+  execSync(`node "${path.join(skillDir, 'scripts', 'forge-e2e.js')}" /test-page --out "${tmpE2eTest}"`, { encoding: 'utf-8' });
+  const e2eGenerated = fs.readFileSync(tmpE2eTest, 'utf-8');
+  if (!e2eGenerated.includes('defaultBrowserType') || !e2eGenerated.includes('toBeGreaterThanOrEqual(44)')) {
+    console.error('❌ forge-e2e.js não desestruturou defaultBrowserType ou não exigiu 44px!');
+    process.exit(1);
+  }
+  console.log('✅ Execução bem-sucedida: scripts/forge-e2e.js (Playwright descriptor & 44px validados)');
 
-  // Teste de auditoria
-  execSync(`node "${path.join(skillDir, 'scripts', 'test-audit.js')}" "${path.join(skillDir, 'test')}" --json`, { encoding: 'utf-8' });
-  console.log('✅ Execução bem-sucedida: scripts/test-audit.js');
+  // Teste de auditoria (os testes gerados pelo próprio Test Forge DEVEM atingir score 100/100!)
+  const auditRaw = execSync(`node "${path.join(skillDir, 'scripts', 'test-audit.js')}" "${path.join(skillDir, 'test')}" --json`, { encoding: 'utf-8' });
+  const auditResult = JSON.parse(auditRaw);
+  if (auditResult.score !== 100 || auditResult.findings.length > 0) {
+    console.error(`❌ Os arquivos gerados pelo Test Forge não atingiram 100/100 no test-audit.js! Score: ${auditResult.score}`);
+    process.exit(1);
+  }
+  console.log('✅ Execução bem-sucedida: scripts/test-audit.js (Score 100/100 nos arquivos gerados)');
 } finally {
   if (fs.existsSync(tmpApiTest)) fs.unlinkSync(tmpApiTest);
   if (fs.existsSync(tmpE2eTest)) fs.unlinkSync(tmpE2eTest);

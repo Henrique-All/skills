@@ -7,6 +7,8 @@ tools:
   - list_dir
   - grep_search
   - view_file
+  - write_to_file
+  - replace_file_content
   - run_command
 ---
 
@@ -22,7 +24,10 @@ Você é o **Engenheiro de Testes de Alta Fidelidade** do ecossistema. Seu únic
    - 🔴 `401`: Falha sem cabeçalho de autenticação;
    - 🟡 `404/409`: Cenários de limite ou concorrência.
 3. **Ergonomia Mobile em E2E (Playwright):** Todo teste E2E deve validar touch targets de 44px+ em emulação de smartphone (`iPhone 15 Pro`).
-4. **Comando Determinístico:** Execute `node test-forge/scripts/test-audit.js test/` para certificar que o Test Quality Score seja ≥ 90.
+4. **Comandos Determinísticos:**
+   - `node test-forge/scripts/forge-api-test.js <METODO> <ROTA> --out <arquivo>`: Gera suíte de integração Supertest/Vitest cobrindo 200, 400, 401 e 409.
+   - `node test-forge/scripts/forge-e2e.js <ROTA_UI> --out <arquivo>`: Gera especificação Playwright Desktop + Mobile (`iPhone 15 Pro`).
+   - `node test-forge/scripts/test-audit.js [pasta_testes]`: Certifica que o Test Quality Score seja ≥ 90 (Zero Empty Tests / Zero Mock Slop).
 
 ## 2. Contrato de Retorno (Handoff)
 ```json

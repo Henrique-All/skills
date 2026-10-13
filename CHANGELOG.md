@@ -5,6 +5,28 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.5.0] - 2026-10-13 — 🚀 Blindagem Estrutural 360°, Cobertura Real dos 18 Pilares OWASP, Drizzle ORM & Zero Duplicidade de Skills
+
+### 🛡️ 1. Infraestrutura, Firewall & Desduplicação do Plugin
+- **Firewall Inteligente (`pre-command-guard.js`):** Liberação explícita de `git push --force-with-lease` e `--force-if-includes`, mantendo bloqueio estrito para `--force` / `-f` e ampliando proteção contra `rm -rf .`, `rm -rf *` e `rm -fr /`.
+- **Desduplicação Automática & Empacotamento (`install.js`):** Inclusão de `bin/orch.js` e `scripts/hooks/pre-command-guard.js` no pacote do plugin oficial e remoção automática de cópias avulsas redundantes em `.agents/skills/` e `~/.gemini/config/skills/`, eliminando registros duplicados no Antigravity.
+
+### 🗺️ 2. Cartógrafo Arquitetural (`repo-cartographer`) & Pipeline `/orch`
+- **Correção de Ciclos, IDs e Mermaid (`cartographer.js`):** `traceDependencies()` retorna `{ nodes, edges, cycles }` (corrigindo `exportMermaid`), `detectCycles()` preserva arestas para nós já visitados, `getNodeId()` elimina colisões em arquivos `index.ts`/`route.ts`/`page.tsx` e `initCodeMap()` indexa automaticamente os entrypoints do projeto.
+- **Orquestrador `/orch` (`orch-pipeline.js`):** Suporte a caminhos com espaços/apóstrofos, tratamento estrito de exit codes no `db-sentinel` e `falsifier` e inclusão do `test-forge` (`test-audit.js`) na etapa 7.
+
+### 🔒 3. DevSecOps 18 Pilares (`devsecops-audit`) & Banco de Dados (`db-sentinel`)
+- **Cobertura Completa dos 18 Pilares (`audit.js`):** Adicionadas regras mecânicas para os Pilares 4 (`COOKIE_INSECURE_FLAGS`), 9 (`FRONTEND_TOKEN_IN_LOCALSTORAGE`, `FRONTEND_REVERSE_TABNABBING`), 11 (`COMMAND_INJECTION_RISK`), 13 (`SUPPLY_CHAIN_UNPINNED_DEPENDENCY`, `SUPPLY_CHAIN_SUSPICIOUS_LIFECYCLE`) e 17 (`SENSITIVE_DATA_IN_LOGS`).
+- **Janelas de Contexto (`localWindow`) & Pilar 16 Irrevogável:** Checagens de `BOLA/IDOR`, `Mass Assignment`, `Webhook HMAC` e `SSRF` agora avaliam a janela da função/handler atual, e segredos do Pilar 16 não podem mais ser suprimidos via `.audit-exceptions.json`.
+- **Suporte Real a Drizzle ORM (`.ts`) & Seeds Consistentes (`db-sentinel`):** `db-audit.js` analisa tabelas `pgTable`/`mysqlTable`/`sqliteTable` e pastas de migrations (`prisma/migrations`, `drizzle`), enquanto `generate-seed.js` filtra relações virtuais `1:N` (`Order[]`) e vincula FKs ao ID real do model pai.
+
+### 🧪 4. Test Forge, Falsifier, Snapshot & Route Guard
+- **Test Forge Score 100/100:** `forge-api-test.js` gera asserções Supertest ativas (sem `expect(true).toBe(true)`) e `forge-e2e.js` remove `defaultBrowserType` ao usar `test.use()` dentro de `test.describe()` com validação de touch targets `>= 44px`.
+- **Falsifier & Snapshot (`hybrid-orchestrator`):** Fim dos falsos positivos com `Set.delete()`/`Object.create()` no Vetor 4 e proteção completa de arquivos `untracked` (`git stash push -u`) no `--save` e `--rollback`.
+- **Route Guard Multi-Framework (`analyze-route.js`):** Suporte nativo a rotas Next.js App Router (`app/.../route.ts`), controllers NestJS (`@Controller`) e interpolação de parâmetros dinâmicos (`:id` / `${id}`) no frontend.
+
+---
+
 ## [2.4.0] - 2026-10-06 — 🛡️ DevSecOps & Red Team Engine (13 Regras de Análise Ofensiva) + Renomeação Anti-Colisão Cloudflare
 
 ### 🛡️ 1. Motor de Análise Ofensiva & DevSecOps Red Team

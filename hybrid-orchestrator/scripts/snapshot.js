@@ -68,13 +68,19 @@ if (isSave) {
   try {
     const headCommit = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim();
     let stashId = null;
+    const statusLines = status.split('\n').filter(Boolean);
+    const hasUntracked = statusLines.some((l) => l.startsWith('??'));
 
-    if (status.length > 0) {
-      stashId = execSync(`git stash create "hybrid-${labelArg}"`, { encoding: 'utf-8' }).trim();
+    if (statusLines.length > 0) {
+      if (!hasUntracked) {
+        // Apenas arquivos rastreados: git stash create não toca no working tree
+        stashId = execSync(`git stash create "hybrid-${labelArg}"`, { encoding: 'utf-8' }).trim();
+      }
       if (!stashId) {
-        // Fallback para stash push
-        execSync(`git stash push -m "[HYBRID-SNAPSHOT] ${labelArg}" --keep-index`, { stdio: 'ignore' });
-        stashId = 'stash@{0}';
+        // Inclui untracked (-u), captura o SHA imutável do stash e reaplica imediatamente para não alterar o working tree atual
+        execSync(`git stash push -u -m "[HYBRID-SNAPSHOT] ${labelArg}"`, { stdio: 'ignore' });
+        stashId = execSync('git rev-parse stash@{0}', { encoding: 'utf-8' }).trim();
+        execSync(`git stash apply --index ${stashId}`, { stdio: 'ignore' });
       }
     }
 
@@ -84,7 +90,8 @@ if (isSave) {
       timestamp: new Date().toISOString(),
       headCommit,
       stashId,
-      dirtyFiles: status.split('\n').filter(Boolean).length
+      hasUntracked,
+      dirtyFiles: statusLines.length
     };
 
     const snapshots = loadSnapshots();
@@ -95,7 +102,7 @@ if (isSave) {
     console.log(`   🏷️  Label: ${snapshot.label}`);
     console.log(`   🔑 ID: ${snapshot.id}`);
     console.log(`   📦 Commit Base: ${headCommit.substring(0, 7)}`);
-    console.log(`   📄 Arquivos alterados preservados: ${snapshot.dirtyFiles}\n`);
+    console.log(`   📄 Arquivos alterados preservados (tracked + untracked): ${snapshot.dirtyFiles}\n`);
   } catch (err) {
     console.error(`❌ Erro ao criar snapshot: ${err.message}`);
     process.exit(1);
@@ -103,10 +110,10 @@ if (isSave) {
 } else if (isRollback) {
   const snapshots = loadSnapshots();
   if (snapshots.length === 0) {
-    console.log('ℹ️  Nenhum snapshot registrado anteriormente. Executando git restore preventivo...');
+    console.log('ℹ️  Nenhum snapshot registrado anteriormente. Executando git restore preventivo (preservando arquivos untracked)...');
     try {
       execSync('git restore .', { stdio: 'inherit' });
-      console.log('✅ Workspace restaurado para o estado limpo do commit atual.');
+      console.log('✅ Arquivos rastreados restaurados para o estado limpo do commit atual.');
     } catch (e) {
       console.error('❌ Falha ao restaurar:', e.message);
     }
@@ -117,14 +124,17 @@ if (isSave) {
   console.log(`⏪ Revertendo para o snapshot: [${lastSnap.label}] (${lastSnap.timestamp})...`);
 
   try {
-    execSync('git restore .', { stdio: 'inherit' });
-    execSync('git clean -fd', { stdio: 'inherit' });
+    execSync('git restore --staged --worktree .', { stdio: 'inherit' });
+    // Limpa apenas arquivos untracked criados APÓS o snapshot, preservando pastas de metadados (.hybrid, .plan, .code-map)
+    execSync('git clean -fd -e .hybrid -e .plan -e .code-map', { stdio: 'inherit' });
 
     if (lastSnap.stashId) {
       try {
-        execSync(`git stash apply ${lastSnap.stashId}`, { stdio: 'inherit' });
+        execSync(`git stash apply --index ${lastSnap.stashId}`, { stdio: 'inherit' });
       } catch {
-        // Se stashId for SHA ou hash temporário, tenta git stash pop
+        try {
+          execSync(`git stash apply ${lastSnap.stashId}`, { stdio: 'inherit' });
+        } catch {}
       }
     }
 

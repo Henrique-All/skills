@@ -164,20 +164,38 @@ function detectCycles(edges) {
   return cycles;
 }
 
-// 4. Trace 360° Determinístico
-function traceDependencies(entrypointRelative, projectDir) {
-  const tsConfig = loadTsConfigPaths(projectDir);
-  const fullEntry = path.resolve(projectDir, entrypointRelative);
+function getNodeId(relPath) {
+  const normalized = relPath.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^src\//, '');
+  const noExt = normalized.replace(/\.[^/.]+$/, '');
+  return noExt || path.basename(relPath, path.extname(relPath));
+}
 
-  if (!fs.existsSync(fullEntry)) {
+// 4. Trace 360° Determinístico
+function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = []) {
+  const tsConfig = loadTsConfigPaths(projectDir);
+  const fullEntry = entrypointRelative ? path.resolve(projectDir, entrypointRelative) : null;
+
+  if (fullEntry && !fs.existsSync(fullEntry) && extraEntryFiles.length === 0) {
     console.error(`❌ Ponto de entrada não encontrado: ${fullEntry}`);
-    return;
+    return { nodes: [], edges: [], cycles: [] };
   }
 
   const nodes = [];
   const edges = [];
   const visitedFiles = new Set();
-  const queue = [fullEntry];
+  const queue = [];
+
+  if (fullEntry && fs.existsSync(fullEntry)) queue.push(fullEntry);
+  for (const f of extraEntryFiles) {
+    if (fs.existsSync(f) && !queue.includes(f)) queue.push(f);
+  }
+
+  const addEdgeUnique = (source, target, relation, status = 'confirmed') => {
+    if (source === target) return;
+    if (!edges.some((e) => e.source === source && e.target === target && e.relation === relation)) {
+      edges.push({ source, target, relation, status });
+    }
+  };
 
   while (queue.length > 0) {
     const current = queue.shift();
@@ -196,16 +214,18 @@ function traceDependencies(entrypointRelative, projectDir) {
     const mtime = fs.statSync(current).mtimeMs;
     const classification = classifyLayer(relPath, content);
 
-    const nodeId = path.basename(relPath, path.extname(relPath));
-    nodes.push({
-      id: nodeId,
-      path: relPath,
-      type: classification.type,
-      layer: classification.layer,
-      hash,
-      mtime: Math.floor(mtime),
-      lastIndexed: new Date().toISOString()
-    });
+    const nodeId = getNodeId(relPath);
+    if (!nodes.some((n) => n.id === nodeId)) {
+      nodes.push({
+        id: nodeId,
+        path: relPath,
+        type: classification.type,
+        layer: classification.layer,
+        hash,
+        mtime: Math.floor(mtime),
+        lastIndexed: new Date().toISOString()
+      });
+    }
 
     // Scanner regex expandido: static imports, requires, dynamic imports e re-exports (barrels)
     const importRegex = /(?:import\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s*\(\s*['"]([^'"]+)['"]\s*\)|export\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"])/g;
@@ -215,16 +235,17 @@ function traceDependencies(entrypointRelative, projectDir) {
       const importStr = match[1] || match[2] || match[3] || match[4];
       const resolved = resolveImportPath(importStr, current, projectDir, tsConfig);
 
-      if (resolved && !visitedFiles.has(resolved) && queue.length < 60) {
-        queue.push(resolved);
+      if (resolved) {
         const targetRel = path.relative(projectDir, resolved).replace(/\\/g, '/');
-        const targetId = path.basename(targetRel, path.extname(targetRel));
-        edges.push({
-          source: nodeId,
-          target: targetId,
-          relation: match[4] ? 're-exports' : (match[3] ? 'dynamic-import' : 'imports'),
-          status: 'confirmed'
-        });
+        const targetId = getNodeId(targetRel);
+        const relType = match[4] ? 're-exports' : (match[3] ? 'dynamic-import' : 'imports');
+
+        // Sempre registra a aresta (mesmo para nós já visitados) para permitir detecção real de ciclos e grafos DAG
+        addEdgeUnique(nodeId, targetId, relType, 'confirmed');
+
+        if (!visitedFiles.has(resolved) && !queue.includes(resolved) && visitedFiles.size + queue.length < 120) {
+          queue.push(resolved);
+        }
       }
     }
 
@@ -245,12 +266,7 @@ function traceDependencies(entrypointRelative, projectDir) {
           lastIndexed: new Date().toISOString()
         });
       }
-      edges.push({
-        source: nodeId,
-        target: endpointId,
-        relation: 'calls_endpoint',
-        status: 'confirmed'
-      });
+      addEdgeUnique(nodeId, endpointId, 'calls_endpoint', 'confirmed');
     }
   }
 
@@ -269,7 +285,7 @@ function traceDependencies(entrypointRelative, projectDir) {
     version: '1.0.0',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    entrypoint: entrypointRelative,
+    entrypoint: entrypointRelative || 'project-scan',
     metadata: {
       generator: 'repo-cartographer',
       nodesCount: nodes.length,
@@ -285,12 +301,55 @@ function traceDependencies(entrypointRelative, projectDir) {
   console.log(`   - Nós identificados: ${nodes.length}`);
   console.log(`   - Conexões (arestas): ${edges.length}`);
   console.log(`   - Ciclos: ${cycles.length}`);
+  return { nodes, edges, cycles };
+}
+
+function discoverProjectSeeds(projectDir, limit = 80) {
+  const seeds = [];
+  const skipDirs = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.code-map', '.agents', '.claude', '.cursor']);
+
+  function walk(dir) {
+    if (seeds.length >= limit || !fs.existsSync(dir)) return;
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const ent of entries) {
+      if (seeds.length >= limit) break;
+      if (skipDirs.has(ent.name) || ent.name.startsWith('.')) continue;
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        walk(full);
+      } else if (/\.(ts|tsx|js|jsx)$/.test(ent.name) && !/\.d\.ts$|\.min\.js$/.test(ent.name)) {
+        seeds.push(full);
+      }
+    }
+  }
+
+  // Prioriza diretórios de código de aplicação antes de varrer a raiz
+  const priorityDirs = ['src', 'app', 'pages', 'server', 'lib', 'bin', 'scripts'];
+  for (const d of priorityDirs) {
+    const p = path.join(projectDir, d);
+    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) walk(p);
+  }
+  if (seeds.length === 0) walk(projectDir);
+  return seeds;
 }
 
 function initCodeMap(projectDir) {
-  const mapDir = getCodeMapDir(projectDir);
+  const resolvedDir = path.resolve(projectDir || process.cwd());
+  const mapDir = getCodeMapDir(resolvedDir);
   if (!fs.existsSync(mapDir)) {
     fs.mkdirSync(mapDir, { recursive: true });
+  }
+
+  const obsidianDir = path.join(mapDir, 'obsidian');
+  if (!fs.existsSync(obsidianDir)) {
+    fs.mkdirSync(obsidianDir, { recursive: true });
+  }
+
+  const seeds = discoverProjectSeeds(resolvedDir, 80);
+  if (seeds.length > 0) {
+    const firstRel = path.relative(resolvedDir, seeds[0]).replace(/\\/g, '/');
+    return traceDependencies(firstRel, resolvedDir, seeds);
   }
 
   const graphPath = path.join(mapDir, 'graph.json');
@@ -301,7 +360,10 @@ function initCodeMap(projectDir) {
       updatedAt: new Date().toISOString(),
       metadata: {
         generator: 'repo-cartographer',
-        description: 'Context IR incremental cache'
+        description: 'Context IR incremental cache',
+        nodesCount: 0,
+        edgesCount: 0,
+        cyclesFound: 0
       },
       nodes: [],
       edges: []
@@ -311,15 +373,12 @@ function initCodeMap(projectDir) {
   } else {
     console.log(`ℹ️  Já existe: ${graphPath}`);
   }
-
-  const obsidianDir = path.join(mapDir, 'obsidian');
-  if (!fs.existsSync(obsidianDir)) {
-    fs.mkdirSync(obsidianDir, { recursive: true });
-  }
+  return { nodes: [], edges: [], cycles: [] };
 }
 
 function checkCacheValidity(projectDir) {
-  const mapDir = getCodeMapDir(projectDir);
+  const resolvedDir = path.resolve(projectDir || process.cwd());
+  const mapDir = getCodeMapDir(resolvedDir);
   const graphPath = path.join(mapDir, 'graph.json');
 
   if (!fs.existsSync(graphPath)) {
@@ -332,7 +391,8 @@ function checkCacheValidity(projectDir) {
     const staleNodes = [];
 
     for (const node of graph.nodes || []) {
-      const fullPath = path.isAbsolute(node.path) ? node.path : path.join(projectDir, node.path);
+      if (node.hash === 'virtual') continue;
+      const fullPath = path.isAbsolute(node.path) ? node.path : path.join(resolvedDir, node.path);
       if (!fs.existsSync(fullPath)) {
         staleNodes.push({ id: node.id, path: node.path, reason: 'Arquivo deletado ou renomeado' });
         continue;
@@ -359,7 +419,8 @@ function checkCacheValidity(projectDir) {
 }
 
 function exportToObsidian(projectDir) {
-  const mapDir = getCodeMapDir(projectDir);
+  const resolvedDir = path.resolve(projectDir || process.cwd());
+  const mapDir = getCodeMapDir(resolvedDir);
   const graphPath = path.join(mapDir, 'graph.json');
   const obsidianDir = path.join(mapDir, 'obsidian');
 
@@ -443,9 +504,9 @@ function exportToObsidian(projectDir) {
 
 // 7. Gerar Diagrama Mermaid Direto
 function exportMermaid(entrypoint, projectDir) {
-  const result = traceDependencies(entrypoint, projectDir);
-  const nodes = result.nodes;
-  const edges = result.edges;
+  const result = traceDependencies(entrypoint, projectDir) || { nodes: [], edges: [] };
+  const nodes = result.nodes || [];
+  const edges = result.edges || [];
 
   console.log('\n===============================================================');
   console.log('🗺️  MERMAID FLOWCHART (TD)');
@@ -454,7 +515,7 @@ function exportMermaid(entrypoint, projectDir) {
   let mm = '```mermaid\nflowchart TD\n';
   nodes.forEach((n, idx) => {
     const cleanId = `N${idx}_${n.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-    const label = `${n.type}: ${path.basename(n.path || n.id)}<br/>Layer ${n.layer} (${n.status})`;
+    const label = `${n.type}: ${path.basename(n.path || n.id)}<br/>Layer ${n.layer}`;
     mm += `    ${cleanId}["${label}"]\n`;
   });
   mm += '\n';
@@ -517,8 +578,15 @@ function traceCallers(targetFile, projectDir) {
 
 // CLI Runner
 const args = process.argv.slice(2);
-const command = args[0] || 'check';
-const targetDir = args.find((a) => !a.startsWith('--') && a !== command && a !== args[1]) || process.cwd();
+const positionalArgs = args.filter((a) => !a.startsWith('--'));
+const command = positionalArgs[0] || 'check';
+
+// Para comandos sem arquivo de entrada (init, check, obsidian), o 2º argumento posicional é o diretório do projeto.
+// Para comandos com arquivo (trace, tree, mermaid, callers), o 2º argumento é o arquivo e o 3º é o diretório.
+const dirOnlyCommands = new Set(['init', 'check', 'obsidian']);
+const targetDir = dirOnlyCommands.has(command)
+  ? (positionalArgs[1] ? path.resolve(positionalArgs[1]) : process.cwd())
+  : (positionalArgs[2] ? path.resolve(positionalArgs[2]) : process.cwd());
 
 switch (command) {
   case 'init':
@@ -528,32 +596,36 @@ switch (command) {
     checkCacheValidity(targetDir);
     break;
   case 'trace':
-    const entrypoint = args[1];
+  case 'tree': {
+    const entrypoint = positionalArgs[1];
     if (!entrypoint) {
       console.error('❌ Informe o ponto de entrada. Ex: node cartographer.js trace src/pages/Checkout.tsx');
       process.exit(1);
     }
     traceDependencies(entrypoint, targetDir);
     break;
-  case 'mermaid':
-    const mmEntry = args[1];
+  }
+  case 'mermaid': {
+    const mmEntry = positionalArgs[1];
     if (!mmEntry) {
       console.error('❌ Informe o ponto de entrada. Ex: node cartographer.js mermaid src/pages/Checkout.tsx');
       process.exit(1);
     }
     exportMermaid(mmEntry, targetDir);
     break;
-  case 'callers':
-    const callerTarget = args[1];
+  }
+  case 'callers': {
+    const callerTarget = positionalArgs[1];
     if (!callerTarget) {
       console.error('❌ Informe o arquivo alvo. Ex: node cartographer.js callers src/models/User.ts');
       process.exit(1);
     }
     traceCallers(callerTarget, targetDir);
     break;
+  }
   case 'obsidian':
     exportToObsidian(targetDir);
     break;
   default:
-    console.log(`Uso: node cartographer.js [init|check|trace <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
+    console.log(`Uso: node cartographer.js [init|check|trace <file>|tree <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
 }

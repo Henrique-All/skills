@@ -15,7 +15,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetPath = process.argv[2] || '.';
+const cleanArgs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const targetPath = cleanArgs[0] || '.';
 const isStrict = process.argv.includes('--strict');
 
 console.log('===============================================================');
@@ -38,8 +39,8 @@ const attacks = [
   {
     name: 'Vetor 2: Tratamento de Inputs Nulos e Indefinidos (Boundary Checks)',
     check: (content) => {
-      if ((content.includes('req.body') || content.includes('params.')) && 
-          !content.includes('zod') && !content.includes('.parse') && !content.includes('if (!') && !content.includes('validate')) {
+      if ((content.includes('req.body') || content.includes('req.params.')) && 
+          !content.includes('zod') && !content.includes('.parse') && !content.includes('safeParse') && !content.includes('if (!') && !content.includes('validate')) {
         return 'Falta de validação de payload: inputs consumidos sem verificação de schema ou nulidade.';
       }
       return null;
@@ -48,7 +49,7 @@ const attacks = [
   {
     name: 'Vetor 3: Falta de Timeout em Requisições Externas',
     check: (content) => {
-      if ((content.includes('fetch(') || content.includes('axios.')) && 
+      if ((/\bfetch\s*\(/.test(content) || /\baxios\.(?:get|post|put|delete|patch|request)\s*\(/.test(content)) && 
           !content.includes('timeout') && !content.includes('AbortController') && !content.includes('signal')) {
         return 'Chamadas HTTP externas sem timeout configurado: risco de deadlock em falha de rede.';
       }
@@ -58,8 +59,14 @@ const attacks = [
   {
     name: 'Vetor 4: Atomicidade e Transações em Operações Múltiplas',
     check: (content) => {
-      const dbMutations = (content.match(/\.(?:create|update|delete|insert|save)\(/g) || []).length;
-      if (dbMutations > 1 && !content.includes('$transaction') && !content.includes('beginTransaction') && !content.includes('commit')) {
+      // Conta apenas mutações reais de banco/ORM (ignora Set.delete, Map.delete, Object.create, axios.create)
+      const ormMutationRegex = /(?:prisma\.\w+|db(?:\.\w+)?|tx(?:\.\w+)?|manager(?:\.\w+)?|\b\w*(?:Repo|Repository|Model|Dao))\s*\.\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany|insert|save|destroy)\s*\(/g;
+      const sqlMutationRegex = /\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/gi;
+      const ormCount = (content.match(ormMutationRegex) || []).length;
+      const sqlCount = (content.match(sqlMutationRegex) || []).length;
+      const dbMutations = ormCount + sqlCount;
+
+      if (dbMutations > 1 && !content.includes('$transaction') && !content.includes('.transaction(') && !content.includes('beginTransaction') && !content.includes('COMMIT')) {
         return `Múltiplas operações de escrita no banco (${dbMutations}) sem bloco de transação. Risco de estado inconsistente em caso de erro intermediário.`;
       }
       return null;
@@ -67,9 +74,12 @@ const attacks = [
   },
   {
     name: 'Vetor 5: Bloqueio de Event Loop em I/O Síncrono',
-    check: (content) => {
-      if (content.includes('fs.readFileSync') || content.includes('fs.writeFileSync')) {
-        return 'Uso de operações de disco síncronas (fs.*Sync) em código de servidor. Risco de degradação sob carga concorrente.';
+    check: (content, filePath) => {
+      // Só reporta fs.*Sync quando o arquivo é um handler HTTP/WebSocket/Controller de servidor
+      const isServerHandler = /(?:req\s*,\s*res|NextRequest|@Controller|router\.(?:get|post|put|delete|patch)|app\.(?:get|post|put|delete|patch)|fastify\.|socket\.on\()/i.test(content);
+      const isCliOrTest = /(?:^|[\\/])(?:scripts|bin|test|tests|migrations|prisma|drizzle)[\\/]/i.test(filePath || '') || content.startsWith('#!/usr/bin/env node');
+      if (isServerHandler && !isCliOrTest && (content.includes('fs.readFileSync') || content.includes('fs.writeFileSync'))) {
+        return 'Uso de operações de disco síncronas (fs.*Sync) em rota/handler de servidor. Risco de degradação sob carga concorrente.';
       }
       return null;
     }
@@ -104,7 +114,7 @@ files.forEach((file) => {
   const content = fs.readFileSync(file, 'utf-8');
 
   attacks.forEach((attack) => {
-    const issue = attack.check(content);
+    const issue = attack.check(content, file);
     if (issue) {
       vulnerabilitiesFound++;
       console.log(`💥 [FALSIFIER FALHOU] ${rel}`);

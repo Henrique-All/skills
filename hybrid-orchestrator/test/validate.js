@@ -60,8 +60,8 @@ try {
 }
 
 try {
-  execSync(`node "${path.join(rootDir, 'scripts', 'falsify.js')}" "${path.join(rootDir, 'scripts')}"`, { stdio: 'ignore' });
-  console.log('✅ Execução bem-sucedida: scripts/falsify.js');
+  execSync(`node "${path.join(rootDir, 'scripts', 'falsify.js')}" "${path.join(rootDir, 'scripts')}" --strict`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/falsify.js (--strict sem falsos positivos)');
 } catch (e) {
   console.error('❌ Erro ao rodar falsify.js:', e.message);
   errors++;

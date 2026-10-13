@@ -17,20 +17,24 @@ const { execSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const isJsonOutput = args.includes('--json');
-const isSarifOutput = args.includes('--sarif');
-const shouldFix = args.includes('--fix');
+const sarifArg = args.find((a) => a === '--sarif' || a.startsWith('--sarif='));
+const isSarifOutput = Boolean(sarifArg);
+const sarifOutFile = sarifArg && sarifArg.includes('=') ? sarifArg.split('=')[1] : null;
+const shouldFix = args.includes('--fix') || args.includes('--autofix');
 const pilaresArg = args.find((a) => a.startsWith('--pilares=') || a.startsWith('--pillars='));
-const selectedPilares = pilaresArg ? pilaresArg.split('=')[1].split(',').map(Number) : null;
+const targetDirArg = args.find((a) => !a.startsWith('--'));
 
-const projectDir = process.cwd();
+const projectDir = targetDirArg ? path.resolve(targetDirArg) : process.cwd();
 
 // 1. Carregar Configuração e Exceções
 const defaultAuditConfig = {
   autoDetect: true,
+  exclude: ['node_modules', '.git', 'dist', 'build', '.code-map', '.next'],
+  pilaresAtivos: null,
   rules: {
     minBcryptRounds: 10,
     secretsScan: {
-      ignorePaths: ['node_modules', '.git', 'dist', 'build', '.code-map'],
+      ignorePaths: ['node_modules', '.git', 'dist', 'build', '.code-map', '.next'],
       regexPatterns: [
         'AKIA[0-9A-Z]{16}',
         'AIza[0-9A-Za-z\\-_]{35}',
@@ -85,6 +89,9 @@ function loadExceptions(config) {
 }
 
 const config = loadConfig();
+const selectedPilares = pilaresArg
+  ? pilaresArg.split('=')[1].split(',').map(Number)
+  : (Array.isArray(config.pilaresAtivos) ? config.pilaresAtivos.map(Number) : null);
 const validExceptions = loadExceptions(config);
 const findings = [];
 
@@ -101,13 +108,18 @@ function isExcepted(ruleId, filePath) {
 
 function addFinding({ id, pilar, severity, file, line, message, evidence, remediation }) {
   if (selectedPilares && !selectedPilares.includes(pilar)) return;
-  if (isExcepted(id, file)) return;
+  // Pilar 16 (Segredos & Credenciais) NUNCA pode ser suprimido via .audit-exceptions.json
+  if (pilar !== 16 && isExcepted(id, file)) return;
+
+  const relFile = path.isAbsolute(file)
+    ? path.relative(projectDir, file).replace(/\\/g, '/')
+    : file.replace(/\\/g, '/');
 
   findings.push({
     id,
     pilar,
     severity,
-    file: path.relative(projectDir, file).replace(/\\/g, '/'),
+    file: relFile,
     line: line || 1,
     message,
     evidence: evidence ? maskSecret(evidence.trim()) : undefined,
@@ -116,7 +128,13 @@ function addFinding({ id, pilar, severity, file, line, message, evidence, remedi
 }
 
 // 2. Leitura Recursiva Resiliente de Arquivos
-function getProjectFiles(dir, ignores = ['node_modules', '.git', 'dist', 'build', '.code-map']) {
+const defaultIgnoreList = Array.from(new Set([
+  ...(config.exclude || []),
+  ...((config.rules && config.rules.secretsScan && config.rules.secretsScan.ignorePaths) || []),
+  'node_modules', '.git', 'dist', 'build', '.code-map'
+]));
+
+function getProjectFiles(dir, ignores = defaultIgnoreList) {
   let results = [];
   try {
     const list = fs.readdirSync(dir, { withFileTypes: true });
@@ -181,14 +199,16 @@ if (!selectedPilares || selectedPilares.includes(16)) {
     } catch (e) {}
   }
 
-  // Regex de segredos no código
+  // Regex de segredos no código (resetando lastIndex a cada linha para evitar perda de matches com flag /g)
   const secretPatterns = config.rules.secretsScan.regexPatterns.map((p) => new RegExp(p, 'g'));
   for (const file of codeFiles) {
+    if (path.basename(file) === 'audit.js') continue;
     try {
       const content = fs.readFileSync(file, 'utf-8');
       const lines = content.split('\n');
       lines.forEach((line, idx) => {
         for (const pattern of secretPatterns) {
+          pattern.lastIndex = 0;
           const match = pattern.exec(line);
           if (match) {
             addFinding({
@@ -271,14 +291,16 @@ for (const file of codeFiles) {
         });
       }
 
+      // Janela de contexto local da função/handler atual (evita que outra rota no mesmo arquivo mascare uma vulnerabilidade)
+      const localWindow = lines.slice(Math.max(0, idx - 15), Math.min(lines.length, idx + 15)).join('\n');
+
       // 1C. RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK (HIGH)
       const idorQueryRegex = /(?:prisma\.\w+\.(?:findUnique|findFirst|update|delete)|findOneAndDelete|findByIdAndUpdate|findById)\s*\(\s*\{\s*where:\s*\{\s*id:\s*(?:req\.params\.id|id)\s*\}\s*\}/i;
       const idorSqlRegex = /(?:SELECT|UPDATE|DELETE)\s+FROM\s+\w+\s+WHERE\s+id\s*=\s*(?:\$1|\?|req\.params\.id)/i;
       const idorDbQueryRegex = /db\.query\s*\(\s*['"`](?:SELECT|UPDATE|DELETE)[^'"`]*WHERE\s+id\s*=\s*(?:\$1|\?)[^'"`]*,\s*\[(?:req\.params\.)?id\]/i;
       if (idorQueryRegex.test(line) || idorSqlRegex.test(line) || idorDbQueryRegex.test(line)) {
-        const hasOwnershipInLine = /userId|tenantId|ownerId|user\.id|req\.user|isAdmin|ensureOwnership|requireAuth|requireRole/i.test(line);
-        const hasOwnershipInFile = /userId|tenantId|ownerId|req\.user\.id|ensureOwnership|isOwner|checkOwnership/i.test(content);
-        if (!hasOwnershipInLine && !hasOwnershipInFile) {
+        const hasOwnershipInWindow = /userId|tenantId|ownerId|user\.id|req\.user|isAdmin|ensureOwnership|requireAuth|requireRole|isOwner|checkOwnership/i.test(localWindow);
+        if (!hasOwnershipInWindow) {
           addFinding({
             id: 'RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK',
             pilar: 15,
@@ -296,8 +318,8 @@ for (const file of codeFiles) {
       const massAssignOrm = /(?:prisma\.\w+\.(?:update|upsert|create)|db\.\w+\.(?:update|create)|(?:User|Account|Profile|Order|Customer|Ticket)\.(?:update|create|findByIdAndUpdate))\s*\(\s*(?:\{[^}]*data:\s*req\.body\b|[^)]*,\s*req\.body\b|\{\s*req\.body\s*\}|req\.body\s*[,)])/i;
       const massAssignExplicit = /data:\s*req\.body\b/i;
       if (massAssignOrm.test(line) || (massAssignExplicit.test(line) && /(?:update|create|upsert)/i.test(line))) {
-        const hasWhitelist = /\.pick\(|\.omit\(|\.parse\(req\.body\)|whitelist:\s*true/i.test(content);
-        if (!hasWhitelist) {
+        const hasWhitelistInWindow = /(?:req\.body\s*=\s*[^;]*\.(?:pick|omit|parse)\(|whitelist:\s*true)/i.test(localWindow);
+        if (!hasWhitelistInWindow) {
           addFinding({
             id: 'RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY',
             pilar: 15,
@@ -349,7 +371,8 @@ for (const file of codeFiles) {
           remediation: 'Exija o segredo de webhook obrigatoriamente através de variável de ambiente (process.env) sem fallback estático em código.'
         });
       } else if (isWebhookRouteLine) {
-        const hasHmacVerification = /createHmac|constructEvent|timingSafeEqual|x-hub-signature|stripe-signature|svix|verifyWebhookSignature/i.test(content);
+        const webhookWindow = lines.slice(Math.max(0, idx - 5), Math.min(lines.length, idx + 35)).join('\n');
+        const hasHmacVerification = /createHmac|constructEvent|timingSafeEqual|x-hub-signature|stripe-signature|svix|verifyWebhookSignature/i.test(webhookWindow);
         if (!hasHmacVerification) {
           addFinding({
             id: 'RULE_WEBHOOK_MISSING_HMAC_SIGNATURE',
@@ -402,7 +425,7 @@ for (const file of codeFiles) {
       // 2C. RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD (HIGH)
       const ssrfCallRegex = /(?:axios(?:\.get)?|fetch|needle\.get|http\.get|https\.get)\s*\(\s*(?:req\.(?:query|body|params)\.(?:url|target|mediaUrl|downloadUrl|link)|url|mediaUrl|targetUrl|userUrl)\b/i;
       if (ssrfCallRegex.test(line)) {
-        const hasSsrfProtection = /(?:127\.0\.0\.1|169\.254|localhost|isPrivateIP|ssrfFilter|validateUrl|isLocalIP|isAllowedDomain|ipRange)/i.test(content);
+        const hasSsrfProtection = /(?:127\.0\.0\.1|169\.254\.169\.254|isPrivateIP|ssrfFilter|validateUrl|isLocalIP|isAllowedDomain|ipRange|allowedHosts)/i.test(localWindow);
         if (!hasSsrfProtection) {
           addFinding({
             id: 'RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD',
@@ -605,8 +628,124 @@ for (const file of codeFiles) {
         });
       }
 
+      // Pilar 4: Cookies & Sessões sem flags de segurança (HttpOnly / SameSite / Secure)
+      if (/res\.cookie\s*\(/.test(line)) {
+        const cookieWindow = lines.slice(idx, Math.min(lines.length, idx + 6)).join(' ');
+        if (!/httpOnly\s*:\s*true/i.test(cookieWindow) || !/sameSite\s*:/i.test(cookieWindow)) {
+          addFinding({
+            id: 'COOKIE_INSECURE_FLAGS',
+            pilar: 4,
+            severity: 'MEDIUM',
+            file,
+            line: lineNum,
+            message: 'Cookie emitido via res.cookie() sem as flags obrigatórias de proteção (httpOnly: true, sameSite, secure).',
+            evidence: line,
+            remediation: "Adicione { httpOnly: true, secure: true, sameSite: 'strict' } nas opções de res.cookie()."
+          });
+        }
+      }
+
+      // Pilar 9: Segurança Frontend (Tokens em localStorage e Reverse Tabnabbing)
+      if (/localStorage\.setItem\s*\(\s*['"](?:token|access_?token|refresh_?token|jwt|auth_?token|id_?token)['"]/i.test(line)) {
+        addFinding({
+          id: 'FRONTEND_TOKEN_IN_LOCALSTORAGE',
+          pilar: 9,
+          severity: 'MEDIUM',
+          file,
+          line: lineNum,
+          message: 'Token de sessão/JWT armazenado em localStorage (vulnerável a roubo imediato via XSS).',
+          evidence: line,
+          remediation: 'Armazene tokens de sessão em cookies HttpOnly + Secure + SameSite ou em memória volátil.'
+        });
+      }
+
+      if (/<a\s+[^>]*target=["']_blank["']/i.test(line) && !/rel=["'][^"']*(?:noopener|noreferrer)/i.test(line)) {
+        addFinding({
+          id: 'FRONTEND_REVERSE_TABNABBING',
+          pilar: 9,
+          severity: 'LOW',
+          file,
+          line: lineNum,
+          message: 'Link externo com target="_blank" sem atributo rel="noopener noreferrer" (Reverse Tabnabbing).',
+          evidence: line,
+          remediation: 'Adicione rel="noopener noreferrer" em todos os elementos com target="_blank".'
+        });
+      }
+
+      // Pilar 11: Injeção de Comando / Execução Dinâmica (RCE)
+      const cmdInjectionRegex = /(?:exec|execSync|spawn|spawnSync)\s*\(\s*(?:`[^`]*\$\{\s*req\.|[^)]*\+\s*req\.(?:body|query|params))/i;
+      const evalInjectionRegex = /\beval\s*\(\s*(?:req\.(?:body|query|params)|`[^`]*\$\{\s*req\.)/i;
+      if (cmdInjectionRegex.test(line) || evalInjectionRegex.test(line)) {
+        addFinding({
+          id: 'COMMAND_INJECTION_RISK',
+          pilar: 11,
+          severity: 'CRITICAL',
+          file,
+          line: lineNum,
+          message: 'Execução de comando de sistema ou eval() interpolando parâmetros diretamente da requisição HTTP (Command Injection / RCE).',
+          evidence: line,
+          remediation: 'Jamais concatene inputs de usuário em comandos de shell. Use execFile com argumentos parametrizados em array e whitelist estrita.'
+        });
+      }
+
+      // Pilar 17: Vazamento de Dados Sensíveis / PII em Logs (LGPD)
+      const sensitiveLogRegex = /(?:console\.(?:log|info|debug|warn|error)|logger\.(?:info|debug|warn|error))\s*\([^)]*(?:req\.body\.(?:password|senha|cvv|creditCard|cardNumber|cpf|token)|user\.(?:password|senha)|passwordHash)/i;
+      if (sensitiveLogRegex.test(line)) {
+        addFinding({
+          id: 'SENSITIVE_DATA_IN_LOGS',
+          pilar: 17,
+          severity: 'MEDIUM',
+          file,
+          line: lineNum,
+          message: 'Impressão de credenciais, senhas ou dados sensíveis (PII/LGPD) diretamente em logs de aplicação.',
+          evidence: line,
+          remediation: 'Remova campos sensíveis (password, token, CPF, cartão) antes de registrar objetos em logs.'
+        });
+      }
+
     });
   } catch (e) {}
+}
+
+// Pilar 13: Supply Chain & Dependências (package.json)
+if (!selectedPilares || selectedPilares.includes(13)) {
+  const pkgJsonPath = path.join(projectDir, 'package.json');
+  if (fs.existsSync(pkgJsonPath)) {
+    try {
+      const rawPkg = fs.readFileSync(pkgJsonPath, 'utf-8');
+      const pkg = JSON.parse(rawPkg);
+      const allDeps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+      for (const [depName, depVer] of Object.entries(allDeps)) {
+        if (depVer === '*' || depVer === 'latest') {
+          addFinding({
+            id: 'SUPPLY_CHAIN_UNPINNED_DEPENDENCY',
+            pilar: 13,
+            severity: 'MEDIUM',
+            file: pkgJsonPath,
+            line: 1,
+            message: `Dependência "${depName}" declarada com versão irrestrita ("${depVer}"), expondo o build a ataques de Supply Chain.`,
+            evidence: `"${depName}": "${depVer}"`,
+            remediation: 'Fixe versões semânticas explícitas no package.json e mantenha o lockfile versionado.'
+          });
+        }
+      }
+      const scripts = pkg.scripts || {};
+      for (const [hookName, scriptCmd] of Object.entries(scripts)) {
+        if (/^(?:preinstall|install|postinstall)$/.test(hookName) && /(?:curl|wget|nc\s|bash\s+-c|powershell.*IEX|Invoke-Expression)/i.test(String(scriptCmd))) {
+          addFinding({
+            id: 'SUPPLY_CHAIN_SUSPICIOUS_LIFECYCLE',
+            pilar: 13,
+            severity: 'HIGH',
+            file: pkgJsonPath,
+            line: 1,
+            message: `Script de ciclo de vida "${hookName}" executa download ou shell remoto durante a instalação de pacotes.`,
+            evidence: `"${hookName}": "${scriptCmd}"`,
+            remediation: 'Audite e remova downloads arbitrários de binários/scripts em hooks de preinstall/postinstall.'
+          });
+        }
+      }
+    } catch (e) {}
+  }
 }
 
 // 🚨 [Pilar 12]: Desktop IPC & Content Security Policy (RULE_TAURI_IPC_UNRESTRICTED_CSP)
@@ -666,7 +805,52 @@ if (!selectedPilares || selectedPilares.includes(12)) {
   }
 }
 
-// 4. Consolidação do Relatório
+// 4. Autofix (se ativado via --fix / --autofix) ANTES da consolidação do relatório
+const fixedFiles = new Set();
+if (shouldFix && findings.length > 0) {
+  const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS']);
+  for (let i = findings.length - 1; i >= 0; i--) {
+    const f = findings[i];
+    const absFile = path.resolve(projectDir, f.file);
+    if (!fs.existsSync(absFile)) continue;
+    try {
+      let content = fs.readFileSync(absFile, 'utf-8');
+      let changed = false;
+
+      // Fix 1: Reverse Tabnabbing (target="_blank")
+      if (content.includes('target="_blank"') && !content.includes('rel="noopener')) {
+        content = content.replace(/target="_blank"(?!\s+rel=)/g, 'target="_blank" rel="noopener noreferrer"');
+        changed = true;
+      }
+
+      // Fix 2: Cookie Security (adiciona httpOnly, sameSite e secure)
+      if (content.includes('res.cookie(') && (!content.includes('httpOnly') || !content.includes('sameSite'))) {
+        content = content.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
+          let opts = p2.trim();
+          if (!opts.includes('httpOnly')) opts += (opts ? ', ' : '') + 'httpOnly: true';
+          if (!opts.includes('sameSite')) opts += (opts ? ', ' : '') + "sameSite: 'strict'";
+          if (!opts.includes('secure')) opts += (opts ? ', ' : '') + 'secure: true';
+          return `${p1} ${opts} ${p3}`;
+        });
+        changed = true;
+      }
+
+      if (changed) {
+        fs.writeFileSync(absFile, content, 'utf-8');
+        fixedFiles.add(f.file);
+      }
+      if (fixableRuleIds.has(f.id) && fixedFiles.has(f.file)) {
+        findings.splice(i, 1);
+      }
+    } catch {}
+  }
+
+  if (fixedFiles.size > 0 && !isJsonOutput && !isSarifOutput) {
+    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
+  }
+}
+
+// 5. Consolidação do Relatório
 const criticalCount = findings.filter((f) => f.severity === 'CRITICAL').length;
 const highCount = findings.filter((f) => f.severity === 'HIGH').length;
 const mediumCount = findings.filter((f) => f.severity === 'MEDIUM').length;
@@ -684,49 +868,11 @@ const report = {
     high: highCount,
     medium: mediumCount,
     low: lowCount,
+    autoFixedFiles: Array.from(fixedFiles),
     status
   },
   findings
 };
-
-// 4. Autofix (se ativado via --fix)
-if (shouldFix && findings.length > 0) {
-  const fixedFiles = new Set();
-  findings.forEach((f) => {
-    if (!fs.existsSync(f.file)) return;
-    try {
-      let content = fs.readFileSync(f.file, 'utf-8');
-      let changed = false;
-
-      // Fix 1: Reverse Tabnabbing (target="_blank")
-      if (content.includes('target="_blank"') && !content.includes('rel="noopener')) {
-        content = content.replace(/target="_blank"(?!\s+rel=)/g, 'target="_blank" rel="noopener noreferrer"');
-        changed = true;
-      }
-
-      // Fix 2: Cookie Security (adiciona httpOnly e secure)
-      if (content.includes('res.cookie(') && (!content.includes('httpOnly') || !content.includes('sameSite'))) {
-        content = content.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
-          let opts = p2.trim();
-          if (!opts.includes('httpOnly')) opts += (opts ? ', ' : '') + 'httpOnly: true';
-          if (!opts.includes('sameSite')) opts += (opts ? ', ' : '') + "sameSite: 'strict'";
-          if (!opts.includes('secure')) opts += (opts ? ', ' : '') + 'secure: true';
-          return `${p1} ${opts} ${p3}`;
-        });
-        changed = true;
-      }
-
-      if (changed) {
-        fs.writeFileSync(f.file, content, 'utf-8');
-        fixedFiles.add(f.file);
-      }
-    } catch {}
-  });
-
-  if (fixedFiles.size > 0) {
-    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
-  }
-}
 
 if (isSarifOutput) {
   const sarif = {
@@ -757,7 +903,14 @@ if (isSarifOutput) {
       }))
     }]
   };
-  console.log(JSON.stringify(sarif, null, 2));
+  const sarifString = JSON.stringify(sarif, null, 2);
+  if (sarifOutFile) {
+    const absSarifOut = path.resolve(projectDir, sarifOutFile);
+    const sarifDir = path.dirname(absSarifOut);
+    if (!fs.existsSync(sarifDir)) fs.mkdirSync(sarifDir, { recursive: true });
+    fs.writeFileSync(absSarifOut, sarifString, 'utf-8');
+  }
+  console.log(sarifString);
   process.exit(isBlocked ? 1 : 0);
 }
 
@@ -780,7 +933,7 @@ if (isJsonOutput) {
     console.log('🚨 ACHADOS DETECTADOS:');
     console.log('---------------------------------------------------------------');
     findings.forEach((f, idx) => {
-      const badge = f.severity === 'CRITICAL' ? '🔴' : (f.severity === 'HIGH' ? '🟠' : '🟡');
+      const badge = f.severity === 'CRITICAL' ? '🔴' : (f.severity === 'HIGH' ? '🟠' : (f.severity === 'MEDIUM' ? '🟡' : '🟢'));
       console.log(`\n[${idx + 1}] ${badge} ${f.severity} — [Pilar ${f.pilar}] ${f.id}`);
       console.log(`    Arquivo: ${f.file}:${f.line}`);
       console.log(`    Problema: ${f.message}`);

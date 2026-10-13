@@ -24,9 +24,9 @@ Você é o **Guardião de Rotas e Contratos de API**. Sua missão é garantir co
 ## 2. Ferramentas Disponíveis
 
 Se a skill `route-guard` estiver presente no workspace ou globalmente, execute seus scripts determinísticos:
-- `node route-guard/scripts/analyze-route.js <METODO> <ROTA>`: Varre o repositório e gera a matriz de impacto (Blast Radius).
-- `node route-guard/scripts/generate-contract.js <ROTA>`: Gera schemas Zod e tipos TypeScript sincronizados.
-- `node route-guard/scripts/mock-route.js <ROTA>`: Cria mock local para testes de integração imediatos.
+- `node route-guard/scripts/analyze-route.js <METODO> <ROTA> [diretorio]`: Varre o repositório e gera a matriz de impacto (Blast Radius).
+- `node route-guard/scripts/generate-contract.js <METODO> <ROTA> --fields "campo:tipo" --out <arquivo>`: Gera schemas Zod e tipos TypeScript sincronizados.
+- `node route-guard/scripts/mock-route.js --port 3333 --delay 150`: Cria servidor mock HTTP local para testes de integração imediatos.
 
 ## 3. Contrato de Retorno (Handoff para o Orquestrador)
 

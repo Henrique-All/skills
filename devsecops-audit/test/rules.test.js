@@ -158,12 +158,34 @@ fs.writeFileSync(path.join(testDir, 'tauri.conf.json'), JSON.stringify({
   }
 }, null, 2));
 
+// 14. Fixture: Pilares 4, 9, 11, 16 (irrevogável) e 17
+fs.writeFileSync(path.join(testDir, 'vuln_pillars_extra.ts'), [
+  'import { execSync } from "child_process";',
+  'export const awsKey = "AKIA1234567890ABCDEF";',
+  'export function extraVulns(req, res) {',
+  '  console.log("Login payload:", req.body.password);',
+  '  res.cookie("session", "abc", { path: "/" });',
+  '  localStorage.setItem("accessToken", "jwt-val");',
+  '  execSync(`ping ${req.query.host}`);',
+  '}'
+].join('\n'));
+
+// Tentativa de suprimir Pilar 16 via .audit-exceptions.json (DEVE SER IGNORADA pelo motor!)
+fs.writeFileSync(path.join(testDir, '.audit-exceptions.json'), JSON.stringify([
+  {
+    id: 'HARDCODED_SECRET_DETECTED',
+    arquivo: 'vuln_pillars_extra.ts',
+    expiraEm: '2099-12-31T23:59:59.000Z'
+  }
+], null, 2));
+
 const auditScript = path.join(__dirname, '..', 'scripts', 'audit.js');
 
 try {
   let stdout = '';
   try {
-    stdout = execSync('node "' + auditScript + '" --json', { cwd: testDir, encoding: 'utf-8' });
+    // Executa passando testDir como argumento posicional (sem precisar de cwd: testDir)
+    stdout = execSync(`node "${auditScript}" "${testDir}" --json`, { encoding: 'utf-8' });
   } catch (e) {
     stdout = e.stdout ? e.stdout.toString() : '';
   }
@@ -184,7 +206,12 @@ try {
     'RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD',
     'RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE',
     'RULE_JWT_MISSING_ALGORITHM_OPTION',
-    'RULE_TAURI_IPC_UNRESTRICTED_CSP'
+    'RULE_TAURI_IPC_UNRESTRICTED_CSP',
+    'HARDCODED_SECRET_DETECTED',
+    'COOKIE_INSECURE_FLAGS',
+    'FRONTEND_TOKEN_IN_LOCALSTORAGE',
+    'COMMAND_INJECTION_RISK',
+    'SENSITIVE_DATA_IN_LOGS'
   ];
 
   console.log('📊 Total de achados detectados nas fixtures: ' + report.findings.length);
@@ -206,7 +233,7 @@ try {
     process.exit(1);
   }
 
-  console.log('\n🎉 Todas as 13 regras de AppSec/Red Team foram detectadas com 100% de precisão!');
+  console.log('\n🎉 Todas as 18 regras de AppSec/Red Team & Pilares foram detectadas com 100% de precisão!');
 } catch (err) {
   console.error('❌ Erro no teste:', err.message);
   if (fs.existsSync(testDir)) fs.rmSync(testDir, { recursive: true, force: true });

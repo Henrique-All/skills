@@ -83,6 +83,8 @@ try {
 
 // 4. Testar execução dos scripts
 const { execSync } = require('child_process');
+const cartographerScript = path.join(rootDir, 'scripts', 'cartographer.js');
+
 try {
   execSync(`node "${path.join(rootDir, 'scripts', 'preview-graph.js')}" --no-open`, { stdio: 'ignore' });
   console.log('✅ Execução bem-sucedida: scripts/preview-graph.js (--no-open)');
@@ -92,10 +94,38 @@ try {
 }
 
 try {
-  execSync(`node "${path.join(rootDir, 'scripts', 'cartographer.js')}" callers "${path.join(rootDir, 'scripts', 'cartographer.js')}"`, { stdio: 'ignore' });
+  execSync(`node "${cartographerScript}" callers "${cartographerScript}"`, { stdio: 'ignore' });
   console.log('✅ Execução bem-sucedida: scripts/cartographer.js (callers)');
 } catch (e) {
   console.error('❌ Falha ao rodar cartographer.js callers:', e.message);
+  hasErrors = true;
+}
+
+try {
+  execSync(`node "${cartographerScript}" trace "${cartographerScript}" "${rootDir}"`, { stdio: 'ignore' });
+  execSync(`node "${cartographerScript}" tree "${cartographerScript}" "${rootDir}"`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/cartographer.js (trace & tree alias)');
+} catch (e) {
+  console.error('❌ Falha ao rodar cartographer.js trace/tree:', e.message);
+  hasErrors = true;
+}
+
+try {
+  const mermaidOut = execSync(`node "${cartographerScript}" mermaid "${cartographerScript}" "${rootDir}"`, { encoding: 'utf-8' });
+  if (!mermaidOut.includes('flowchart TD')) {
+    throw new Error('Saída Mermaid não contém flowchart TD');
+  }
+  console.log('✅ Execução bem-sucedida: scripts/cartographer.js (mermaid)');
+} catch (e) {
+  console.error('❌ Falha ao rodar cartographer.js mermaid:', e.message);
+  hasErrors = true;
+}
+
+try {
+  execSync(`node "${cartographerScript}" check "${rootDir}"`, { stdio: 'ignore' });
+  console.log('✅ Execução bem-sucedida: scripts/cartographer.js (check)');
+} catch (e) {
+  console.error('❌ Falha ao rodar cartographer.js check:', e.message);
   hasErrors = true;
 }
 

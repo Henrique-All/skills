@@ -79,18 +79,40 @@ try {
   hasErrors = true;
 }
 
-// 4. Teste Funcional: analyze-route.js
+// 4. Teste Funcional: analyze-route.js (Rota Nova + Next.js App Router com parâmetro dinâmico)
+const tmpNextDir = path.join(rootDir, 'test', 'tmp_next_proj');
 try {
   const output = execSync('node scripts/analyze-route.js GET /api/test-route', { cwd: rootDir, encoding: 'utf-8' });
   if (output.includes('ROUTE GUARD') && output.includes('ROTA NOVA')) {
-    console.log('✅ analyze-route.js: Análise de rota executada com sucesso.');
+    console.log('✅ analyze-route.js: Análise de rota nova executada com sucesso.');
   } else {
     console.error('❌ analyze-route.js: Saída inesperada.');
+    hasErrors = true;
+  }
+
+  // Criar fixture temporária Next.js App Router + consumidor com template string
+  const routeFile = path.join(tmpNextDir, 'app', 'api', 'orders', '[id]', 'route.ts');
+  const clientFile = path.join(tmpNextDir, 'src', 'OrderView.tsx');
+  fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+  fs.mkdirSync(path.dirname(clientFile), { recursive: true });
+  fs.writeFileSync(routeFile, 'export async function GET(req: Request) { return Response.json({ ok: true }); }\n');
+  fs.writeFileSync(clientFile, 'export async function loadOrder(orderId: string) { return fetch(`/api/orders/${orderId}`); }\n');
+
+  const jsonOut = execSync(`node scripts/analyze-route.js GET /api/orders/:id "${tmpNextDir}" --json`, { cwd: rootDir, encoding: 'utf-8' });
+  const parsed = JSON.parse(jsonOut);
+  if (parsed.status === 'ROTA_EXISTENTE' && parsed.declarations.length === 1 && parsed.consumersCount === 1) {
+    console.log('✅ analyze-route.js: Detecção de Next.js App Router ([id]/route.ts) e consumidor dinâmico validada.');
+  } else {
+    console.error('❌ analyze-route.js falhou ao mapear Next.js App Router ou consumidor dinâmico:', jsonOut);
     hasErrors = true;
   }
 } catch (e) {
   console.error(`❌ Falha ao rodar analyze-route.js: ${e.message}`);
   hasErrors = true;
+} finally {
+  if (fs.existsSync(tmpNextDir)) {
+    fs.rmSync(tmpNextDir, { recursive: true, force: true });
+  }
 }
 
 // 5. Teste Funcional: generate-contract.js
