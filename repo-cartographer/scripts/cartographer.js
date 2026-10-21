@@ -108,20 +108,21 @@ function resolveImportPath(importStr, currentFilePath, projectDir, tsConfig) {
 // 2. Classificação de Camada
 function classifyLayer(filePath, content) {
   const normalized = filePath.replace(/\\/g, '/').toLowerCase();
-  
-  if (normalized.includes('/pages/') || normalized.includes('/views/') || normalized.includes('/components/') || normalized.endsWith('.tsx') || normalized.endsWith('.jsx')) {
+  const baseName = path.basename(filePath);
+
+  if (normalized.includes('/pages/') || normalized.includes('/views/') || normalized.includes('/components/') || normalized.includes('/screens/') || normalized.endsWith('.tsx') || normalized.endsWith('.jsx')) {
     return { layer: 1, type: 'ui' };
   }
-  if (normalized.includes('/store') || normalized.includes('/slices') || normalized.includes('/context') || normalized.includes('use') || content.includes('zustand') || content.includes('createContext')) {
-    return { layer: 2, type: 'state' };
-  }
-  if (normalized.includes('/api/') || normalized.includes('/routes/') || normalized.includes('/controllers/') || content.includes('express') || content.includes('router.')) {
-    return { layer: 4, type: 'backend' };
-  }
-  if (normalized.includes('/models/') || normalized.includes('/schemas/') || normalized.includes('/entities/') || normalized.includes('prisma') || content.includes('@prisma') || content.includes('typeorm')) {
+  if (normalized.includes('/models/') || normalized.includes('/schemas/') || normalized.includes('/entities/') || normalized.includes('/repositories/') || normalized.includes('prisma') || content.includes('@prisma/client') || content.includes('typeorm') || content.includes('drizzle-orm')) {
     return { layer: 5, type: 'database' };
   }
-  if (normalized.includes('redis') || normalized.includes('queue') || normalized.includes('worker') || normalized.includes('kafka')) {
+  if (normalized.includes('/controllers/') || normalized.includes('/routes/') || normalized.includes('/services/') || normalized.includes('/middlewares/') || normalized.includes('/server/') || content.includes('express(') || content.includes('router.')) {
+    return { layer: 4, type: 'backend' };
+  }
+  if (normalized.includes('/store') || normalized.includes('/slices') || normalized.includes('/context') || normalized.includes('/hooks/') || /^use[A-Z]/.test(baseName) || content.includes('from \'zustand\'') || content.includes('from "zustand"') || content.includes('createContext(')) {
+    return { layer: 2, type: 'state' };
+  }
+  if (normalized.includes('redis') || normalized.includes('queue') || normalized.includes('worker') || normalized.includes('kafka') || normalized.startsWith('scripts/') || normalized.includes('/scripts/') || normalized.startsWith('bin/')) {
     return { layer: 6, type: 'infra' };
   }
   return { layer: 3, type: 'api' };
@@ -243,7 +244,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
         // Sempre registra a aresta (mesmo para nós já visitados) para permitir detecção real de ciclos e grafos DAG
         addEdgeUnique(nodeId, targetId, relType, 'confirmed');
 
-        if (!visitedFiles.has(resolved) && !queue.includes(resolved) && visitedFiles.size + queue.length < 120) {
+        if (!visitedFiles.has(resolved) && !queue.includes(resolved) && visitedFiles.size + queue.length < 250) {
           queue.push(resolved);
         }
       }
@@ -277,7 +278,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
     cycles.forEach((c) => console.log(`   🔁 ${c.join(' ➔ ')}`));
   }
 
-  // Salva no .code-map/graph.json
+  // Salva no .code-map/graph.json e .code-map/INDEX.md
   const mapDir = getCodeMapDir(projectDir);
   if (!fs.existsSync(mapDir)) fs.mkdirSync(mapDir, { recursive: true });
 
@@ -297,16 +298,114 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
   };
 
   fs.writeFileSync(path.join(mapDir, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf-8');
-  console.log(`✅ Grafo 360° gerado com sucesso em .code-map/graph.json!`);
+  generateIndexMarkdown(projectDir, graphData);
+  console.log(`✅ Grafo 360° gerado com sucesso em .code-map/graph.json e .code-map/INDEX.md!`);
   console.log(`   - Nós identificados: ${nodes.length}`);
   console.log(`   - Conexões (arestas): ${edges.length}`);
   console.log(`   - Ciclos: ${cycles.length}`);
   return { nodes, edges, cycles };
 }
 
-function discoverProjectSeeds(projectDir, limit = 80) {
+function generateIndexMarkdown(projectDir, graphData) {
+  const mapDir = getCodeMapDir(projectDir);
+  const nodes = graphData.nodes || [];
+  const edges = graphData.edges || [];
+
+  const inDegree = new Map();
+  const outDegree = new Map();
+  edges.forEach((e) => {
+    outDegree.set(e.source, (outDegree.get(e.source) || 0) + 1);
+    inDegree.set(e.target, (inDegree.get(e.target) || 0) + 1);
+  });
+
+  const layerLabels = {
+    1: '1. 🖥️ Camada 1: UI (Telas, Páginas & Componentes)',
+    2: '2. 🔄 Camada 2: Estado (Stores, Contexts & Hooks)',
+    3: '3. 🔌 Camada 3: Rede, API Client & Contratos HTTP',
+    4: '4. ⚙️ Camada 4: Backend (Rotas, Controllers & Services)',
+    5: '5. 🗄️ Camada 5: Banco de Dados (Models, Schemas & ORM)',
+    6: '6. ☁️ Camada 6: Infraestrutura, Filas & Utilitários'
+  };
+
+  let md = `# 🗺️ Índice Arquitetural 360° (.code-map/INDEX.md)\n\n`;
+  md += `> ⚡ **LEITURA OBRIGATÓRIA PARA AGENTES DE IA (PASSO ZERO — ANTI-VOLTAS):**\n`;
+  md += `> Este arquivo resume a cartografia completa do projeto. Consulte as camadas e conexões abaixo para abrir diretamente os arquivos exatos com \`view_file\`, sem fazer buscas cegas pelo repositório.\n\n`;
+  md += `- **Atualizado em:** \`${graphData.updatedAt}\`\n`;
+  md += `- **Métricas:** **${nodes.length}** nós mapeados | **${edges.length}** conexões | **${graphData.metadata?.cyclesFound || 0}** ciclos\n`;
+  md += `- **Busca Rápida via CLI:** \`node .agents/plugins/enterprise-ai-suite/skills/repo-cartographer/scripts/cartographer.js query <termo>\`\n\n`;
+
+  // Top Hubs
+  const rankedNodes = [...nodes]
+    .map((n) => ({
+      ...n,
+      inCount: inDegree.get(n.id) || 0,
+      outCount: outDegree.get(n.id) || 0,
+      total: (inDegree.get(n.id) || 0) + (outDegree.get(n.id) || 0)
+    }))
+    .filter((n) => n.total > 0)
+    .sort((a, b) => b.inCount - a.inCount || b.total - a.total)
+    .slice(0, 12);
+
+  if (rankedNodes.length > 0) {
+    md += `## 🔥 Núcleos de Maior Impacto (Top Hubs)\n\n`;
+    md += `| Arquivo / Nó | Camada | Dependentes (In) | Importa (Out) |\n`;
+    md += `| :--- | :---: | :---: | :---: |\n`;
+    rankedNodes.forEach((n) => {
+      md += `| \`${n.path}\` | L${n.layer} (${n.type}) | ${n.inCount} | ${n.outCount} |\n`;
+    });
+    md += `\n`;
+  }
+
+  // Agrupamento por Camada
+  md += `## 📚 Arquivos Mapeados por Camada (6 Layers)\n\n`;
+  for (let layerNum = 1; layerNum <= 6; layerNum++) {
+    const layerNodes = nodes.filter((n) => (n.layer || 3) === layerNum);
+    if (layerNodes.length === 0) continue;
+    md += `### ${layerLabels[layerNum]} (${layerNodes.length})\n`;
+    layerNodes.slice(0, 40).forEach((n) => {
+      const callers = inDegree.get(n.id) || 0;
+      const deps = outDegree.get(n.id) || 0;
+      const meta = callers + deps > 0 ? ` *(usado por ${callers}, chama ${deps})*` : '';
+      md += `- \`${n.path}\`${meta}\n`;
+    });
+    if (layerNodes.length > 40) {
+      md += `- *...e mais ${layerNodes.length - 40} nós (consulte \`.code-map/graph.json\` ou use \`cartographer.js query <termo>\`)*\n`;
+    }
+    md += `\n`;
+  }
+
+  // Fluxo de Conexões Principais
+  if (edges.length > 0) {
+    md += `## 🔗 Mapa de Fluxo Direto (Quem Chama Quem)\n\n`;
+    const groupedEdges = new Map();
+    edges.forEach((e) => {
+      if (!groupedEdges.has(e.source)) groupedEdges.set(e.source, []);
+      groupedEdges.get(e.source).push(e.target);
+    });
+    let count = 0;
+    for (const [src, targets] of groupedEdges.entries()) {
+      if (count >= 50) {
+        md += `- *...mais fluxos disponíveis em \`.code-map/graph.json\`*\n`;
+        break;
+      }
+      const srcNode = nodes.find((n) => n.id === src);
+      const srcLabel = srcNode ? srcNode.path : src;
+      md += `- \`${srcLabel}\` ➔ ${targets.map((t) => `\`${t}\``).join(', ')}\n`;
+      count++;
+    }
+    md += `\n`;
+  }
+
+  fs.writeFileSync(path.join(mapDir, 'INDEX.md'), md, 'utf-8');
+}
+
+function discoverProjectSeeds(projectDir, limit = 160) {
   const seeds = [];
-  const skipDirs = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.code-map', '.agents', '.claude', '.cursor']);
+  const seen = new Set();
+  const skipDirs = new Set([
+    'node_modules', '.git', 'dist', 'build', 'coverage', '.next',
+    '.code-map', '.agents', '.claude', '.cursor', '.plan', '.craft', '.mobile-preview', '.swarm'
+  ]);
 
   function walk(dir) {
     if (seeds.length >= limit || !fs.existsSync(dir)) return;
@@ -319,18 +418,35 @@ function discoverProjectSeeds(projectDir, limit = 80) {
       if (ent.isDirectory()) {
         walk(full);
       } else if (/\.(ts|tsx|js|jsx)$/.test(ent.name) && !/\.d\.ts$|\.min\.js$/.test(ent.name)) {
-        seeds.push(full);
+        if (!seen.has(full)) {
+          seen.add(full);
+          seeds.push(full);
+        }
       }
     }
   }
 
-  // Prioriza diretórios de código de aplicação antes de varrer a raiz
-  const priorityDirs = ['src', 'app', 'pages', 'server', 'lib', 'bin', 'scripts'];
+  // Prioriza diretórios de código de aplicação (incluindo estruturas Fullstack e Monorepo)
+  const priorityDirs = [
+    'src', 'app', 'pages', 'components', 'server', 'api', 'client', 'web', 'backend', 'frontend', 'lib', 'bin', 'scripts',
+    'frontend/src', 'frontend/app', 'backend/src', 'client/src', 'server/src', 'web/src', 'api/src'
+  ];
   for (const d of priorityDirs) {
     const p = path.join(projectDir, d);
     if (fs.existsSync(p) && fs.statSync(p).isDirectory()) walk(p);
   }
-  if (seeds.length === 0) walk(projectDir);
+
+  // Suporte a workspaces de monorepo (apps/*, packages/*, services/*)
+  const monoContainers = ['apps', 'packages', 'services', 'modules'];
+  for (const container of monoContainers) {
+    const cPath = path.join(projectDir, container);
+    if (fs.existsSync(cPath) && fs.statSync(cPath).isDirectory()) {
+      walk(cPath);
+    }
+  }
+
+  // Complementa com demais pastas da raiz se ainda houver espaço no limite
+  if (seeds.length < limit) walk(projectDir);
   return seeds;
 }
 
@@ -346,7 +462,7 @@ function initCodeMap(projectDir) {
     fs.mkdirSync(obsidianDir, { recursive: true });
   }
 
-  const seeds = discoverProjectSeeds(resolvedDir, 80);
+  const seeds = discoverProjectSeeds(resolvedDir, 160);
   if (seeds.length > 0) {
     const firstRel = path.relative(resolvedDir, seeds[0]).replace(/\\/g, '/');
     return traceDependencies(firstRel, resolvedDir, seeds);
@@ -369,6 +485,7 @@ function initCodeMap(projectDir) {
       edges: []
     };
     fs.writeFileSync(graphPath, JSON.stringify(template, null, 2), 'utf-8');
+    generateIndexMarkdown(resolvedDir, template);
     console.log(`✅ Inicializado: ${graphPath}`);
   } else {
     console.log(`ℹ️  Já existe: ${graphPath}`);
@@ -576,13 +693,60 @@ function traceCallers(targetFile, projectDir) {
   }
 }
 
+// 9. Consulta Instantânea no Grafo (Anti-Voltas para Agentes de IA)
+function queryGraph(keyword, projectDir) {
+  const resolvedDir = path.resolve(projectDir || process.cwd());
+  const mapDir = getCodeMapDir(resolvedDir);
+  const graphPath = path.join(mapDir, 'graph.json');
+
+  let graph = null;
+  if (fs.existsSync(graphPath)) {
+    try {
+      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    } catch {}
+  }
+
+  if (!graph || !Array.isArray(graph.nodes) || graph.nodes.length === 0) {
+    console.log('⚡ Grafo vazio ou ausente. Inicializando cartografia automática...');
+    initCodeMap(resolvedDir);
+    if (fs.existsSync(graphPath)) {
+      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    }
+  }
+
+  const nodes = (graph && graph.nodes) || [];
+  const edges = (graph && graph.edges) || [];
+  const q = (keyword || '').toLowerCase();
+
+  const matched = nodes.filter(
+    (n) =>
+      (n.id && n.id.toLowerCase().includes(q)) ||
+      (n.path && n.path.toLowerCase().includes(q)) ||
+      (n.type && n.type.toLowerCase().includes(q))
+  );
+
+  console.log(`🗺️  CARTOGRAPHER QUERY: "${keyword}" (${matched.length} nó(s) encontrado(s))\n`);
+  if (matched.length === 0) {
+    console.log(`ℹ️  Nenhum nó com "${keyword}" no grafo atual. Consulte .code-map/INDEX.md para a visão completa.`);
+    return;
+  }
+
+  matched.slice(0, 15).forEach((n, idx) => {
+    const incoming = edges.filter((e) => e.target === n.id).map((e) => e.source);
+    const outgoing = edges.filter((e) => e.source === n.id).map((e) => e.target);
+    console.log(`${idx + 1}. [Layer ${n.layer} | ${n.type}] ${n.path}`);
+    if (incoming.length > 0) console.log(`   ⬅️  Chamado por (In): ${incoming.join(', ')}`);
+    if (outgoing.length > 0) console.log(`   ➡️  Chama/Importa (Out): ${outgoing.join(', ')}`);
+  });
+}
+
 // CLI Runner
 const args = process.argv.slice(2);
 const positionalArgs = args.filter((a) => !a.startsWith('--'));
 const command = positionalArgs[0] || 'check';
 
 // Para comandos sem arquivo de entrada (init, check, obsidian), o 2º argumento posicional é o diretório do projeto.
-// Para comandos com arquivo (trace, tree, mermaid, callers), o 2º argumento é o arquivo e o 3º é o diretório.
+// Para comandos com arquivo/termo (trace, tree, mermaid, callers, query), o 2º argumento é o alvo e o 3º é o diretório.
 const dirOnlyCommands = new Set(['init', 'check', 'obsidian']);
 const targetDir = dirOnlyCommands.has(command)
   ? (positionalArgs[1] ? path.resolve(positionalArgs[1]) : process.cwd())
@@ -595,6 +759,11 @@ switch (command) {
   case 'check':
     checkCacheValidity(targetDir);
     break;
+  case 'query': {
+    const kw = positionalArgs[1] || '';
+    queryGraph(kw, targetDir);
+    break;
+  }
   case 'trace':
   case 'tree': {
     const entrypoint = positionalArgs[1];
@@ -627,5 +796,5 @@ switch (command) {
     exportToObsidian(targetDir);
     break;
   default:
-    console.log(`Uso: node cartographer.js [init|check|trace <file>|tree <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
+    console.log(`Uso: node cartographer.js [init|check|query <termo>|trace <file>|tree <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
 }

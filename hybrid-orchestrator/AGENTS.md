@@ -8,6 +8,7 @@ This document instructs any AI agent (Claude, Gemini, GPT, Copilot, Cursor, Roo 
 
 ## Core Rules
 
+0. **Cartography-First (Step Zero — Zero Blind Search):** Always check and read **`.code-map/INDEX.md`** (or `.code-map/graph.json`) FIRST before running exploratory `grep_search` or directory scans. Go straight to the mapped files across the 6 layers.
 1. **Classify before editing:** Route A, B, or C — then act.
 2. **Planning before code (Routes B & C):** Run planning phases and obtain explicit approval before writing any code.
 3. **Strict scope:** Change only mapped files. No unsolicited refactors.

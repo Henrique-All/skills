@@ -5,6 +5,20 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.5.1] - 2026-10-21 — 🗺️ Cartografia-First (Passo Zero Anti-Voltas), Índice Instantâneo `INDEX.md` & Auto-Sync Invisível `PostToolUse`
+
+### 🗺️ 1. Índice Arquitetural Instantâneo (`.code-map/INDEX.md`) & Consulta Rápida (`query`)
+- **Geração Automática do `.code-map/INDEX.md` (`cartographer.js`):** Toda execução de `init` ou `trace` agora consolida um índice Markdown de leitura de 1 turno (~80 linhas) agrupando **Top Hubs (arquivos mais conectados)**, as **6 Camadas (UI, Estado, API, Backend, Banco, Infra)** e o **Mapa de Fluxo Direto (`Quem Chama Quem`)**, permitindo que a IA vá direto aos arquivos exatos sem ler milhares de linhas de JSON bruto.
+- **Novo Subcomando `cartographer.js query <termo>`:** Filtra nós instantaneamente no grafo e exibe quem chama (`⬅️ In`) e quem é chamado (`➡️ Out`), auto-inicializando o mapa caso esteja vazio.
+- **Descoberta Fullstack & Monorepo (`discoverProjectSeeds`):** Varredura ampliada para incluir subpastas `frontend/src`, `frontend/app`, `backend/src`, `client/src`, `server/src`, `apps/*` e `packages/*`, além de refinamento em `classifyLayer()` para evitar falsos positivos da Camada 2 (`state`) em arquivos como `userController.ts`.
+
+### 🔄 2. Governança de Ciclo Completo: Olhar Primeiro (Passo Zero) & Atualizar ao Finalizar (Passo Final)
+- **Hook Silencioso `PostToolUse` (`scripts/hooks/post-edit-cartography.js`):** Conectado ao `hooks.json` para interceptar `write_to_file`, `replace_file_content` e `multi_replace_file_content`, reindexando `.code-map/INDEX.md` e `.code-map/graph.json` automaticamente em background (0 tokens, 0 mensagens no chat) sempre que arquivos são criados ou editados.
+- **Auto-Indexação Real e Injeção de `AGENTS.md` (`scripts/init.js`):** O comando `orch init` agora executa o `cartographer.js init` de imediato (eliminando pastas `.code-map/` vazias) e injeta o `AGENTS.md` na raiz do projeto para que Antigravity, Claude Code e Cursor carreguem nativamente a regra de Cartografia-First.
+- **Regras Globais e Skills Sincronizadas:** Atualizados `GEMINI.md`, `rules/01-zero-trust.md`, `hybrid-orchestrator` e `repo-cartographer` com a obrigação estrita de ler `.code-map/INDEX.md` no Passo Zero e manter o mapa sincronizado ao concluir alterações.
+
+---
+
 ## [2.5.0] - 2026-10-13 — 🚀 Blindagem Estrutural 360°, Cobertura Real dos 18 Pilares OWASP, Drizzle ORM & Zero Duplicidade de Skills
 
 ### 🛡️ 1. Infraestrutura, Firewall & Desduplicação do Plugin

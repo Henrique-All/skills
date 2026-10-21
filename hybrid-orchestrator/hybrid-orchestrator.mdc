@@ -10,6 +10,7 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo c
 
 ## 1. Regras Fundamentais
 
+0. **🗺️ Passo Zero — Cartografia Primeiro (Anti-Voltas):** Antes de fazer buscas exploratórias (`grep_search`, `find_by_name`, `list_dir`), leia **`.code-map/INDEX.md`** (ou `.code-map/graph.json`) se existir no projeto para ir direto aos arquivos exatos das 6 camadas.
 1. **Classifique antes de editar:** Rota A, B ou C primeiro. Para perguntas e diagnósticos sem código, responda normalmente sem acionar o protocolo.
 2. **Alinhamento antes do código (Rotas B e C):** Execute as Fases de Planejamento e obtenha a Trava de Permissão antes de escrever qualquer linha.
 3. **Escopo fechado:** Apenas os arquivos mapeados. Sem refatorações não solicitadas.

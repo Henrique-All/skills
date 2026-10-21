@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.5.0)
+ * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.5.1)
  * Executa testes de integridade das skills, do Plugin oficial, dos Subagentes e dos Hooks.
  */
 
@@ -9,7 +9,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.5.0');
+console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.5.1');
 console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
@@ -43,7 +43,11 @@ try {
   // scripts/hooks/
   const preGuardPath = path.join(rootDir, 'scripts', 'hooks', 'pre-command-guard.js');
   if (!fs.existsSync(preGuardPath)) throw new Error('scripts/hooks/pre-command-guard.js não encontrado!');
-  console.log('   ✅ Script de safety firewall (pre-command-guard.js) verificado');
+  const postCartPath = path.join(rootDir, 'scripts', 'hooks', 'post-edit-cartography.js');
+  if (!fs.existsSync(postCartPath)) throw new Error('scripts/hooks/post-edit-cartography.js não encontrado!');
+  const testPostCart = execSync(`node "${postCartPath}"`, { input: JSON.stringify({}), encoding: 'utf-8' });
+  if (testPostCart.trim() !== '{}') throw new Error('post-edit-cartography.js deve retornar {} silencioso!');
+  console.log('   ✅ Scripts de hooks (pre-command-guard.js & post-edit-cartography.js) verificados');
 
   // Testar funcionalidade do firewall pre-command-guard.js
   const testDeny = execSync(
