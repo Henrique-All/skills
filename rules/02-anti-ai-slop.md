@@ -1,4 +1,4 @@
-# 🎨 Regra 02: Anti-AI Slop, Densidade Profissional & Arquitetura Mobile
+# 🎨 Regra 02: Anti-AI Slop, UX de Produto, Motion 120fps & Arquitetura Mobile
 
 Esta regra governa qualquer geração, refatoração ou modificação de interface gráfica, telas ou componentes no ecossistema.
 
@@ -9,62 +9,58 @@ Esta regra governa qualquer geração, refatoração ou modificação de interfa
 Aplicações corporativas, painéis administrativos, help desks, chats e CRMs são **ferramentas de trabalho**, não landing pages promocionais.
 O agente deve rejeitar o visual artificial gerado por IA genérica:
 
-1. **Densidade de Informação Profissional:**
+1. **Densidade de Informação Profissional & Micro-Tipografia:**
    - **Proibido Componentes Inflados:** Não use `rounded-3xl` (`border-radius: 24px+`) nem paddings gigantescos (`p-8`, `p-10`) em cards internos de dados.
-   - **Padrão de Produto:** Use cantos moderados (`rounded-lg` / `rounded-md`, 6px a 10px), paddings compactos e ergonômicos (12px a 20px) e hierarquia tipográfica focada em legibilidade e rapidez de leitura.
-   - **Tamanho de Botões:** Botões normais de desktop devem ter 32px a 40px de altura (nunca botões balão de 56px estilo landing page). No mobile, garanta área de toque invisível/visível de 44x44px.
+   - **Padrão de Produto:** Use cantos moderados (`rounded-lg` / `rounded-xl`, 8px a 12px), paddings compactos (12px a 20px) e hierarquia tipográfica escaneável.
+   - **Tipografia Funcional (`tabular-nums`):** Preços, saldos, métricas KPI, contadores e colunas numéricas de tabelas **DEVEM** usar `tabular-nums` (`font-variant-numeric: tabular-nums`) para impedir que os dígitos "dancem" horizontalmente. Títulos devem usar `tracking-tight text-balance`.
 2. **Proibição de Efeitos Espalhafatosos:**
    - Proibido o uso indiscriminado de gradientes roxos neon (`from-purple-500 to-indigo-500`), brilhos neon (`box-shadow: 0 0 25px rgba(...)`) ou glassmorphism denso (`backdrop-blur-xl bg-white/5`) sem contraste definido.
    - Paletas sóbrias e refinadas: monocromático equilibrado (Zinc/Slate) com apenas 1 cor de destaque funcional (< 5% da tela).
 
 ---
 
-## 🛡️ 2. Defensive CSS — Proibido Deixar Telas Quebradas
+## ⚡ 2. Engenharia de Movimento Multi-Engine (120fps / Zero Re-renders)
 
-Ao refatorar ou ajustar componentes existentes:
-1. **Preservação de Flexbox e Grid:**
-   - NUNCA remova `min-width: 0` de filhos flexíveis que contenham texto ou dados dinâmicos (sua ausência estoura o contêiner e causa scroll horizontal indesejado).
-   - NUNCA quebre a cadeia de altura (`height: 100%`, `flex: 1`, `overflow: hidden`) sem testar se o scroll do chat/tabela continua funcionando.
-   - NUNCA aplique larguras fixas em pixels (`width: 450px`) em áreas que precisam ser fluidas. Use `max-width: 100%` e unidades relativas.
-2. **Harmonia com o Design System Existente:**
-   - Respeite rigorosamente a tecnologia e os tokens já adotados pelo projeto (ex.: se o projeto usa Styled-Components com `theme.colors.*`, use esse padrão; se usa Tailwind, use os tokens utilitários).
-   - NUNCA injete bibliotecas ou classes alienígenas conflitantes.
-3. **Preservação Funcional:**
-   - Ao refatorar o visual, NUNCA perca props, callbacks de eventos (`onClick`, `onChange`, `onClose`, `onSubmit`) ou a gestão de foco de inputs.
-
----
-
-## 📱 3. Erradicação da Preguiça Mobile — Master-Detail Obrigatório
-
-Mudar apenas `padding` ou aplicar `flex-direction: column` cego **NÃO É** adaptação mobile.
-1. **Telas Multi-Coluna (Chat / Atendimento / Inboxes / Split-Views):**
-   - **PROIBIDO EMPILHAMENTO VERTICAL:** No celular, o usuário não pode ter que rolar uma lista inteira de contatos para só então conseguir ver o chat.
-   - **OBRIGATÓRIO MASTER-DETAIL:**
-     * No celular, exiba **somente a lista** quando nenhum item estiver selecionado.
-     * Ao clicar em um atendimento/item, oculte a lista e abra a área de conversa em **tela cheia (100dvh)**.
-     * Deve haver obrigatoriamente um botão `← Voltar` (com touch target >= 44x44px) no topo para desmarcar a seleção e retornar à lista.
-     * Painéis secundários de contexto (dados do cliente, histórico) devem ser acessados via **Bottom Sheet** deslizante acionada por botão de ação rápida no cabeçalho.
-2. **Ergonomia do Polegar & Hardware:**
-   - Altura dinâmica `100dvh` obrigatória em contêineres de tela cheia (elimina corte da barra de navegação no Safari e Chrome móvel).
-   - Respeito à Safe Area na base (`pb-[env(safe-area-inset-bottom)]`) para barras fixas.
-   - Clearance de 64px para o botão de menu hambúrguer no cabeçalho mobile.
-   - Fonte mínima de 16px em inputs para impedir o auto-zoom do iOS Safari.
+1. **Zero Re-render em Tracking de Ponteiro e Scroll:**
+   - **PROIBIDO** chamar `setState` (`useState`) dentro de `onMouseMove` ou `onScroll` (causa 60 re-renders/seg no React).
+   - Use obrigatoriamente `useMotionValue`, `useSpring` e `useMotionTemplate` (Framer Motion / `motion/react`) ou CSS Custom Properties via `ref`.
+2. **Proibido `transition-all`:**
+   - Nunca use `transition-all` no Tailwind ou `transition: all` no CSS (anima propriedades de layout na CPU). Especifique `transition-colors`, `transition-transform` ou `transition-opacity`.
+3. **Seleção Deliberada de Engine de Animação:**
+   - **Motion (`framer-motion`):** Micro-interações (`whileTap={{ scale: 0.98 }}`), pílulas e modais com `layoutId` (`AnimatedTabs`, `MorphingDialog`, `CommandPalette`) e toasts empilhados (`StackedToast`).
+   - **AutoAnimate (`@formkit/auto-animate`):** Obrigatório em listas CRUD, filtros de tabelas e tags dinâmicas (`const [parent] = useAutoAnimate()`).
+   - **GSAP (`useGSAP`, `Flip`, `ScrollTrigger`):** Para timelines sequenciais e mudanças complexas de layout CSS Grid.
+   - **View Transitions API (`document.startViewTransition`) & `@starting-style`:** Para troca de tema Dark/Light sem piscar e animações de entrada nativas.
 
 ---
 
-## ☀️ 4. Coerência Estrita Dual-Theme (Light & Dark Mode)
+## 🧠 3. Psicologia de UX & Arquitetura dos 5 Estados
 
-1. **Zero Texto Branco Hardcoded:**
-   - Proibido `color: #fff`, `color: white` ou `text-white` estático sobre superfícies dinâmicas. No tema claro, isso gera texto branco no branco.
-   - Sempre utilize ternárias `isLight(theme) ? '#0f172a' : '#f8fafc'` ou tokens semânticos `theme.colors.text`.
-2. **Zero Superfícies Fantasma:**
-   - Proibido `background: rgba(255, 255, 255, 0.05)` ou bordas brancas translúcidas sem alternativa clara. No tema claro, use fundos sólidos (`#ffffff`) com bordas nítidas (`#e2e8f0`).
-3. **Contraste WCAG AA (4.5:1):**
-   - Todo texto deve ser legível com contraste confortável em ambos os modos.
+1. **Os 5 Estados Obrigatórios de Telas de Dados:**
+   - *(1) Loading:* Content-Aware Skeletons (`ContentSkeleton.tsx`) sem layout shift (proibido spinner solto).
+   - *(2) Empty State:* Card educativo com botão CTA primário (`EmptyStateCard`).
+   - *(3) Filtered Empty State:* Estado "Nenhum resultado para o filtro" com botão imediato `"Limpar filtros"`.
+   - *(4) Error State:* Banner inline com mensagem clara e botão `"Tentar novamente"`.
+   - *(5) Populated State:* Dados formatados com densidade calibrada.
+2. **UX Defensiva & Optimistic UI (< 400ms):**
+   - **PROIBIDO** usar `window.alert()`, `window.confirm()` ou `window.prompt()`.
+   - Para ações destrutivas rápidas, use **`HoldToConfirmButton`** (segurar por 1.2s com barra de progresso em mola) ou confirmação inline em duas etapas.
+   - Mutações frequentes (toggles, favoritos, envio de mensagem) devem atualizar a UI de forma otimista em `< 16ms`.
 
 ---
 
-## ⚡ 5. Governança Autônoma Sem Comandos Avulsos
+## 🛡️ 4. Defensive CSS & Master-Detail Mobile Obrigatório
 
-- O agente não espera nem pede comandos como `/front`, `/mobile` ou `/orch`.
-- Ele assume a responsabilidade de entregar o front-end perfeito, com contraste verificado, mobile ergonômico e layout intacto.
+1. **Preservação de Flexbox, Grid e Contratos:**
+   - NUNCA remova `min-width: 0` de filhos flexíveis que contenham texto dinâmico.
+   - NUNCA perca props, callbacks (`onClick`, `onChange`, `onClose`) ou gestão de foco (`focus-visible:ring-2`).
+2. **Master-Detail no Mobile:**
+   - **PROIBIDO EMPILHAMENTO VERTICAL** em telas multi-coluna (Chat / Atendimento / Inboxes). Exiba apenas a lista no mobile e abra a conversa em tela cheia (`100dvh`) com botão `← Voltar` (>= 44x44px) e detalhes em **Bottom Sheet**.
+
+---
+
+## ☀️ 5. Coerência Estrita Dual-Theme (Light & Dark Mode)
+
+1. **Zero Texto Branco Hardcoded:** Proibido `color: #fff`, `color: white` ou `text-white` estático sobre superfícies dinâmicas. Use `text-zinc-900 dark:text-zinc-100` ou ternárias `isLight(theme) ? '#0f172a' : '#f8fafc'`.
+2. **Zero Superfícies Fantasma:** Proibido `bg-white/5` ou `border-white/10` sem variante clara (`bg-white dark:bg-zinc-900/90 border-zinc-200/80 dark:border-white/[0.08]`).
+3. **Contraste WCAG AA (4.5:1):** Validado estaticamente via `craft-audit.js` e visualmente via `visual-check.js`.

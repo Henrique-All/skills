@@ -24,7 +24,9 @@ const requiredFiles = [
   'templates/BottomSheet.tsx',
   'templates/MobileBottomNav.tsx',
   'templates/ResponsiveTableToCards.tsx',
-  'templates/SwipeableRow.tsx'
+  'templates/SwipeableRow.tsx',
+  'templates/MasterDetailShell.tsx',
+  'templates/PullToRefresh.tsx'
 ];
 
 let hasErrors = false;

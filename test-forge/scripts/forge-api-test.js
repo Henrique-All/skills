@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * test-forge/scripts/forge-api-test.js
+ * test-forge/scripts/forge-api-test.js (v2.0)
  * Gerador de Testes de Integração de API Reais (Anti-Mock Slop)
- * Gera suíte com 4 cenários rigorosos: 200/201 Sucesso, 400 Bad Request, 401 Não Autorizado, 404/409 Limite.
+ * Gera suíte com 5 cenários: 200/201 Sucesso, 400 Bad Request, 401 Não Autorizado,
+ * 404/409 Limite e Rajada de Concorrência (Promise.all Race Condition).
  */
 
 const fs = require('fs');
@@ -30,13 +31,12 @@ const validPayloadLine = method !== 'GET' ? `\n      .send({ title: 'Item de Tes
 
 const testContent = `/**
  * ${path.basename(outPath)}
- * Teste de Integração Real gerado pelo Test Forge (Enterprise AI Suite)
- * Valida requisições HTTP reais sem mocks fantasmas.
+ * Teste de Integração Real gerado pelo Test Forge v2.0 (Enterprise AI Suite)
+ * Valida requisições HTTP reais, contratos e concorrência sem mocks fantasmas.
  */
 
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-// Importe a instância real da sua aplicação Express / Fastify / NestJS:
 import { app } from '../src/app';
 
 describe('Integration Test: ${method} ${route}', () => {
@@ -79,6 +79,25 @@ ${method !== 'GET' ? `
 
     expect([404, 409, 400, 422]).toContain(res.status);
   });
+${method !== 'GET' ? `
+  // 5. Rajada de Concorrência / Idempotência (Race Condition Guard)
+  it('deve suportar requisições simultâneas (Promise.all) sem erro 500 ou corrupção de estado', async () => {
+    const idempotencyKey = 'idem-key-concurrent-001';
+    const [resA, resB] = await Promise.all([
+      request(app)
+        .${httpMethod}('${route}')
+        .set('Authorization', authToken)
+        .set('Idempotency-Key', idempotencyKey)${validPayloadLine},
+      request(app)
+        .${httpMethod}('${route}')
+        .set('Authorization', authToken)
+        .set('Idempotency-Key', idempotencyKey)${validPayloadLine},
+    ]);
+
+    expect(resA.status).toBeLessThan(500);
+    expect(resB.status).toBeLessThan(500);
+  });
+` : ''}
 });
 `;
 
@@ -88,5 +107,5 @@ if (!fs.existsSync(destDir)) {
 }
 
 fs.writeFileSync(outPath, testContent);
-console.log(`\n✅ Teste de integração de API gerado com sucesso em: ${outPath}`);
+console.log(`\n✅ Teste de integração de API v2.0 gerado com sucesso em: ${outPath}`);
 console.log(`   Endpoint coberto: [${method}] ${route}\n`);

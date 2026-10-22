@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/orch-pipeline.js
- * Pipeline de Execução Unificada do Enterprise AI Suite (v2.5.1)
+ * Pipeline de Execução Unificada do Enterprise AI Suite (v2.6.0)
  * 
  * Executa determinística e compulsoriamente auditorias locais (Node.js na CPU):
  * - S1: Cartografia 360° (AST & Nós) — SEMPRE OBRIGATÓRIA (Fundação)
@@ -48,7 +48,7 @@ const projectDir = targetArg ? path.resolve(targetArg) : process.cwd();
 const demand = args.filter((a) => a !== targetArg && !a.startsWith('--')).join(' ') || 'Orquestração e Desenvolvimento do Projeto';
 
 console.log('===============================================================');
-console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA');
+console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA (v2.6.0)');
 console.log('===============================================================');
 console.log(`📁 Projeto Alvo: ${projectDir}`);
 console.log(`🎯 Demanda: "${demand}"`);
@@ -76,6 +76,21 @@ const results = {
   falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0 },
   testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 }
 };
+
+const collectedFindings = [];
+
+function pushFindings(sourceLabel, items = []) {
+  for (const item of items) {
+    collectedFindings.push({
+      source: sourceLabel,
+      severity: (item.severity || 'MEDIUM').toUpperCase(),
+      rule: item.rule || item.id || 'RULE',
+      file: item.file || '-',
+      line: item.line || 1,
+      message: item.message || ''
+    });
+  }
+}
 
 // 1. CARTOGRAFIA 360° (SEMPRE OBRIGATÓRIA - FUNDAÇÃO ARQUITETURAL)
 process.stdout.write('🗺️  [1/7] Executando Cartografia 360° & AST (Fundação)... ');
@@ -105,6 +120,7 @@ function parseSecurityOutput(raw) {
   results.security.critical = data.summary?.critical ?? 0;
   results.security.high = data.summary?.high ?? 0;
   results.security.status = results.security.critical > 0 ? 'CRÍTICO' : results.security.high > 0 ? 'ALTO' : 'OK';
+  pushFindings('🔒 DevSecOps', data.findings || []);
 }
 
 if (!isTargeted || hasSec || hasApi) {
@@ -141,6 +157,7 @@ if (!isTargeted || hasFront) {
       results.uiCraft.score = data.score ?? 100;
       results.uiCraft.issues = (data.findings || []).length;
       results.uiCraft.status = data.passed ? 'APROVADO' : 'ALERTA';
+      pushFindings('🎨 UI Craft', data.findings || []);
       console.log(`✅ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
     } else {
       results.uiCraft.status = 'IGNORADO';
@@ -153,6 +170,7 @@ if (!isTargeted || hasFront) {
       results.uiCraft.score = data.score ?? 0;
       results.uiCraft.issues = (data.findings || []).length;
       results.uiCraft.status = results.uiCraft.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+      pushFindings('🎨 UI Craft', data.findings || []);
       console.log(`⚠️ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
     } catch {
       results.uiCraft.score = 0;
@@ -175,6 +193,7 @@ if (!isTargeted || hasMobile || hasFront) {
       results.mobile.score = data.score ?? 100;
       results.mobile.issues = (data.findings || []).length;
       results.mobile.status = data.passed ? 'APROVADO' : 'ATENÇÃO';
+      pushFindings('📱 Mobile', data.findings || []);
       console.log(`✅ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
     } else {
       results.mobile.status = 'IGNORADO';
@@ -187,6 +206,7 @@ if (!isTargeted || hasMobile || hasFront) {
       results.mobile.score = data.score ?? 0;
       results.mobile.issues = (data.findings || []).length;
       results.mobile.status = results.mobile.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+      pushFindings('📱 Mobile', data.findings || []);
       console.log(`⚠️ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
     } catch {
       results.mobile.score = 0;
@@ -211,6 +231,7 @@ function parseDbOutput(raw) {
   results.database.missingIndexes = (data.findings || []).filter((f) => f.rule === 'MISSING_FOREIGN_KEY_INDEX').length;
   const hasCritical = (data.findings || []).some((f) => f.severity === 'CRITICAL');
   results.database.status = hasCritical ? 'CRÍTICO' : results.database.missingIndexes > 0 ? 'FALTA ÍNDICE' : results.database.issues > 0 ? 'ALERTA' : 'OK';
+  pushFindings('🗄️ DB Sentinel', data.findings || []);
 }
 
 if (!isTargeted || hasDb) {
@@ -236,19 +257,27 @@ if (!isTargeted || hasDb) {
   console.log('🗄️  [5/7] Banco de Dados & Índices... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
-// 6. ADVERSARY FALSIFIER
+// 6. ADVERSARY FALSIFIER (8 VETORES)
 function parseFalsifierOutput(out) {
-  const failedMatch = out.match(/encontrou (\d+) vulnerabilidade/);
-  results.falsifier.vectorsFailed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
-  results.falsifier.status = results.falsifier.vectorsFailed > 0 ? 'VULNERÁVEL' : 'SEGURO';
+  try {
+    const parsed = JSON.parse(out);
+    results.falsifier.vectorsFailed = parsed.vectorsFailed ?? (parsed.findings || []).length;
+    results.falsifier.status = results.falsifier.vectorsFailed > 0 ? 'VULNERÁVEL' : 'SEGURO';
+    pushFindings('⚡ Falsifier', parsed.findings || []);
+    return;
+  } catch {
+    const failedMatch = out.match(/encontrou (\d+) vulnerabilidade/);
+    results.falsifier.vectorsFailed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
+    results.falsifier.status = results.falsifier.vectorsFailed > 0 ? 'VULNERÁVEL' : 'SEGURO';
+  }
 }
 
 if (!isTargeted || hasDb || hasApi) {
-  process.stdout.write('⚡ [6/7] Executando Falsifier (5 Vetores de Estresse Concorrente)... ');
+  process.stdout.write('⚡ [6/7] Executando Falsifier (8 Vetores de Estresse Concorrente)... ');
   try {
     const falsifyScript = path.join(rootDir, 'hybrid-orchestrator', 'scripts', 'falsify.js');
     if (fs.existsSync(falsifyScript)) {
-      const out = execSync(`node "${falsifyScript}" "${projectDir}"`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      const out = execSync(`node "${falsifyScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
       parseFalsifierOutput(out);
       console.log(`✅ ${results.falsifier.vectorsFailed} vetores identificados`);
     }
@@ -282,6 +311,7 @@ if (!isTargeted || hasTest) {
         results.testForge.score = data.score ?? 100;
         results.testForge.issues = (data.findings || []).length;
         results.testForge.status = results.testForge.score >= 85 ? 'APROVADO' : 'ATENÇÃO';
+        pushFindings('🧪 Test Forge', data.findings || []);
         console.log(`✅ Score: ${results.testForge.score}/100 (${results.testForge.issues} apontamentos)`);
       }
     }
@@ -293,11 +323,30 @@ if (!isTargeted || hasTest) {
   console.log('🧪 [7/7] Test Forge (Anti-Mock Slop)... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
+// Ordenação dos Top Apontamentos por severidade
+const severityRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+const topFindings = [...collectedFindings]
+  .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+  .slice(0, 15);
+
+let topFindingsSection = '';
+if (topFindings.length > 0) {
+  topFindingsSection = `\n## 🔍 1.1 Top Apontamentos Detectados (Arquivo:Linha)\n\n`;
+  topFindingsSection += `| Motor | Severidade | Regra | Local (\`Arquivo:Linha\`) | Diagnóstico |\n`;
+  topFindingsSection += `| :--- | :---: | :--- | :--- | :--- |\n`;
+  topFindings.forEach((f) => {
+    const cleanMsg = String(f.message).replace(/\|/g, '/').replace(/\r?\n/g, ' ').slice(0, 110);
+    topFindingsSection += `| ${f.source} | **${f.severity}** | \`${f.rule}\` | \`${f.file}:${f.line}\` | ${cleanMsg} |\n`;
+  });
+} else {
+  topFindingsSection = `\n## 🔍 1.1 Top Apontamentos Detectados (Arquivo:Linha)\n\n> ✅ Nenhum apontamento bloqueante detectado nos motores executados.\n`;
+}
+
 // GERAÇÃO CONSOLIDADA DO .plan/PLAN.md
 const planDir = path.join(projectDir, '.plan');
 if (!fs.existsSync(planDir)) fs.mkdirSync(planDir, { recursive: true });
 
-const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite
+const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2.6.0)
 
 > **Demanda:** "${demand}"  
 > **Projeto:** \`${path.basename(projectDir)}\`  
@@ -312,13 +361,13 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite
 | Especialista | Status | Métrica / Score | Diagnóstico Técnico |
 | :--- | :---: | :---: | :--- |
 | 🗺️ **Repo Cartographer** | **${results.cartography.status}** | ${results.cartography.nodes} nós / ${results.cartography.edges} arestas | AST e grafo mapeados em \`.code-map/graph.json\` (${results.cartography.cycles} ciclos) |
-| 🔒 **DevSecOps Auditor** | **${results.security.status}** | ${results.security.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.security.findings} apontamentos`} | ${results.security.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.security.critical} críticos, ${results.security.high} altos (OWASP / RBAC / Auth)`} |
+| 🔒 **DevSecOps Auditor** | **${results.security.status}** | ${results.security.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.security.findings} apontamentos`} | ${results.security.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.security.critical} críticos, ${results.security.high} altos (OWASP / RBAC / Auth / IA)`} |
 | 🎨 **UI Craftsman (Anti-Slop)** | **${results.uiCraft.status}** | ${results.uiCraft.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.uiCraft.score}/100`} | ${results.uiCraft.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.uiCraft.issues} apontamentos de contraste dual-theme ou estética`} |
 | 📱 **Mobile Converter** | **${results.mobile.status}** | ${results.mobile.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.mobile.score}/100`} | ${results.mobile.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.mobile.issues} apontamentos (Touch targets 44px+, Safe Areas, 100dvh)`} |
 | 🗄️ **DB Sentinel** | **${results.database.status}** | ${results.database.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.database.score}/100`} | ${results.database.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.database.missingIndexes} FKs sem índice (${results.database.issues} alertas totais)`} |
-| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${results.falsifier.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.falsifier.vectorsFailed} vetores`} | ${results.falsifier.status === 'IGNORADO' ? 'Não requisitado na flag' : 'Testes de concorrência, N+1, timeouts e transações atômicas'} |
-| 🧪 **Test Forge** | **${results.testForge.status}** | ${results.testForge.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.testForge.score}/100`} | ${results.testForge.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.testForge.issues} alertas de mocks excessivos ou asserções triviais`} |
-
+| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${results.falsifier.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.falsifier.vectorsFailed} vetores`} | ${results.falsifier.status === 'IGNORADO' ? 'Não requisitado na flag' : '8 vetores: concorrência, Lost Update, N+1, memory leaks e transações'} |
+| 🧪 **Test Forge** | **${results.testForge.status}** | ${results.testForge.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.testForge.score}/100`} | ${results.testForge.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.testForge.issues} alertas de mocks excessivos, .only ou sleeps fixos`} |
+${topFindingsSection}
 ---
 
 ## 🛡️ 2. Sabatina dos 4 Quadrantes
@@ -326,9 +375,9 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite
 | Quadrante | Diagnóstico do Pipeline | Resolução da Arquitetura |
 | :--- | :--- | :--- |
 | **Q1: Contratos & Tipagem** | ${results.cartography.nodes} módulos rastreados no grafo AST | Validação estrita de contratos (Zod/DTO), preservação de payloads e zero breaking changes |
-| **Q2: Dados & Concorrência** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${results.falsifier.vectorsFailed} vetores de estresse • ${results.database.missingIndexes} FKs sem índice`} | Transações atômicas em escritas múltiplas, prevenção de N+1 e indexação de chaves estrangeiras |
+| **Q2: Dados & Concorrência** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${results.falsifier.vectorsFailed} vetores de estresse • ${results.database.missingIndexes} FKs sem índice`} | Transações atômicas em escritas múltiplas, prevenção de N+1, anti-Lost Update e indexação de FKs |
 | **Q3: Design Dual-Theme & Mobile** | Craft: ${results.uiCraft.score}/100 • Mobile: ${results.mobile.score}/100 | Coerência obrigatória Light/Dark mode (WCAG AA), fluxo Master-Detail mobile, 100dvh e alvos >= 44px |
-| **Q4: Segurança & Zero-Trust** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : `${results.security.critical} críticos • ${results.security.high} altos`} | Isolamento de propriedade (anti-BOLA/IDOR), sanitização de inputs e bloqueio de segredos hardcoded |
+| **Q4: Segurança & Zero-Trust** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : `${results.security.critical} críticos • ${results.security.high} altos`} | Isolamento de propriedade (anti-BOLA/IDOR), proteção de env público e bloqueio de segredos hardcoded |
 
 ---
 

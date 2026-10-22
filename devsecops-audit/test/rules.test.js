@@ -1,12 +1,12 @@
 /**
- * test/rules.test.js - Teste Unitário dos 13 Vetores Avançados de AppSec & Red Team
+ * test/rules.test.js - Teste Unitário dos 20 Vetores Avançados de AppSec & Red Team (v2.6.0)
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('🧪 Executando Bateria de Testes dos 13 Vetores de Ataque Avançados (DevSecOps Red Team)...\n');
+console.log('🧪 Executando Bateria de Testes dos 20 Vetores de Ataque Avançados (DevSecOps Red Team v2.6.0)...\n');
 
 const testDir = path.join(__dirname, 'temp_fixtures');
 if (fs.existsSync(testDir)) {
@@ -161,7 +161,8 @@ fs.writeFileSync(path.join(testDir, 'tauri.conf.json'), JSON.stringify({
 // 14. Fixture: Pilares 4, 9, 11, 16 (irrevogável) e 17
 fs.writeFileSync(path.join(testDir, 'vuln_pillars_extra.ts'), [
   'import { execSync } from "child_process";',
-  'export const awsKey = "AKIA1234567890ABCDEF";',
+  `export const awsKey = "${'AKIA' + '1234567890ABCDEF'}";`,
+  `export const anthropicKey = "${'sk-ant-api03-' + 'ABCDEFGHIJKLMNOPQRSTUV12345'}";`,
   'export function extraVulns(req, res) {',
   '  console.log("Login payload:", req.body.password);',
   '  res.cookie("session", "abc", { path: "/" });',
@@ -169,6 +170,28 @@ fs.writeFileSync(path.join(testDir, 'vuln_pillars_extra.ts'), [
   '  execSync(`ping ${req.query.host}`);',
   '}'
 ].join('\n'));
+
+// 15. Fixture: FRONTEND_PUBLIC_ENV_SECRET_LEAK e AI_UNBOUNDED_PROMPT_INPUT
+fs.writeFileSync(path.join(testDir, 'vuln_ai_and_public_env.ts'), [
+  `export const serviceKey = process.env.${'NEXT_PUBLIC_' + 'SUPABASE_SERVICE_ROLE'};`,
+  'export async function askAi(req, res) {',
+  '  const { prompt } = req.body;',
+  '  const out = await openai.chat.completions.create({ model: "gpt-4o", messages: [{ role: "user", content: prompt }] });',
+  '  return res.json(out);',
+  '}'
+].join('\n'));
+
+// 16. Fixture: Pilar 13 — Radar de CVEs Conhecidos (Next.js CVE-2025-29927, Axios, JWT) & Lockfile
+fs.writeFileSync(path.join(testDir, 'package.json'), JSON.stringify({
+  name: 'vuln-supply-chain-fixture',
+  version: '1.0.0',
+  dependencies: {
+    next: '14.2.0',
+    axios: '^1.5.0',
+    jsonwebtoken: '^8.5.1',
+    lodash: 'latest'
+  }
+}, null, 2));
 
 // Tentativa de suprimir Pilar 16 via .audit-exceptions.json (DEVE SER IGNORADA pelo motor!)
 fs.writeFileSync(path.join(testDir, '.audit-exceptions.json'), JSON.stringify([
@@ -210,6 +233,11 @@ try {
     'HARDCODED_SECRET_DETECTED',
     'COOKIE_INSECURE_FLAGS',
     'FRONTEND_TOKEN_IN_LOCALSTORAGE',
+    'FRONTEND_PUBLIC_ENV_SECRET_LEAK',
+    'AI_UNBOUNDED_PROMPT_INPUT',
+    'SUPPLY_CHAIN_KNOWN_CVE',
+    'SUPPLY_CHAIN_UNPINNED_DEPENDENCY',
+    'SUPPLY_CHAIN_MISSING_LOCKFILE',
     'COMMAND_INJECTION_RISK',
     'SENSITIVE_DATA_IN_LOGS'
   ];
@@ -233,7 +261,7 @@ try {
     process.exit(1);
   }
 
-  console.log('\n🎉 Todas as 18 regras de AppSec/Red Team & Pilares foram detectadas com 100% de precisão!');
+  console.log('\n🎉 Todas as 23 regras de AppSec/Red Team, CVEs & Pilares v2.6.0 foram detectadas com 100% de precisão!');
 } catch (err) {
   console.error('❌ Erro no teste:', err.message);
   if (fs.existsSync(testDir)) fs.rmSync(testDir, { recursive: true, force: true });

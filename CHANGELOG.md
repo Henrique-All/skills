@@ -5,6 +5,38 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.6.0] - 2026-10-22 — 🎨 Design Engineering Multi-Engine (120fps / 0 Re-renders), Psicologia de UX, Mobile 4.0, DB Sentinel 2.0, Route Guard 2.0 & Test Forge 2.0
+
+### 🎨 1. Frontend Craftsman v4.0 — UI, UX & Orquestração Multi-Engine de Animações
+- **Matriz Multi-Engine de Animações (120fps / Zero Re-renders):** Suporte documentado e integrado para **Motion (Framer Motion v12)** (`useMotionValue`, `useSpring`, `useMotionTemplate`, `layoutId`, `LayoutGroup`, `AnimatePresence`), **GSAP** (`useGSAP`, `contextSafe`, `Flip`, `ScrollTrigger`), **AutoAnimate** (`useAutoAnimate` de 1 linha para listas CRUD), **Lenis Smooth Scroll** (`data-lenis-prevent`) e **CSS Nativo Moderno** (`document.startViewTransition` com reveal circular e `@starting-style`).
+- **Engenharia de UX & Psicologia de Produto:** Arquitetura obrigatória dos **5 Estados de Tela** (Content-Aware Skeleton, Empty State com CTA, Filtered Empty State, Error Retry e Populated State), **Limiar de Doherty (< 400ms Optimistic UI)**, **UX Defensiva** (`HoldToConfirmButton` em vez de `window.confirm`), **Keyboard-First (`⌘K`)** e **Micro-Tipografia Funcional (`tabular-nums`, `text-balance`)**.
+- **Catálogo de 10 Templates Dual-Theme & 0 Re-renders (`frontend-craftsman/templates/`):**
+  - Refatorados (`SpotlightCard.tsx`, `MagneticButton.tsx`, `AnimatedTabs.tsx`, `SmoothAccordion.tsx`, `ContentSkeleton.tsx` + `EmptyStateCard`) para **Light/Dark Mode coerente** e **0 re-renders no movimento do ponteiro**.
+  - 5 Novos Templates Criados: `CommandPalette.tsx` (`⌘K`), `MorphingDialog.tsx` (`layoutId`), `SpringNumberTicker.tsx` (`useSpring` + `tabular-nums`), `StackedToast.tsx` (pilha 3D estilo Sonner) e `HoldToConfirmButton.tsx` (segurar por 1.2s).
+- **Auditor Estático `craft-audit.js v4.0.0`:** 4 novas regras determinísticas (`TRANSITION_ALL_SLOP`, `POINTER_STATE_THRASH`, `NATIVE_DIALOG_SLOP` e `MISSING_TABULAR_NUMS`).
+
+### 📱 2. Mobile Converter v4.0 — Master-Detail, Pull-to-Refresh, Snap Points & Teclado Virtual
+- **Novos Templates Mobile (`mobile-converter/templates/`):** Adicionados `MasterDetailShell.tsx` (container responsivo que impede empilhamento vertical em telas de Chat/Atendimento/Inbox) e `PullToRefresh.tsx` (gesto elástico na GPU com feedback háptico).
+- **Refatoração Dual-Theme & `visualViewport`:** `BottomSheet.tsx` agora suporta múltiplos `snapPoints` e ajuste automático para o teclado virtual do iOS/Android via `window.visualViewport`; todos os 6 templates atingem **Score 100/100** tanto no `mobile-audit.js` quanto no `craft-audit.js`.
+
+### 🗄️ 3. DB Sentinel v2.0 — Detecção de N+1 em Loops, Paginação & Precisão Financeira
+- **Novas Regras em `db-audit.js v2.0`:**
+  - `N_PLUS_ONE_LOOP_QUERY`: Detecta queries ORM (`await prisma/db/tx`) dentro de loops `for`, `.map(async)` e `.forEach(async)`.
+  - `UNBOUNDED_FIND_MANY`: Detecta `.findMany()` sem `take` ou `cursor` (prevenção de OOM).
+  - `FLOAT_FOR_MONEY`: Bloqueia `Float` / `real` / `doublePrecision` em colunas financeiras (`price`, `amount`, `total`, `balance`), exigindo `Decimal` ou `Int` em centavos.
+
+### 🛡️ 4. Route Guard v2.0 & 🧪 Test Forge v2.0
+- **Route Guard v2.0 (`analyze-route.js`):** Mapeamento estendido para **Next.js Server Actions (`'use server'`)** e **tRPC Procedures (`publicProcedure`/`protectedProcedure`)**, além de alertas automáticos de `MISSING_SCHEMA_VALIDATION`, `MISSING_IDEMPOTENCY_KEY` (em rotas financeiras/pedidos) e `MISSING_RATE_LIMIT` (em rotas de autenticação).
+- **Test Forge v2.0 (`forge-api-test.js`, `forge-e2e.js`, `test-audit.js`):** Geração automática de teste de **Rajada de Concorrência (`Promise.all` + `Idempotency-Key`)** em rotas de escrita, E2E Playwright validando **Light Mode + Dark Mode (`emulateMedia`) + navegação por teclado (`Tab`/`Escape`)** e detecção de `.only()` esquecido e `waitForTimeout()` fixo.
+
+### ⚡ 5. Hybrid Orchestrator (8 Vetores), DevSecOps v2.6, Repo Cartographer (`orphans`) & Pipeline `/orch`
+- **Hybrid Orchestrator (`falsify.js v2.6.0`):** Falsifier expandido de 5 para **8 Vetores de Estresse** (`LOST_UPDATE_RACE_CONDITION` para Read-Modify-Write em saldos/estoques, `EFFECT_MEMORY_LEAK` para listeners/timers sem cleanup em `useEffect` e `SWALLOWED_EXCEPTION` para `catch` vazio), além de saída estruturada `--json`.
+- **DevSecOps Audit (`audit.js v2.6.0`):** Radar Híbrido de CVEs & Supply Chain no Pilar 13 (`SUPPLY_CHAIN_KNOWN_CVE` offline instantâneo para `next` CVE-2025-29927, `axios`, `jsonwebtoken`, `express`, `ws`, `lodash`, `crypto-js`, `multer`, `minimist`, `vm2` + auto-patch no `--fix`, `SUPPLY_CHAIN_NPM_AUDIT_CVE` integrando `npm audit --json`, e `SUPPLY_CHAIN_MISSING_LOCKFILE`), detecção de **Vazamento de Segredo em Variável Pública de Frontend** (`FRONTEND_PUBLIC_ENV_SECRET_LEAK` em `NEXT_PUBLIC_*`/`VITE_*`/`REACT_APP_*`), **Prompt LLM sem Limite de Tamanho** (`AI_UNBOUNDED_PROMPT_INPUT`) e novos padrões de segredos (`sk-ant-api03-`, `whsec_`, `xoxb-`).
+- **Repo Cartographer (`cartographer.js orphans`):** Novo subcomando `orphans [--json]` que detecta módulos órfãos (Dead Code com `inDegree === 0`) excluindo entrypoints naturais, rotas Next.js, CLIs e testes.
+- **Pipeline Unificado `/orch` (`scripts/orch-pipeline.js`):** Consolida a tabela **`1.1 Top Apontamentos Detectados (Arquivo:Linha)`** diretamente no `.plan/PLAN.md` cruzando os achados dos 6 motores locais.
+
+---
+
 ## [2.5.1] - 2026-10-21 — 🗺️ Cartografia-First (Passo Zero Anti-Voltas), Índice Instantâneo `INDEX.md` & Auto-Sync Invisível `PostToolUse`
 
 ### 🗺️ 1. Índice Arquitetural Instantâneo (`.code-map/INDEX.md`) & Consulta Rápida (`query`)

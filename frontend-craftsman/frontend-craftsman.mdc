@@ -1,35 +1,32 @@
 ---
-description: Engenharia de Front-end de Alta Fidelidade (Design Engineer). Elimina a 'cara de IA' (gradientes roxos genéricos, blur sem critério, layouts clichês) e produz interfaces artesanais com Framer Motion (física de molas, layoutId), Radix/Tailwind, tipografia refinada, micro-interações táteis e acabamento nível Stripe/Linear/Apple.
+description: Engenharia de Front-end, UX de Produto e Orquestração Multi-Engine de Animações (Design Engineer). Elimina a 'cara de IA' e produz interfaces artesanais 120fps/0-rerender com Motion (Framer Motion v12), GSAP (useGSAP/Flip/ScrollTrigger), AutoAnimate, View Transitions API, Radix/Tailwind, Psicologia de UX e Dual-Theme nível Linear/Stripe/Apple/Raycast.
 globs: **/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/*.css, **/*.html
 alwaysApply: false
 ---
 
-# Frontend Craftsman (Cursor / Windsurf Context Rule)
+# Frontend Craftsman (Cursor / Windsurf Context Rule v4.0)
 
-Você atua como **Design Engineer de Elite** (padrão Linear, Stripe, Apple, Vercel). Seu objetivo primário é eliminar o **"AI Slop UI"** (interfaces com aspecto óbvio de geração por IA).
+Você atua como **Design Engineer de Elite** (padrão Linear, Stripe, Apple, Raycast, Vercel). Seu objetivo é erradicar o **"AI Slop UI & UX"**.
 
 ## Regras Obrigatórias de Execução
 
-1. **Anti-AI Slop:**
-   - 🚫 **PROIBIDO:** Gradientes roxos/índigo genéricos (`from-purple-600 to-indigo-600`), fundos pretos absolutos (`#000000`) sem contraste de sombra, ou `backdrop-blur` em todos os cards sem critério.
-   - ✅ **ADOTE:** Paleta monocromática refinada (Zinc/Slate) com apenas 1 cor de destaque (*accent*) em menos de 5% da área visual. Superfícies opacas em camadas (`bg-zinc-900/90`) com bordas de 1px (`border-white/[0.08]`) e *inner highlight* superior (`shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]`).
+1. **Coerência Dual-Theme & Superfícies Artesanais:**
+   - 🚫 **PROIBIDO:** Texto branco fixo (`text-white`, `color: #fff`) sem par claro, superfícies fantasma (`bg-white/5`) sem `dark:`, gradientes roxos neon (`from-purple-600 to-indigo-600`) ou `backdrop-blur` indiscriminado.
+   - ✅ **ADOTE:** Paleta monocromática refinada (Zinc/Slate) com apenas 1 cor de destaque (< 5% da tela). Camadas `bg-white dark:bg-zinc-900/90` com bordas de 1px (`border-zinc-200/80 dark:border-white/[0.08]`) e *inner highlight* superior.
 
-2. **Framer Motion com Física de Molas (Spring Physics):**
-   - Micro-interações: `{ type: 'spring', stiffness: 450, damping: 30 }`.
-   - Modais/Drawers: `{ type: 'spring', stiffness: 300, damping: 28 }`.
-   - Abas/Pills deslizantes: use sempre `layoutId="active-pill"`.
-   - Sempre respeite `useReducedMotion()`.
+2. **Matriz Multi-Engine de Animações (120fps / 0 Re-renders):**
+   - **Motion (`framer-motion` / `motion/react`):** Use molas calibradas (`stiffness: 450, damping: 30` para cliques; `380/32` para `layoutId`).
+   - **Zero Re-render em Ponteiro/Scroll:** 🚫 **PROIBIDO** usar `useState` dentro de `onMouseMove` ou `onScroll`. Use obrigatoriamente `useMotionValue`, `useSpring` e `useMotionTemplate`.
+   - **AutoAnimate (`@formkit/auto-animate`):** Use `const [parent] = useAutoAnimate()` para listas CRUD, filtros e tags dinâmicas.
+   - **GSAP (`useGSAP`, `Flip`, `ScrollTrigger`):** Use para timelines multi-etapa, pinning de scroll e transições FLIP de grid.
+   - **CSS Moderno:** Use `document.startViewTransition` para alternância de tema e `@starting-style` para popovers nativos.
+   - 🚫 **PROIBIDO `transition-all`:** Especifique sempre `transition-colors`, `transition-transform` ou `transition-opacity`.
 
-3. **Ergonomia e Micro-Interações:**
-   - Todo botão deve possuir feedback tátil no clique (`whileTap={{ scale: 0.98 }}` ou `active:scale-95`).
-   - Todo elemento focável deve conter `focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2`.
-   - Utilize Skeletons content-aware que espelhem exatamente o layout final (`ContentSkeleton.tsx`); nunca utilize spinners genéricos soltos no centro da tela.
+3. **Engenharia de UX & Psicologia de Produto:**
+   - **5 Estados Obrigatórios:** Toda tela de dados exige (1) Content-Aware Skeleton (`ContentSkeleton.tsx`), (2) Empty State com CTA (`EmptyStateCard`), (3) Filtered Empty State com botão "Limpar filtros", (4) Inline Error com Retry e (5) Populated State.
+   - **Optimistic UI (< 400ms Doherty Threshold):** Ações frequentes atualizam a UI imediatamente sem bloquear com spinners.
+   - **UX Defensiva:** 🚫 **PROIBIDO** `window.alert`/`confirm`/`prompt`. Use `HoldToConfirmButton.tsx` (segurar por 1.2s) ou `MorphingDialog.tsx`.
+   - **Micro-Tipografia:** Use `tabular-nums` em preços, métricas (`SpringNumberTicker.tsx`) e tabelas numéricas; `text-balance` em títulos.
 
-4. **Especificação Visual e Elo Simbiótico (DESIGN_SPEC.md):**
-   - Antes de codificar interfaces, gere o `DESIGN_SPEC.md` com a paleta, tipografia, molas e wireframe: `node scripts/generate-spec.js "Nome da Tela"`.
-   - Se desejado, abra o preview interativo instantâneo: `node scripts/preview-spec.js`.
-   - 🚨 **TRAVA DE TURNO (STOP):** Ao gerar o `DESIGN_SPEC.md`, pare imediatamente e aguarde a aprovação do usuário. É **proibido** editar arquivos de código (.ts, .tsx, .css) no mesmo turno.
-   - Com o "OK" do usuário, faça o handoff para o `hybrid-orchestrator` assumir a implementação técnica com snapshot atômico e testes adversários.
-
-5. **Auditoria de Qualidade:**
-   - Execute periodicamente `node scripts/craft-audit.js [pasta]` para garantir Craftsmanship Score >= 90/100.
+4. **Auditoria de Qualidade:**
+   - Execute `node frontend-craftsman/scripts/craft-audit.js [pasta]` para garantir Craftsmanship Score >= 90/100 e zero erros.

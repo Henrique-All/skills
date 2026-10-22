@@ -1,5 +1,5 @@
 /**
- * test/validate.js - Validador de Integridade da Skill Route Guard
+ * test/validate.js - Validador de Integridade da Skill Route Guard v2.0
  */
 
 const fs = require('fs');
@@ -24,7 +24,6 @@ const requiredFiles = [
 
 let hasErrors = false;
 
-// 1. Validar existência e tamanho dos arquivos
 requiredFiles.forEach((file) => {
   const fullPath = path.join(rootDir, file);
   if (!fs.existsSync(fullPath)) {
@@ -41,12 +40,7 @@ requiredFiles.forEach((file) => {
   }
 });
 
-// 2. Validar sintaxe dos JSONs
-const jsonFiles = [
-  'package.json',
-  'route-guard.config.example.json'
-];
-
+const jsonFiles = ['package.json', 'route-guard.config.example.json'];
 jsonFiles.forEach((file) => {
   try {
     const content = fs.readFileSync(path.join(rootDir, file), 'utf-8');
@@ -58,28 +52,19 @@ jsonFiles.forEach((file) => {
   }
 });
 
-// 3. Validar Frontmatter do SKILL.md
 try {
   const skillContent = fs.readFileSync(path.join(rootDir, 'SKILL.md'), 'utf-8');
-  if (!skillContent.startsWith('---')) {
-    console.error('❌ SKILL.md: Frontmatter não inicia com ---');
+  if (!skillContent.startsWith('---') || !skillContent.includes('name: route-guard')) {
+    console.error('❌ SKILL.md: Frontmatter inválido.');
     hasErrors = true;
   } else {
-    const frontmatterEnd = skillContent.indexOf('---', 3);
-    const frontmatter = skillContent.slice(3, frontmatterEnd);
-    if (!frontmatter.includes('name: route-guard')) {
-      console.error('❌ SKILL.md: nome inválido no frontmatter.');
-      hasErrors = true;
-    } else {
-      console.log('✅ SKILL.md: Frontmatter válido e nome correspondente.');
-    }
+    console.log('✅ SKILL.md: Frontmatter válido e nome correspondente.');
   }
 } catch (e) {
   console.error(`❌ Erro ao validar SKILL.md: ${e.message}`);
   hasErrors = true;
 }
 
-// 4. Teste Funcional: analyze-route.js (Rota Nova + Next.js App Router com parâmetro dinâmico)
 const tmpNextDir = path.join(rootDir, 'test', 'tmp_next_proj');
 try {
   const output = execSync('node scripts/analyze-route.js GET /api/test-route', { cwd: rootDir, encoding: 'utf-8' });
@@ -90,13 +75,16 @@ try {
     hasErrors = true;
   }
 
-  // Criar fixture temporária Next.js App Router + consumidor com template string
   const routeFile = path.join(tmpNextDir, 'app', 'api', 'orders', '[id]', 'route.ts');
+  const actionFile = path.join(tmpNextDir, 'app', 'actions', 'order.actions.ts');
   const clientFile = path.join(tmpNextDir, 'src', 'OrderView.tsx');
   fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+  fs.mkdirSync(path.dirname(actionFile), { recursive: true });
   fs.mkdirSync(path.dirname(clientFile), { recursive: true });
+
   fs.writeFileSync(routeFile, 'export async function GET(req: Request) { return Response.json({ ok: true }); }\n');
-  fs.writeFileSync(clientFile, 'export async function loadOrder(orderId: string) { return fetch(`/api/orders/${orderId}`); }\n');
+  fs.writeFileSync(actionFile, "'use server';\nexport async function createOrder(data: any) { return { ok: true }; }\n");
+  fs.writeFileSync(clientFile, 'export async function loadOrder(orderId: string) { await createOrder({}); return fetch(`/api/orders/${orderId}`); }\n');
 
   const jsonOut = execSync(`node scripts/analyze-route.js GET /api/orders/:id "${tmpNextDir}" --json`, { cwd: rootDir, encoding: 'utf-8' });
   const parsed = JSON.parse(jsonOut);
@@ -104,6 +92,19 @@ try {
     console.log('✅ analyze-route.js: Detecção de Next.js App Router ([id]/route.ts) e consumidor dinâmico validada.');
   } else {
     console.error('❌ analyze-route.js falhou ao mapear Next.js App Router ou consumidor dinâmico:', jsonOut);
+    hasErrors = true;
+  }
+
+  const actionJsonOut = execSync(`node scripts/analyze-route.js POST /actions/createOrder "${tmpNextDir}" --json`, { cwd: rootDir, encoding: 'utf-8' });
+  const parsedAction = JSON.parse(actionJsonOut);
+  if (
+    parsedAction.status === 'ROTA_EXISTENTE' &&
+    parsedAction.declarations.some((d) => d.kind === 'SERVER_ACTION') &&
+    parsedAction.securityAdvisories.some((a) => a.includes('MISSING_IDEMPOTENCY_KEY'))
+  ) {
+    console.log('✅ analyze-route.js: Detecção de Next.js Server Action ("use server") e Idempotency-Key advisory validada.');
+  } else {
+    console.error('❌ analyze-route.js falhou ao mapear Server Action:', actionJsonOut);
     hasErrors = true;
   }
 } catch (e) {
@@ -115,7 +116,6 @@ try {
   }
 }
 
-// 5. Teste Funcional: generate-contract.js
 try {
   const contractOut = execSync('node scripts/generate-contract.js POST /api/orders --fields "amount:number,item:string"', { cwd: rootDir, encoding: 'utf-8' });
   if (contractOut.includes('CreateOrderSchema') && contractOut.includes('OrderResponseSchema') && contractOut.includes('OrderContract')) {

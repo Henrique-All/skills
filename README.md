@@ -1,4 +1,4 @@
-# ⚡ Enterprise AI Suite (v2.5.1)
+# ⚡ Enterprise AI Suite (v2.6.0)
 
 > **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.

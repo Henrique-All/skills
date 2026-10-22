@@ -26,7 +26,12 @@ const requiredFiles = [
   'templates/SpotlightCard.tsx',
   'templates/MagneticButton.tsx',
   'templates/SmoothAccordion.tsx',
-  'templates/ContentSkeleton.tsx'
+  'templates/ContentSkeleton.tsx',
+  'templates/CommandPalette.tsx',
+  'templates/MorphingDialog.tsx',
+  'templates/SpringNumberTicker.tsx',
+  'templates/StackedToast.tsx',
+  'templates/HoldToConfirmButton.tsx'
 ];
 
 let hasErrors = false;
@@ -166,12 +171,21 @@ try {
     parsedBad = JSON.parse(err.stdout ? err.stdout.toString() : '{}');
   }
 
-  const expectedRules = ['LIGHT_MODE_WHITE_TEXT', 'LOW_CONTRAST_LIGHT', 'LOW_CONTRAST_DARK', 'LIGHT_MODE_GHOST_SURFACE'];
+  const expectedRules = [
+    'LIGHT_MODE_WHITE_TEXT',
+    'LOW_CONTRAST_LIGHT',
+    'LOW_CONTRAST_DARK',
+    'LIGHT_MODE_GHOST_SURFACE',
+    'TRANSITION_ALL_SLOP',
+    'POINTER_STATE_THRASH',
+    'NATIVE_DIALOG_SLOP',
+    'MISSING_TABULAR_NUMS'
+  ];
   const foundRules = (parsedBad?.findings || []).map((f) => f.ruleId);
   const missingRules = expectedRules.filter((r) => !foundRules.includes(r));
 
   if (parsedBad && parsedBad.passed === false && missingRules.length === 0) {
-    console.log(`✅ Fixture 'bad' detectou corretamente ${parsedBad.findings.length} violações incluindo Light Mode e Contraste`);
+    console.log(`✅ Fixture 'bad' detectou corretamente ${parsedBad.findings.length} violações (Light Mode, Contraste, Motion & UX)`);
   } else {
     console.error(`❌ Fixture 'bad' falhou na detecção! Regras ausentes: ${missingRules.join(', ')}`);
     hasErrors = true;
@@ -200,14 +214,14 @@ try {
   hasErrors = true;
 }
 
-// 10. Testar execução de craft-audit.js nos próprios templates (deve passar com louvor)
+// 10. Testar execução de craft-audit.js nos 10 templates (deve passar com 100/100)
 try {
   const auditOutput = execSync('node scripts/craft-audit.js templates/ --json', { cwd: rootDir, encoding: 'utf-8' });
   const parsed = JSON.parse(auditOutput);
-  if (parsed.passed && parsed.score >= 85) {
-    console.log(`✅ Auditoria nos templates passou com louvor! Score: ${parsed.score}/100`);
+  if (parsed.passed && parsed.score === 100 && parsed.findings.length === 0) {
+    console.log(`✅ Auditoria nos 10 templates passou com perfeição! Score: ${parsed.score}/100 (0 avisos)`);
   } else {
-    console.error(`❌ Templates receberam score insuficiente: ${parsed.score}/100`);
+    console.error(`❌ Templates receberam score abaixo de 100: ${parsed.score}/100`);
     hasErrors = true;
   }
 } catch (err) {

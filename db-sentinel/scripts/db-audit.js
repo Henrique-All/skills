@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * db-sentinel/scripts/db-audit.js
- * Auditor Determinístico de Banco de Dados, Schemas e Migrations
- * Analisa schemas Prisma, Drizzle ou SQL puro e calcula o Database Health Score (0-100).
+ * db-sentinel/scripts/db-audit.js (v2.0.0)
+ * Auditor Determinístico de Banco de Dados, Schemas, Migrations e Queries ORM
+ * Analisa schemas Prisma, Drizzle, SQL puro e código (.ts/.js) calculando o Database Health Score (0-100).
  */
 
 const fs = require('fs');
@@ -18,16 +18,17 @@ const colors = {
   gray: '\x1b[90m'
 };
 
-function collectSqlFilesRecursively(dir) {
+function collectFilesRecursively(dir, extFilter) {
   let results = [];
   if (!fs.existsSync(dir)) return results;
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const ent of entries) {
+      if (['node_modules', '.git', 'dist', 'build', '.agents', '.code-map'].includes(ent.name)) continue;
       const full = path.join(dir, ent.name);
       if (ent.isDirectory()) {
-        results = results.concat(collectSqlFilesRecursively(full));
-      } else if (ent.name.endsWith('.sql')) {
+        results = results.concat(collectFilesRecursively(full, extFilter));
+      } else if (extFilter(ent.name)) {
         results.push(full);
       }
     }
@@ -64,9 +65,19 @@ function findSchemaFiles(dir = process.cwd()) {
 
   for (const mDir of migrationDirs) {
     const fullMDir = path.join(dir, mDir);
-    for (const sqlFile of collectSqlFilesRecursively(fullMDir)) {
+    for (const sqlFile of collectFilesRecursively(fullMDir, (n) => n.endsWith('.sql'))) {
       if (!candidates.includes(sqlFile)) {
         candidates.push(sqlFile);
+      }
+    }
+  }
+
+  const codeDirs = ['src', 'app', 'server', 'api'];
+  for (const cDir of codeDirs) {
+    const fullCDir = path.join(dir, cDir);
+    for (const codeFile of collectFilesRecursively(fullCDir, (n) => /\.(ts|js)$/.test(n) && !n.endsWith('.d.ts'))) {
+      if (!candidates.includes(codeFile)) {
+        candidates.push(codeFile);
       }
     }
   }
@@ -117,7 +128,6 @@ targetFiles.forEach((file) => {
       const lineNum = idx + 1;
       if (trimmed.startsWith('//')) return;
 
-      // Início de modelo
       const modelMatch = trimmed.match(/^model\s+([A-Za-z0-9_]+)\s*\{/);
       if (modelMatch) {
         currentModel = modelMatch[1];
@@ -126,7 +136,6 @@ targetFiles.forEach((file) => {
         relations = [];
         hotFilterFields = [];
       } else if (trimmed === '}' && currentModel) {
-        // Fim de modelo: Validar chaves estrangeiras sem índice
         relations.forEach(rel => {
           const hasBlockIndex = modelIndexes.some(idxStr => idxStr.includes(rel.fk));
           const hasInlineUnique = inlineUniqueFields.has(rel.fk);
@@ -142,7 +151,6 @@ targetFiles.forEach((file) => {
           }
         });
 
-        // Validar campos de filtro frequente sem índice no modelo
         hotFilterFields.forEach(hf => {
           const hasBlockIndex = modelIndexes.some(idxStr => idxStr.includes(hf.fieldName));
           const hasInlineUnique = inlineUniqueFields.has(hf.fieldName);
@@ -160,14 +168,12 @@ targetFiles.forEach((file) => {
 
         currentModel = null;
       } else if (currentModel) {
-        // Captura @unique ou @id inline no próprio campo
         const fieldParts = trimmed.split(/\s+/);
         const fieldName = fieldParts[0];
         if (fieldName && !fieldName.startsWith('@@') && (trimmed.includes('@unique') || trimmed.includes('@id'))) {
           inlineUniqueFields.add(fieldName);
         }
 
-        // Captura campos e relações
         const relMatch = trimmed.match(/@relation\(.*fields:\s*\[([^\]]+)\].*\)/);
         if (relMatch) {
           const fks = relMatch[1].split(',').map(s => s.trim());
@@ -175,22 +181,30 @@ targetFiles.forEach((file) => {
           fks.forEach(fk => relations.push({ fk, target, line: lineNum }));
         }
 
-        // Captura índices declarados no bloco do modelo
         if (trimmed.startsWith('@@index(') || trimmed.startsWith('@@unique(') || trimmed.startsWith('@@id(')) {
           modelIndexes.push(trimmed);
         }
 
-        // Registra campos de auditoria ou filtros padrão para checar no fechamento do model
         if (/^(status|tenantId|accountId|organizationId)\s+/.test(trimmed)) {
           hotFilterFields.push({ fieldName, line: lineNum });
+        }
+
+        if (/^(price|amount|total|subtotal|balance|cost|fee|tax|discount|salary|valor|preco|saldo)\s+Float\b/i.test(trimmed)) {
+          addFinding(
+            'HIGH',
+            'FLOAT_FOR_MONEY',
+            `Campo monetário "${fieldName}" no modelo "${currentModel}" utiliza Float (sujeito a erros de arredondamento IEEE 754).`,
+            file,
+            lineNum,
+            `Substitua Float por Decimal (@db.Decimal(10, 2)) ou Int/BigInt (em centavos).`
+          );
         }
       }
     });
   }
 
-  // 2. ANÁLISE DRIZZLE ORM (.ts)
-  if (ext === '.ts') {
-    // Detecta tabelas Drizzle: pgTable / mysqlTable / sqliteTable
+  // 2. ANÁLISE DRIZZLE ORM & CÓDIGO DE APLICAÇÃO (.ts / .js)
+  if (ext === '.ts' || ext === '.js') {
     const tableRegex = /(?:pgTable|mysqlTable|sqliteTable)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*\{([\s\S]*?)\}(?:\s*,\s*\(([^)]*)\)\s*=>\s*([\s\S]*?))?\)/g;
     let tMatch;
     while ((tMatch = tableRegex.exec(content)) !== null) {
@@ -219,14 +233,56 @@ targetFiles.forEach((file) => {
             );
           }
         }
+        if (/^(price|amount|total|subtotal|balance|cost|fee|valor|preco|saldo)\s*:\s*(?:real|doublePrecision)\s*\(/i.test(trimmedCol)) {
+          addFinding(
+            'HIGH',
+            'FLOAT_FOR_MONEY',
+            `Coluna monetária Drizzle na tabela "${tableName}" usa ponto flutuante (real/doublePrecision).`,
+            file,
+            tableStartLine + cIdx,
+            'Use numeric({ precision: 10, scale: 2 }) ou integer() em centavos.'
+          );
+        }
       });
+    }
+
+    // 2B. Detecta Problema N+1 (queries ORM dentro de loops for / .map / .forEach)
+    const nPlusOneRegex = /(?:\bfor\s*\([^)]*\)\s*\{|\.(?:map|forEach)\s*\(\s*async\b[^)]*\)\s*=>\s*\{)([\s\S]{0,450}?)\bawait\s+(?:this\.)?(?:prisma|db|tx)\.[A-Za-z0-9_$]+\.(?:findUnique|findFirst|findMany|create|update|delete|select|insert|execute)\s*\(/g;
+    let nMatch;
+    while ((nMatch = nPlusOneRegex.exec(content)) !== null) {
+      const lineNum = content.slice(0, nMatch.index).split('\n').length;
+      addFinding(
+        'HIGH',
+        'N_PLUS_ONE_LOOP_QUERY',
+        'Query ORM executada dentro de loop assíncrono (for/map/forEach) detectada — causa problema clássico de N+1 queries.',
+        file,
+        lineNum,
+        'Agrupe a consulta antes do loop com findMany({ where: { id: { in: ids } } }), include ou createMany/updateMany.'
+      );
+    }
+
+    // 2C. Detecta findMany() sem limite de paginação (take / cursor)
+    const findManyRegex = /\b(?:prisma|db)\.[A-Za-z0-9_$]+\.findMany\s*\(([\s\S]{0,220}?)\)/g;
+    let fmMatch;
+    while ((fmMatch = findManyRegex.exec(content)) !== null) {
+      const argsText = fmMatch[1] || '';
+      if (!/\b(?:take|cursor)\s*:/.test(argsText)) {
+        const lineNum = content.slice(0, fmMatch.index).split('\n').length;
+        addFinding(
+          'MEDIUM',
+          'UNBOUNDED_FIND_MANY',
+          'Chamada a .findMany() sem limite (take/cursor) — pode carregar milhares de linhas em memória e causar OOM.',
+          file,
+          lineNum,
+          'Adicione paginação explícita (ex.: take: 50, skip / cursor).'
+        );
+      }
     }
   }
 
   // 3. ANÁLISE SQL & MIGRATIONS (.sql e SQL embarcado em .ts)
   if (ext === '.sql' || ext === '.ts') {
     const reportedNotNullLines = new Set();
-    const reportedDropLines = new Set();
 
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
@@ -247,7 +303,6 @@ targetFiles.forEach((file) => {
       }
 
       if ((/DROP\s+COLUMN\b/.test(upper) || /DROP\s+TABLE\b/.test(upper)) && !/DROP\s+TABLE\s+IF\s+EXISTS\s+#/i.test(upper)) {
-        reportedDropLines.add(lineNum);
         addFinding(
           'HIGH',
           'DESTRUCTIVE_DDL',
@@ -259,7 +314,6 @@ targetFiles.forEach((file) => {
       }
     });
 
-    // Suporte a instruções SQL multi-linha em arquivos .sql
     if (ext === '.sql') {
       const statements = content.split(';');
       let charOffset = 0;
@@ -306,7 +360,7 @@ if (isJson) {
   process.exit(findings.some(f => f.severity === 'CRITICAL') ? 1 : 0);
 }
 
-console.log(`\n${colors.cyan}${colors.bold}🗄️  DB SENTINEL — RELATÓRIO DE INTEGRIDADE DE BANCO DE DADOS${colors.reset}`);
+console.log(`\n${colors.cyan}${colors.bold}🗄️  DB SENTINEL v2.0 — RELATÓRIO DE INTEGRIDADE DE BANCO DE DADOS${colors.reset}`);
 console.log(`Arquivos analisados (${analyzedCount}): ${targetFiles.map(f => path.basename(f)).join(', ')}\n`);
 
 let scoreColor = colors.green;
@@ -325,7 +379,7 @@ console.log(`\n---------------------------------------------------------------`)
 console.log(`🚨 ACHADOS DE INTEGRIDADE E PERFORMANCE (${findings.length}):`);
 console.log(`---------------------------------------------------------------`);
 
-findings.forEach((f, idx) => {
+findings.forEach((f) => {
   let badge = `${colors.red}[CRITICAL]${colors.reset}`;
   if (f.severity === 'HIGH') badge = `${colors.yellow}[HIGH]${colors.reset}`;
   else if (f.severity === 'MEDIUM') badge = `${colors.cyan}[MEDIUM]${colors.reset}`;

@@ -1,7 +1,7 @@
 {
   "name": "hybrid-orchestrator-skill",
-  "version": "1.0.0",
-  "description": "Orquestrador adaptativo de desenvolvimento de software (Plandex & Teamwork Pattern) para qualquer projeto e qualquer agente de IA.",
+  "version": "2.6.0",
+  "description": "Orquestrador adaptativo de desenvolvimento de software (Plandex & Teamwork Pattern) com Falsifier de 8 Vetores de Estresse para qualquer projeto e qualquer agente de IA.",
   "main": "install.js",
   "scripts": {
     "install:global": "node install.js --global --target=all",

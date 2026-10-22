@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * test-forge/scripts/test-audit.js
+ * test-forge/scripts/test-audit.js (v2.0)
  * Auditor Determinístico de Qualidade de Testes (Anti-Mock Slop)
- * Analisa testes e calcula o Test Quality Score (0-100), alertando mocks excessivos e asserções vazias.
+ * Analisa testes e calcula o Test Quality Score (0-100), alertando mocks excessivos,
+ * asserções vazias, .only esquecido e sleeps fixos (waitForTimeout).
  */
 
 const fs = require('fs');
@@ -11,7 +12,6 @@ const path = require('path');
 const cleanArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const targetDir = cleanArgs[0] ? path.resolve(cleanArgs[0]) : process.cwd();
 const isJson = process.argv.includes('--json');
-const isStrict = process.argv.includes('--strict');
 
 const colors = {
   reset: '\x1b[0m',
@@ -73,25 +73,43 @@ testFiles.forEach(file => {
     const trimmed = line.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return;
 
-    // Contagem de mocks
     if (/vi\.mock\(|jest\.mock\(|\.spyOn\(/.test(trimmed)) {
       fileMocks++;
       totalMocks++;
     }
 
-    // Contagem de asserções
     if (/expect\(|assert\(/.test(trimmed)) {
       fileAsserts++;
       totalAsserts++;
     }
 
-    // Alerta de Mock Slop / Asserção Vazia
     if (/expect\((true|false|1|0)\)\.to(Be|Equal)\((true|false|1|0)\)/.test(trimmed)) {
       findings.push({
         severity: 'HIGH',
+        rule: 'TRIVIAL_ASSERTION',
         file,
         line: lineNum,
         message: 'Asserção trivial/falsa detectada. O teste não valida o retorno real da função.'
+      });
+    }
+
+    if (/\b(?:describe|it|test)\.only\s*\(/.test(trimmed)) {
+      findings.push({
+        severity: 'HIGH',
+        rule: 'FOCUSED_TEST_ONLY',
+        file,
+        line: lineNum,
+        message: 'Uso de .only() detectado — silencia o restante da suíte de testes no CI.'
+      });
+    }
+
+    if (/\.waitForTimeout\s*\(\s*\d{3,}\s*\)/.test(trimmed)) {
+      findings.push({
+        severity: 'MEDIUM',
+        rule: 'HARDCODED_SLEEP',
+        file,
+        line: lineNum,
+        message: 'Uso de waitForTimeout() fixo torna o teste lento e flaky; prefira auto-waiting com expect(locator).'
       });
     }
   });
@@ -99,16 +117,17 @@ testFiles.forEach(file => {
   if (fileAsserts === 0) {
     findings.push({
       severity: 'HIGH',
+      rule: 'NO_ASSERTIONS',
       file,
       line: 1,
       message: 'Arquivo de teste sem nenhuma asserção ativa (expect/assert).'
     });
   }
 
-  // Alerta de Mock-Heavy (mais de 4 mocks para poucas asserções)
   if (fileMocks >= 4 && fileAsserts <= 3) {
     findings.push({
       severity: 'MEDIUM',
+      rule: 'MOCK_HEAVY_SLOP',
       file,
       line: 1,
       message: `Arquivo excessivamente mockado (${fileMocks} mocks para ${fileAsserts} asserções). Considere migrar para teste de integração real.`
@@ -116,7 +135,6 @@ testFiles.forEach(file => {
   }
 });
 
-// Score de 0 a 100
 let score = 100;
 findings.forEach(f => {
   if (f.severity === 'HIGH') score -= 20;
@@ -129,7 +147,7 @@ if (isJson) {
   process.exit(0);
 }
 
-console.log(`\n${colors.cyan}${colors.bold}🧪 TEST FORGE — AUDITORIA DE QUALIDADE DE TESTES${colors.reset}`);
+console.log(`\n${colors.cyan}${colors.bold}🧪 TEST FORGE v2.0 — AUDITORIA DE QUALIDADE DE TESTES${colors.reset}`);
 console.log(`Arquivos de teste analisados (${testFiles.length}): Total de asserções: ${totalAsserts} | Mocks: ${totalMocks}\n`);
 
 let scoreColor = colors.green;

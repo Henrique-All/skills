@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/audit.js - Motor Universal DevSecOps de Auditoria de Segurança
+ * scripts/audit.js - Motor Universal DevSecOps de Auditoria de Segurança (v2.6.0)
  * 
  * Executa checagens mecânicas dos 18 pilares de segurança em qualquer repositório.
  * Zero dependências externas.
@@ -40,7 +40,10 @@ const defaultAuditConfig = {
         'AIza[0-9A-Za-z\\-_]{35}',
         '-----BEGIN (?:RSA |EC )?PRIVATE KEY-----',
         'ghp_[0-9a-zA-Z]{36}',
-        'sk-proj-[a-zA-Z0-9_-]{30,}'
+        'sk-proj-[a-zA-Z0-9_-]{30,}',
+        'sk-ant-api03-[a-zA-Z0-9\\-_]{20,}',
+        'whsec_[a-zA-Z0-9]{24,}',
+        'xoxb-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{20,}'
       ]
     }
   },
@@ -645,7 +648,7 @@ for (const file of codeFiles) {
         }
       }
 
-      // Pilar 9: Segurança Frontend (Tokens em localStorage e Reverse Tabnabbing)
+      // Pilar 9: Segurança Frontend (Tokens em localStorage, Reverse Tabnabbing e Vazamento de Env Público)
       if (/localStorage\.setItem\s*\(\s*['"](?:token|access_?token|refresh_?token|jwt|auth_?token|id_?token)['"]/i.test(line)) {
         addFinding({
           id: 'FRONTEND_TOKEN_IN_LOCALSTORAGE',
@@ -656,6 +659,20 @@ for (const file of codeFiles) {
           message: 'Token de sessão/JWT armazenado em localStorage (vulnerável a roubo imediato via XSS).',
           evidence: line,
           remediation: 'Armazene tokens de sessão em cookies HttpOnly + Secure + SameSite ou em memória volátil.'
+        });
+      }
+
+      const publicEnvSecretRegex = /(?:process\.env\.|import\.meta\.env\.|\b)(?:NEXT_PUBLIC_|VITE_|REACT_APP_)[A-Z0-9_]*(?:SECRET|PRIVATE_KEY|SERVICE_ROLE|DATABASE_URL|PASSWORD)\b/;
+      if (publicEnvSecretRegex.test(line)) {
+        addFinding({
+          id: 'FRONTEND_PUBLIC_ENV_SECRET_LEAK',
+          pilar: 9,
+          severity: 'CRITICAL',
+          file,
+          line: lineNum,
+          message: 'Chave privada ou segredo de servidor prefixado com variável pública de bundle frontend (NEXT_PUBLIC_ / VITE_ / REACT_APP_). Risco de exposição total no navegador.',
+          evidence: line,
+          remediation: 'Remova o prefixo público (NEXT_PUBLIC_ / VITE_ / REACT_APP_) e acesse o segredo exclusivamente no backend (Server Actions, Route Handlers ou API).'
         });
       }
 
@@ -670,6 +687,25 @@ for (const file of codeFiles) {
           evidence: line,
           remediation: 'Adicione rel="noopener noreferrer" em todos os elementos com target="_blank".'
         });
+      }
+
+      // Pilar 12: IA / LLM Security — Prompt sem limite de tamanho ou truncamento (Unbounded Consumption / Prompt Injection)
+      const llmCallRegex = /(?:chat\.completions\.create|models\.generateContent|messages\.create|generateText\s*\(|streamText\s*\()/;
+      if (llmCallRegex.test(line)) {
+        const takesUserInput = /req\.body|request\.json\s*\(/i.test(localWindow) || /req\.body|request\.json\s*\(/i.test(content);
+        const hasLengthCap = /(?:\.max\s*\(|\.slice\s*\(|maxLength|\.substring\s*\(|max_tokens|maxOutputTokens)/i.test(localWindow);
+        if (takesUserInput && !hasLengthCap) {
+          addFinding({
+            id: 'AI_UNBOUNDED_PROMPT_INPUT',
+            pilar: 12,
+            severity: 'MEDIUM',
+            file,
+            line: lineNum,
+            message: 'Chamada a modelo LLM consome input de usuário (req.body) sem limite de caracteres (.max() / .slice()) ou teto de tokens (Risco de Denial of Wallet e Prompt Injection).',
+            evidence: line,
+            remediation: 'Valide o tamanho máximo do prompt com Zod (z.string().max(4000)) e defina max_tokens/maxOutputTokens na chamada ao modelo.'
+          });
+        }
       }
 
       // Pilar 11: Injeção de Comando / Execução Dinâmica (RCE)
@@ -707,28 +743,165 @@ for (const file of codeFiles) {
   } catch (e) {}
 }
 
-// Pilar 13: Supply Chain & Dependências (package.json)
+// Pilar 13: Supply Chain, CVEs & Dependências (package.json + package-lock.json + npm audit)
+function parseSemver(verStr) {
+  if (!verStr || typeof verStr !== 'string') return null;
+  const cleaned = verStr.trim().replace(/^[~^>=<v\s]+/, '');
+  const m = cleaned.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+function isSemverLess(verTuple, targetTuple) {
+  for (let i = 0; i < 3; i++) {
+    if (verTuple[i] < targetTuple[i]) return true;
+    if (verTuple[i] > targetTuple[i]) return false;
+  }
+  return false;
+}
+
+const KNOWN_CVE_ADVISORIES = [
+  {
+    pkg: 'next',
+    cve: 'CVE-2025-29927',
+    severity: 'CRITICAL',
+    patched: '^15.2.3',
+    isVulnerable: (v) =>
+      isSemverLess(v, [14, 2, 25]) || (v[0] === 15 && isSemverLess(v, [15, 2, 3])),
+    description: 'Bypass crítico de autenticação e autorização em Middleware do Next.js via cabeçalho x-middleware-subrequest.',
+    remediation: 'Atualize imediatamente o Next.js para >= 14.2.25 (v14) ou >= 15.2.3 (v15) e bloqueie x-middleware-subrequest no reverse proxy.'
+  },
+  {
+    pkg: 'axios',
+    cve: 'CVE-2024-39338 / CVE-2023-45857',
+    severity: 'HIGH',
+    patched: '^1.7.4',
+    isVulnerable: (v) => isSemverLess(v, [1, 7, 4]),
+    description: 'Versão do Axios vulnerável a Server-Side Request Forgery (SSRF) e exposição acidental de cabeçalho XSRF-TOKEN.',
+    remediation: 'Atualize o pacote axios para >= 1.7.4 (npm install axios@latest).'
+  },
+  {
+    pkg: 'jsonwebtoken',
+    cve: 'CVE-2022-23529 / CVE-2022-23539',
+    severity: 'CRITICAL',
+    patched: '^9.0.2',
+    isVulnerable: (v) => isSemverLess(v, [9, 0, 0]),
+    description: 'Versão legada do jsonwebtoken (< 9.0.0) suscetível a Remote Code Execution (RCE) e confusão de chave/algoritmo.',
+    remediation: 'Atualize jsonwebtoken para >= 9.0.2 (npm install jsonwebtoken@latest).'
+  },
+  {
+    pkg: 'express',
+    cve: 'CVE-2024-29041 / CVE-2024-45590',
+    severity: 'HIGH',
+    patched: '^4.21.1',
+    isVulnerable: (v) => isSemverLess(v, [4, 19, 2]),
+    description: 'Versão do Express (< 4.19.2) vulnerável a Open Redirect em res.location/res.redirect e DoS via body-parser.',
+    remediation: 'Atualize express para >= 4.21.1 (npm install express@latest).'
+  },
+  {
+    pkg: 'ws',
+    cve: 'CVE-2024-37890',
+    severity: 'HIGH',
+    patched: '^8.17.1',
+    isVulnerable: (v) => isSemverLess(v, [8, 17, 1]),
+    description: 'Servidor WebSocket (ws < 8.17.1) vulnerável a Denial of Service (crash do processo Node) via headers HTTP excedentes.',
+    remediation: 'Atualize ws para >= 8.17.1 (npm install ws@latest).'
+  },
+  {
+    pkg: 'lodash',
+    cve: 'CVE-2021-23337 / CVE-2020-8203',
+    severity: 'HIGH',
+    patched: '^4.17.21',
+    isVulnerable: (v) => isSemverLess(v, [4, 17, 21]),
+    description: 'Versão do lodash (< 4.17.21) vulnerável a Command Injection via _.template e Prototype Pollution.',
+    remediation: 'Atualize lodash para >= 4.17.21 (npm install lodash@latest).'
+  },
+  {
+    pkg: 'crypto-js',
+    cve: 'CVE-2023-46233',
+    severity: 'HIGH',
+    patched: '^4.2.0',
+    isVulnerable: (v) => isSemverLess(v, [4, 2, 0]),
+    description: 'crypto-js (< 4.2.0) utiliza PBKDF2 enfraquecido (1.000x mais fácil de quebrar por força bruta com SHA1/1 iteração).',
+    remediation: 'Atualize crypto-js para >= 4.2.0 ou migre para o módulo nativo node:crypto.'
+  },
+  {
+    pkg: 'multer',
+    cve: 'CVE-2022-24434',
+    severity: 'HIGH',
+    patched: '^1.4.5-lts.1',
+    isVulnerable: (v) => isSemverLess(v, [1, 4, 4]),
+    description: 'multer (< 1.4.4-lts.1) vulnerável a Denial of Service no parser multipart.',
+    remediation: 'Atualize multer para >= 1.4.5-lts.1.'
+  },
+  {
+    pkg: 'minimist',
+    cve: 'CVE-2021-44906',
+    severity: 'HIGH',
+    patched: '^1.2.8',
+    isVulnerable: (v) => isSemverLess(v, [1, 2, 6]),
+    description: 'minimist (< 1.2.6) vulnerável a Prototype Pollution.',
+    remediation: 'Atualize minimist para >= 1.2.8.'
+  },
+  {
+    pkg: 'vm2',
+    cve: 'CVE-2023-37466 / CVE-2023-37903',
+    severity: 'CRITICAL',
+    patched: null,
+    isVulnerable: () => true,
+    description: 'Pacote vm2 está descontinuado e possui falhas críticas não corrigidas de Sandbox Escape (RCE no host Node.js).',
+    remediation: 'Remova vm2 imediatamente e substitua por isolated-vm ou containers/processos isolados.'
+  }
+];
+
 if (!selectedPilares || selectedPilares.includes(13)) {
   const pkgJsonPath = path.join(projectDir, 'package.json');
   if (fs.existsSync(pkgJsonPath)) {
     try {
       const rawPkg = fs.readFileSync(pkgJsonPath, 'utf-8');
+      const pkgLines = rawPkg.split('\n');
       const pkg = JSON.parse(rawPkg);
       const allDeps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+
+      const findDepLine = (depName) => {
+        const idx = pkgLines.findIndex((l) => l.includes(`"${depName}"`));
+        return idx >= 0 ? idx + 1 : 1;
+      };
+
       for (const [depName, depVer] of Object.entries(allDeps)) {
+        const lineNum = findDepLine(depName);
         if (depVer === '*' || depVer === 'latest') {
           addFinding({
             id: 'SUPPLY_CHAIN_UNPINNED_DEPENDENCY',
             pilar: 13,
             severity: 'MEDIUM',
             file: pkgJsonPath,
-            line: 1,
+            line: lineNum,
             message: `Dependência "${depName}" declarada com versão irrestrita ("${depVer}"), expondo o build a ataques de Supply Chain.`,
             evidence: `"${depName}": "${depVer}"`,
             remediation: 'Fixe versões semânticas explícitas no package.json e mantenha o lockfile versionado.'
           });
         }
+
+        // Radar Offline Instantâneo de CVEs Conhecidos
+        const advisory = KNOWN_CVE_ADVISORIES.find((a) => a.pkg === depName);
+        if (advisory) {
+          const parsedVer = parseSemver(String(depVer));
+          if (advisory.pkg === 'vm2' || (parsedVer && advisory.isVulnerable(parsedVer))) {
+            addFinding({
+              id: 'SUPPLY_CHAIN_KNOWN_CVE',
+              pilar: 13,
+              severity: advisory.severity,
+              file: pkgJsonPath,
+              line: lineNum,
+              message: `[${advisory.cve}] Pacote "${depName}" (${depVer}): ${advisory.description}`,
+              evidence: `"${depName}": "${depVer}"`,
+              remediation: advisory.remediation
+            });
+          }
+        }
       }
+
       const scripts = pkg.scripts || {};
       for (const [hookName, scriptCmd] of Object.entries(scripts)) {
         if (/^(?:preinstall|install|postinstall)$/.test(hookName) && /(?:curl|wget|nc\s|bash\s+-c|powershell.*IEX|Invoke-Expression)/i.test(String(scriptCmd))) {
@@ -737,11 +910,76 @@ if (!selectedPilares || selectedPilares.includes(13)) {
             pilar: 13,
             severity: 'HIGH',
             file: pkgJsonPath,
-            line: 1,
+            line: findDepLine(hookName),
             message: `Script de ciclo de vida "${hookName}" executa download ou shell remoto durante a instalação de pacotes.`,
             evidence: `"${hookName}": "${scriptCmd}"`,
             remediation: 'Audite e remova downloads arbitrários de binários/scripts em hooks de preinstall/postinstall.'
           });
+        }
+      }
+
+      // Verifica presença de Lockfile quando há dependencies de produção
+      const prodDepsCount = Object.keys(pkg.dependencies || {}).length;
+      if (prodDepsCount > 0) {
+        const lockfiles = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', 'bun.lock'];
+        const hasLockfile = lockfiles.some((lf) => fs.existsSync(path.join(projectDir, lf)));
+        if (!hasLockfile) {
+          addFinding({
+            id: 'SUPPLY_CHAIN_MISSING_LOCKFILE',
+            pilar: 13,
+            severity: 'LOW',
+            file: pkgJsonPath,
+            line: 1,
+            message: 'package.json declara dependências de produção mas não há lockfile (package-lock.json / pnpm-lock.yaml / yarn.lock) no projeto.',
+            evidence: `${prodDepsCount} dependência(s) sem lockfile`,
+            remediation: 'Gere e versione o lockfile para garantir builds determinísticos e auditoria de árvore transitiva.'
+          });
+        }
+      }
+
+      // Camada 2: Scanner Real de Advisories via npm audit --json (quando package-lock.json está presente)
+      const pkgLockPath = path.join(projectDir, 'package-lock.json');
+      if (fs.existsSync(pkgLockPath) && !args.includes('--no-npm-audit')) {
+        let npmAuditRaw = '';
+        try {
+          npmAuditRaw = execSync('npm audit --json --audit-level=high', {
+            cwd: projectDir,
+            stdio: 'pipe',
+            timeout: 4500
+          }).toString();
+        } catch (auditErr) {
+          npmAuditRaw = auditErr.stdout ? auditErr.stdout.toString() : '';
+        }
+        if (npmAuditRaw) {
+          try {
+            const auditJson = JSON.parse(npmAuditRaw);
+            const vulns = auditJson.vulnerabilities || {};
+            for (const [pkgName, info] of Object.entries(vulns)) {
+              const sev = String(info.severity || '').toUpperCase();
+              if (sev !== 'CRITICAL' && sev !== 'HIGH') continue;
+              // Evita duplicar se já foi reportado pelo radar direto no package.json
+              if (findings.some((f) => f.id === 'SUPPLY_CHAIN_KNOWN_CVE' && f.message.includes(`"${pkgName}"`))) continue;
+
+              const viaObjects = (info.via || []).filter((v) => typeof v === 'object' && v !== null);
+              const firstVia = viaObjects[0] || {};
+              const advisoryTitle = firstVia.title || `Vulnerabilidade ${sev} na árvore de dependências`;
+              const advisoryUrl = firstVia.url || '';
+              const fixCmd = info.fixAvailable
+                ? 'Execute `npm audit fix` para atualizar para uma versão corrigida.'
+                : `Atualize "${pkgName}" manualmente ou substitua a dependência afetada.`;
+
+              addFinding({
+                id: 'SUPPLY_CHAIN_NPM_AUDIT_CVE',
+                pilar: 13,
+                severity: sev,
+                file: pkgLockPath,
+                line: 1,
+                message: `[npm audit] Pacote "${pkgName}" (${info.range || '*'}): ${advisoryTitle}${advisoryUrl ? ` (${advisoryUrl})` : ''}`,
+                evidence: `${pkgName}@${info.range || 'instalado'}`,
+                remediation: fixCmd
+              });
+            }
+          } catch {}
         }
       }
     } catch (e) {}
@@ -808,7 +1046,7 @@ if (!selectedPilares || selectedPilares.includes(12)) {
 // 4. Autofix (se ativado via --fix / --autofix) ANTES da consolidação do relatório
 const fixedFiles = new Set();
 if (shouldFix && findings.length > 0) {
-  const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS']);
+  const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS', 'SUPPLY_CHAIN_KNOWN_CVE']);
   for (let i = findings.length - 1; i >= 0; i--) {
     const f = findings[i];
     const absFile = path.resolve(projectDir, f.file);
@@ -833,6 +1071,31 @@ if (shouldFix && findings.length > 0) {
           return `${p1} ${opts} ${p3}`;
         });
         changed = true;
+      }
+
+      // Fix 3: Supply Chain Known CVE em package.json (atualiza para a versão mínima segura)
+      if (f.id === 'SUPPLY_CHAIN_KNOWN_CVE' && path.basename(absFile) === 'package.json') {
+        const pkgObj = JSON.parse(content);
+        for (const adv of KNOWN_CVE_ADVISORIES) {
+          if (!adv.patched) continue;
+          if (pkgObj.dependencies && pkgObj.dependencies[adv.pkg]) {
+            const v = parseSemver(String(pkgObj.dependencies[adv.pkg]));
+            if (v && adv.isVulnerable(v)) {
+              pkgObj.dependencies[adv.pkg] = adv.patched;
+              changed = true;
+            }
+          }
+          if (pkgObj.devDependencies && pkgObj.devDependencies[adv.pkg]) {
+            const v = parseSemver(String(pkgObj.devDependencies[adv.pkg]));
+            if (v && adv.isVulnerable(v)) {
+              pkgObj.devDependencies[adv.pkg] = adv.patched;
+              changed = true;
+            }
+          }
+        }
+        if (changed) {
+          content = JSON.stringify(pkgObj, null, 2) + '\n';
+        }
       }
 
       if (changed) {
@@ -860,7 +1123,7 @@ const isBlocked = criticalCount > 0 || highCount > 0;
 const status = isBlocked ? 'BLOQUEADO' : (mediumCount > 0 ? 'AVISOS' : 'APROVADO');
 
 const report = {
-  version: '1.0.0',
+  version: '2.6.0',
   timestamp: new Date().toISOString(),
   summary: {
     totalFindings: findings.length,
@@ -882,7 +1145,7 @@ if (isSarifOutput) {
       tool: {
         driver: {
           name: "devsecops-audit",
-          version: "1.0.0",
+          version: "2.6.0",
           informationUri: "https://github.com/Henrique-All/skills",
           rules: Array.from(new Set(findings.map((f) => f.id))).map((id) => ({
             id,

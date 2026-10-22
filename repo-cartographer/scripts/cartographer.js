@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 /**
- * scripts/cartographer.js - Engine utilitária do Repo Cartographer
+ * scripts/cartographer.js - Engine utilitária do Repo Cartographer (v2.6.0)
  * 
  * Executa tarefas determinísticas de I/O, cache incremental, validação de hash,
- * resolução de path aliases (tsconfig/jsconfig), detecção de ciclos e exportação Obsidian.
+ * resolução de path aliases (tsconfig/jsconfig), detecção de ciclos, módulos órfãos e exportação Obsidian.
  * Zero dependências externas.
  * 
  * Uso:
  *   node cartographer.js init [projectDir]
  *   node cartographer.js check [projectDir]
+ *   node cartographer.js query <termo> [projectDir]
+ *   node cartographer.js orphans [projectDir] [--json]
  *   node cartographer.js trace <entrypointFile> [projectDir]
  *   node cartographer.js obsidian [projectDir]
  */
@@ -283,7 +285,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
   if (!fs.existsSync(mapDir)) fs.mkdirSync(mapDir, { recursive: true });
 
   const graphData = {
-    version: '1.0.0',
+    version: '2.6.0',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrypoint: entrypointRelative || 'project-scan',
@@ -471,7 +473,7 @@ function initCodeMap(projectDir) {
   const graphPath = path.join(mapDir, 'graph.json');
   if (!fs.existsSync(graphPath)) {
     const template = {
-      version: '1.0.0',
+      version: '2.6.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {
@@ -740,14 +742,101 @@ function queryGraph(keyword, projectDir) {
   });
 }
 
+// 10. Detecção de Módulos Órfãos / Dead Code (inDegree === 0 excluindo entrypoints)
+function findOrphans(projectDir, isJson = false) {
+  const resolvedDir = path.resolve(projectDir || process.cwd());
+  const mapDir = getCodeMapDir(resolvedDir);
+  const graphPath = path.join(mapDir, 'graph.json');
+
+  let graph = null;
+  if (fs.existsSync(graphPath)) {
+    try {
+      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    } catch {}
+  }
+
+  if (!graph || !Array.isArray(graph.nodes) || graph.nodes.length === 0) {
+    if (!isJson) console.log('⚡ Grafo vazio ou ausente. Inicializando cartografia automática...');
+    initCodeMap(resolvedDir);
+    if (fs.existsSync(graphPath)) {
+      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    }
+  }
+
+  const nodes = (graph && graph.nodes) || [];
+  const edges = (graph && graph.edges) || [];
+
+  const inDegree = new Map();
+  edges.forEach((e) => {
+    inDegree.set(e.target, (inDegree.get(e.target) || 0) + 1);
+  });
+
+  const entrypointRegex = /(?:^|\/)(?:page|layout|route|loading|error|not-found|middleware|index|main|app|server|install)\.(?:ts|tsx|js|jsx)$/i;
+  const infraOrTestDirRegex = /(?:^|\/)(?:scripts|bin|test|tests|templates|migrations|pages|app)\//i;
+
+  const orphans = [];
+  let entrypointsExcluded = 0;
+
+  for (const n of nodes) {
+    if (n.hash === 'virtual') continue;
+    const inc = inDegree.get(n.id) || 0;
+    if (inc > 0) continue;
+
+    const normPath = (n.path || '').replace(/\\/g, '/');
+    if (entrypointRegex.test(normPath) || infraOrTestDirRegex.test(normPath) || /\.(?:test|spec)\.(?:ts|tsx|js|jsx)$/i.test(normPath)) {
+      entrypointsExcluded++;
+      continue;
+    }
+
+    orphans.push({
+      id: n.id,
+      path: normPath,
+      layer: n.layer,
+      type: n.type
+    });
+  }
+
+  if (isJson) {
+    console.log(
+      JSON.stringify(
+        {
+          totalNodes: nodes.length,
+          entrypointsExcluded,
+          orphansCount: orphans.length,
+          orphans
+        },
+        null,
+        2
+      )
+    );
+    return orphans;
+  }
+
+  console.log('===============================================================');
+  console.log('🧹 CARTOGRAPHER ORPHAN DETECTOR (DEAD CODE / MÓDULOS SEM CONSUMIDOR)');
+  console.log('===============================================================');
+  console.log(`📊 Total de nós analisados: ${nodes.length} (${entrypointsExcluded} entrypoints/CLIs/testes excluídos)\n`);
+
+  if (orphans.length === 0) {
+    console.log('✅ Nenhum módulo órfão detectado! Todos os módulos internos possuem consumidores ativos.');
+  } else {
+    console.log(`⚠️  ${orphans.length} módulo(s) sem consumidores diretos no grafo (candidatos a Dead Code):\n`);
+    orphans.slice(0, 30).forEach((o, idx) => {
+      console.log(`  ${idx + 1}. [Layer ${o.layer} | ${o.type}] ${o.path}`);
+    });
+  }
+  return orphans;
+}
+
 // CLI Runner
 const args = process.argv.slice(2);
+const isJsonFlag = args.includes('--json');
 const positionalArgs = args.filter((a) => !a.startsWith('--'));
 const command = positionalArgs[0] || 'check';
 
-// Para comandos sem arquivo de entrada (init, check, obsidian), o 2º argumento posicional é o diretório do projeto.
+// Para comandos sem arquivo de entrada (init, check, obsidian, orphans), o 2º argumento posicional é o diretório do projeto.
 // Para comandos com arquivo/termo (trace, tree, mermaid, callers, query), o 2º argumento é o alvo e o 3º é o diretório.
-const dirOnlyCommands = new Set(['init', 'check', 'obsidian']);
+const dirOnlyCommands = new Set(['init', 'check', 'obsidian', 'orphans']);
 const targetDir = dirOnlyCommands.has(command)
   ? (positionalArgs[1] ? path.resolve(positionalArgs[1]) : process.cwd())
   : (positionalArgs[2] ? path.resolve(positionalArgs[2]) : process.cwd());
@@ -764,6 +853,9 @@ switch (command) {
     queryGraph(kw, targetDir);
     break;
   }
+  case 'orphans':
+    findOrphans(targetDir, isJsonFlag);
+    break;
   case 'trace':
   case 'tree': {
     const entrypoint = positionalArgs[1];
@@ -796,5 +888,5 @@ switch (command) {
     exportToObsidian(targetDir);
     break;
   default:
-    console.log(`Uso: node cartographer.js [init|check|query <termo>|trace <file>|tree <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
+    console.log(`Uso: node cartographer.js [init|check|query <termo>|orphans|trace <file>|tree <file>|mermaid <file>|callers <file>|obsidian] [diretório]`);
 }

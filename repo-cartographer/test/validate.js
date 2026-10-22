@@ -1,5 +1,5 @@
 /**
- * test/validate.js - Validador de Integridade da Skill Repo Cartographer
+ * test/validate.js - Validador de Integridade da Skill Repo Cartographer (v2.6.0)
  */
 
 const fs = require('fs');
@@ -138,6 +138,18 @@ try {
   console.log('✅ Execução bem-sucedida: scripts/cartographer.js (query & .code-map/INDEX.md)');
 } catch (e) {
   console.error('❌ Falha ao rodar cartographer.js query / INDEX.md:', e.message);
+  hasErrors = true;
+}
+
+try {
+  const orphansRaw = execSync(`node "${cartographerScript}" orphans "${rootDir}" --json`, { encoding: 'utf-8' });
+  const orphansParsed = JSON.parse(orphansRaw);
+  if (typeof orphansParsed.orphansCount !== 'number' || !Array.isArray(orphansParsed.orphans)) {
+    throw new Error('JSON de orphans inválido');
+  }
+  console.log('✅ Execução bem-sucedida: scripts/cartographer.js (orphans --json)');
+} catch (e) {
+  console.error('❌ Falha ao rodar cartographer.js orphans:', e.message);
   hasErrors = true;
 }
 

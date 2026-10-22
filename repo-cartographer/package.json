@@ -1,7 +1,7 @@
 {
   "name": "repo-cartographer-skill",
-  "version": "1.0.0",
-  "description": "Cartógrafo de repositórios: mapeamento 360° em 6 camadas, Context IR incremental e handshake estruturado com hybrid-orchestrator",
+  "version": "2.6.0",
+  "description": "Cartógrafo de repositórios: mapeamento 360° em 6 camadas, detecção de módulos órfãos (dead code), Context IR incremental e handshake estruturado com hybrid-orchestrator",
   "main": "scripts/cartographer.js",
   "scripts": {
     "test": "node test/validate.js",
@@ -9,6 +9,7 @@
     "install:global": "node install.js --global --target=all",
     "install:both": "node install.js --both",
     "cartographer": "node scripts/cartographer.js",
+    "orphans": "node scripts/cartographer.js orphans",
     "preview": "node scripts/preview-graph.js",
     "mermaid": "node scripts/cartographer.js mermaid",
     "callers": "node scripts/cartographer.js callers"

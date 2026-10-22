@@ -150,24 +150,31 @@ const specContent = `# 🎨 Especificação de Design — ${titleArg}
 
 ---
 
-## 📦 3. Pilha de Bibliotecas & Componentes
+## 📦 3. Pilha de Bibliotecas & Matriz Multi-Engine de Animações
 
-| Biblioteca | Versão / Padrão | Utilidade no Projeto |
+| Engine / Biblioteca | Padrão / Primitivo | Quando Usar |
 | :--- | :--- | :--- |
-| **framer-motion** | \`^11.0.0\` ou superior | Física de molas (Spring Physics), \`layoutId\` e \`AnimatePresence\` |
-| **lucide-react** | Ícones consistentes | Ícones com \`strokeWidth={1.75}\` e dimensões ópticas padronizadas (16-18px) |
-| **radix-ui / headless** | Primitivos acessíveis | Dialogs, Popovers e Menus com foco gerenciado e WAI-ARIA nativo |
-| **tailwindcss** | Utility-first | Classes utilitárias com tokens semânticos |
+| **Motion (\`framer-motion\` v12)** | \`SPRINGS\`, \`layoutId\`, \`AnimatePresence\` | Micro-interações, abas deslizantes, Morphing Dialogs e Toasts |
+| **Motion GPU Tracking** | \`useMotionValue\` + \`useMotionTemplate\` | Spotlight Cards, Magnetic Buttons e cursores (**0 re-renders no React**) |
+| **AutoAnimate (\`@formkit/auto-animate\`)** | \`const [parent] = useAutoAnimate()\` | Listas CRUD, filtros em tempo real, tags e inserção/remoção em 1 linha |
+| **GSAP (\`gsap\` + \`@gsap/react\`)** | \`useGSAP()\`, \`Flip\`, \`ScrollTrigger\` | Timelines coreografadas multi-etapa e mudanças estruturais de CSS Grid |
+| **View Transitions API & CSS** | \`document.startViewTransition\`, \`@starting-style\` | Alternância de tema Dark/Light com reveal circular e popovers nativos |
+| **radix-ui / tailwindcss** | Primitivos WAI-ARIA + Tokens | Acessibilidade por teclado (\`⌘K\`), foco gerenciado e \`tabular-nums\` |
 
 ---
 
-## ⚡ 4. Dinâmica de Movimento & Molas (Framer Motion)
+## ⚡ 4. Dinâmica de Movimento (120fps / Zero Re-renders) & Psicologia de UX
 
-- **Micro-interações (Cliques & Toggles):** \`{ type: 'spring', stiffness: 450, damping: 30 }\`
-- **Feedback Tátil no Clique:** \`whileTap={{ scale: 0.98 }}\` em todos os botões e abas.
-- **Navegação / Abas:** Transição contínua via \`layoutId="active-pill"\` sem salto de renderização.
-- **Modais & Gavetas:** \`{ type: 'spring', stiffness: 300, damping: 28 }\` com \`AnimatePresence mode="wait"\`.
-- **Acessibilidade de Movimento:** Respeito automático à preferência do sistema (\`prefers-reduced-motion\`).
+- **Micro-interações (Cliques & Toggles):** \`{ type: 'spring', stiffness: 450, damping: 30 }\` com \`whileTap={{ scale: 0.98 }}\`.
+- **Zero Re-render no Ponteiro:** Proibido \`useState\` em \`onMouseMove\`/\`onScroll\`. Obrigatório \`useMotionValue\`.
+- **Proibido \`transition-all\`:** Restrinja transições CSS a \`transition-colors\`, \`transition-transform\` ou \`transition-opacity\`.
+- **Arquitetura Obrigatória dos 5 Estados de UX:**
+  1. *Loading:* Content-Aware Skeletons (\`ContentSkeleton.tsx\`, zero CLS).
+  2. *Empty State:* \`EmptyStateCard\` com CTA primário imediato.
+  3. *Filtered Empty State:* Estado "Nenhum resultado" com botão **"Limpar filtros"**.
+  4. *Error State:* Banner inline com botão **"Tentar novamente"**.
+  5. *Populated State:* Densidade calibrada com \`tabular-nums\` em métricas/preços (\`SpringNumberTicker.tsx\`).
+- **UX Defensiva:** Proibido \`window.alert\`/\`confirm\`. Ações destrutivas usam \`HoldToConfirmButton.tsx\` (segurar por 1.2s).
 
 ---
 

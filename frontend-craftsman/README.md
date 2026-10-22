@@ -1,98 +1,70 @@
-# 🎨 Frontend Craftsman — Design Engineering de Alta Fidelidade
+# 🎨 Frontend Craftsman — Design Engineering, UX & Multi-Engine Motion (v4.0)
 
-> **Elimine o "AI Slop UI" (a cara óbvia de IA) e construa interfaces artesanais de elite com Framer Motion, física de molas, Radix UI, Tailwind e micro-interações táteis nível Linear, Apple, Stripe e Raycast.**
+> **Elimine o "AI Slop UI & UX" e construa interfaces artesanais 120fps / 0 Re-renders com Motion (Framer Motion v12), GSAP (`useGSAP`/`Flip`), AutoAnimate, View Transitions API, Radix UI, Tailwind e Psicologia de UX nível Linear, Apple, Stripe e Raycast.**
 
 [![Status](https://img.shields.io/badge/status-active-emerald.svg)]()
+[![Version](https://img.shields.io/badge/version-4.0.0-amber.svg)]()
 [![Platform](https://img.shields.io/badge/platform-Antigravity%20|%20Claude%20|%20Cursor%20|%20Windsurf-blue.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
 ---
 
 ## 💡 Por Que Esta Skill Existe?
 
-Quando IAs geram código de front-end sem direcionamento de alto padrão, elas geram quase sempre o mesmo padrão genérico e amador:
-- Gradientes roxos/índigo (`from-purple-600 to-indigo-600`) em todos os botões e títulos;
-- `backdrop-blur-md` e cantos gigantes colocados em tudo sem hierarquia de profundidade;
-- Animações lineares duras (`transition-all duration-300`) ou nenhuma micro-interação no clique;
-- Textos clichês ("Transform your workflow with Next-Gen AI");
-- Spinners genéricos no meio da tela e ausência de navegação acessível por teclado.
+Quando IAs geram código de front-end sem governança de Design Engineering, elas repetem os mesmos vícios visuais e de usabilidade:
+- Gradientes roxos/índigo (`from-purple-600 to-indigo-600`) e `backdrop-blur` exagerado sem contraste;
+- Modo Claro quebrado (`text-white` sobre fundo branco e `bg-white/5` invisível);
+- Engasgos de CPU com `transition-all` e `useState` dentro de `onMouseMove` (60 re-renders/s);
+- Ausência dos 5 estados de UX (Skeleton, Empty State, Filtered Empty, Error Retry, Data);
+- Uso amador de `window.confirm()` / `window.alert()` e números dançantes sem `tabular-nums`.
 
-O **Frontend Craftsman** estabelece um padrão rigoroso de **Design Engineering** que transforma código de IA em produtos com acabamento de software comercial de primeira linha.
-
----
-
-## ⚡ Comparativo: AI Slop vs. Crafted Frontend
-
-| Aspecto | ❌ Vício da IA Genérica (AI Slop) | ✅ Padrão Frontend Craftsman |
-| :--- | :--- | :--- |
-| **Paleta de Cores** | Roxo neon, azul genérico e gradientes arco-íris | Neutros profundos (Zinc 950 / Slate 950) com **1 única cor de destaque** cirúrgica (< 5% da tela) |
-| **Superfícies & Iluminação** | Blur embaçado em excesso sem borda definida | Superfícies opacas em camadas com bordas ultrafinas de 1px (`border-white/[0.08]`) e **inner highlight** superior |
-| **Animações** | Lineares ou inexistentes (`duration-300 ease-in-out`) | **Física de molas do Framer Motion (Spring Physics)** calibradas por sensação física |
-| **Navegação de Abas** | Abas com saltos secos de visualização | Abas deslizantes fluidas com `layoutId="active-pill"` estilo macOS/Linear |
-| **Interatividade** | Botão sem efeito de clique ou foco | Compressão tátil expressiva (`whileTap={{ scale: 0.98 }}`), cursor magnético e Spotlight dinâmico |
-| **Carregamento** | "Carregando..." ou spinner centralizado | **Content-Aware Skeletons** que preservam o layout e evitam Layout Shift (CLS) |
+O **Frontend Craftsman v4.0** governa **UI + UX + Motion Multi-Engine** com auditoria estática e visual determinística.
 
 ---
 
-## 🛠️ Ferramentas Inclusas
+## ⚡ Matriz Multi-Engine de Animação & UX
 
-### 1. Preview Visual Instantâneo (`preview-spec.js`)
-Gera e abre no navegador uma interface interativa com os componentes vivos e a paleta real:
+| Necessidade | Solução Frontend Craftsman v4.0 |
+| :--- | :--- |
+| **Micro-interações & Morphing** | **Motion (`framer-motion`)** com molas físicas calibradas, `layoutId` e `AnimatePresence` |
+| **Tracking de Mouse / Spotlight (0 Re-renders)** | `useMotionValue` + `useSpring` + `useMotionTemplate` direto na GPU |
+| **Listas CRUD & Filtros** | **AutoAnimate (`@formkit/auto-animate`)** em 1 linha (`useAutoAnimate()`) |
+| **Timelines, Scroll & Grid FLIP** | **GSAP (`useGSAP`, `Flip`, `ScrollTrigger`)** + **Lenis Smooth Scroll** |
+| **Troca de Tema & Popovers Nativos** | **View Transitions API (`startViewTransition`)** com reveal circular + `@starting-style` |
+| **Confirmação de Ações Destrutivas** | **`HoldToConfirmButton.tsx`** (segurar por 1.2s com barra de mola) em vez de `window.confirm` |
+| **Métricas, Preços e KPIs** | **`SpringNumberTicker.tsx`** + `tabular-nums` obrigatório |
+
+---
+
+## 🧩 Catálogo de 10 Templates Artesanais Dual-Theme (`templates/`)
+
+1. **`SpotlightCard.tsx`**: Card Dual-Theme com iluminação radial via `useMotionValue` + `useMotionTemplate` (0 re-renders).
+2. **`MagneticButton.tsx`**: Botão com atração elástica `useSpring` (0 re-renders) e variantes Dual-Theme.
+3. **`AnimatedTabs.tsx`**: Abas deslizantes com `layoutId`, setas do teclado (`ArrowLeft`/`Right`) e `startViewTransition`.
+4. **`SmoothAccordion.tsx`**: Sanfona fluida com altura animada por mola e chevron vetorial SVG.
+5. **`ContentSkeleton.tsx`**: `ShimmerBlock`, `CardSkeleton`, `TableRowSkeleton` e `EmptyStateCard` acionável.
+6. **`CommandPalette.tsx`**: Paleta de comandos `⌘K` estilo Linear/Raycast com busca, setas e `layoutId`.
+7. **`MorphingDialog.tsx`**: Trigger/Card que se expande fisicamente transformando-se no Modal via `layoutId`.
+8. **`SpringNumberTicker.tsx`**: Contador numérico animado por mola com `Intl.NumberFormat` e `tabular-nums`.
+9. **`StackedToast.tsx`**: Notificações empilhadas em 3D (estilo Sonner) expansíveis no hover.
+10. **`HoldToConfirmButton.tsx`**: Botão tátil "Segure para confirmar" com barra de progresso em mola.
+
+---
+
+## 🛠️ Ferramentas CLI Inclusas
+
 ```bash
-node scripts/preview-spec.js DESIGN_SPEC.md
-```
-
-### 2. Gerador de Especificação de Design (`generate-spec.js`)
-Cria o `DESIGN_SPEC.md` completo com cores, fontes, molas e wireframe ASCII:
-```bash
-# Dark Mode (padrão)
-node scripts/generate-spec.js "Central de Clientes" --preset=linear-dark
-
-# Light Mode de Alta Fidelidade (Stripe Style)
-node scripts/generate-spec.js "Checkout Transparente" --preset=stripe-clean-light
-```
-
-### 3. Auditoria de Artesanato Visual (`craft-audit.js`)
-Varre sua base de código (`.tsx`, `.jsx`, `.vue`, `.html`, `.css`) e detecta anti-patterns de IA, calculando o **Craftsmanship Score (0-100)**:
-```bash
+# 1. Auditoria Estática v4.0 (Dual-Theme, Contraste WCAG, Motion & UX)
 node scripts/craft-audit.js src/
-```
 
-### 4. Gerador de Tokens de Paleta (`craft-palette.js`)
-Gera tokens para Tailwind v3, Tailwind v4 (`@theme`) e CSS Custom Properties:
-```bash
-# Tailwind CSS v4 (@theme CSS-First)
+# 2. Verificação Visual Headless no Browser (Playwright 4 Viewports)
+node scripts/visual-check.js .craft/preview.html
+
+# 3. Preview Visual Interativo Instantâneo
+node scripts/preview-spec.js DESIGN_SPEC.md
+
+# 4. Especificação de Design & Gerador de Paletas
+node scripts/generate-spec.js "Central Financeira" --preset=linear-dark
 node scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
-
-# Tailwind CSS v3 (tailwind.config.js)
-node scripts/craft-palette.js linear-dark
-
-# CSS Variables (:root)
-node scripts/craft-palette.js supabase-emerald --format=css
-```
-
-### 5. Templates de Componentes Prontos (`templates/`)
-- `AnimatedTabs.tsx`: Seletor de abas com física de mola e indicador deslizante `layoutId`.
-- `SpotlightCard.tsx`: Card escuro com iluminação radial reativa à posição do mouse.
-- `MagneticButton.tsx`: Botão com atração elástica ao cursor e compressão no clique.
-- `SmoothAccordion.tsx`: Sanfona expansível com `AnimatePresence` sem solavancos visuais.
-- `ContentSkeleton.tsx`: Skeletons content-aware com efeito shimmer suave (zero CLS).
-
----
-
-## 🚀 Instalação e Compatibilidade
-
-A skill é multiplataforma e pode ser instalada localmente no projeto ou globalmente para todos os agentes:
-
-```bash
-# Instalar no projeto atual (.agents/skills/frontend-craftsman)
-node install.js
-
-# Instalar globalmente em todos os assistentes (Antigravity, Claude Code, Cursor)
-node install.js --global --target=all
-
-# Instalar local E globalmente
-node install.js --both
 ```
 
 ---

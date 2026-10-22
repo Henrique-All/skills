@@ -46,12 +46,16 @@ export const Hero = styled.div`
 `;
 
 export const Tw = () => (
-  <div>
+  <div onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}>
     <p className="text-zinc-900 dark:text-zinc-100">projeto usa dark:</p>
-    {/* LIGHT_MODE_WHITE_TEXT + LIGHT_MODE_GHOST_SURFACE (Tailwind) */}
-    <div className="text-white bg-white/5 p-4">texto</div>
+    {/* LIGHT_MODE_WHITE_TEXT + LIGHT_MODE_GHOST_SURFACE + TRANSITION_ALL_SLOP (Tailwind) */}
+    <div className="text-white bg-white/5 transition-all p-4">texto</div>
     {/* HARDCODED_DARK_SURFACE (Tailwind) */}
     <div className="bg-zinc-900 p-4">painel</div>
+    {/* MISSING_TABULAR_NUMS */}
+    <span className="text-lg font-bold">R$ 1.490,00</span>
+    {/* NATIVE_DIALOG_SLOP */}
+    <button onClick={() => window.confirm('Deseja excluir?')}>Excluir</button>
   </div>
 );
 
