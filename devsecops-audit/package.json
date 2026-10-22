@@ -1,7 +1,7 @@
 {
   "name": "devsecops-audit-skill",
-  "version": "1.0.0",
-  "description": "Motor de auditoria de segurança DevSecOps com 18 pilares universais (OWASP, supply chain, secrets, menor privilégio)",
+  "version": "2.6.0",
+  "description": "Motor de auditoria de segurança DevSecOps com 18 pilares universais (OWASP, supply chain, secrets modernos, vazamento de env público, IA/LLM, menor privilégio)",
   "main": "scripts/audit.js",
   "scripts": {
     "test": "node test/validate.js",

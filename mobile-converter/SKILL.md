@@ -99,9 +99,10 @@ Em listas de dados móveis, expor múltiplos botões consome espaço vertical.
 - Adicione ações reveladas por arrasto horizontal para a esquerda (ex: Arquivar e Excluir estilo iOS/WhatsApp).
 - Use o template oficial [templates/SwipeableRow.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/SwipeableRow.tsx).
 
-### f) Metamorfose 6: Multi-Colunas (Chat/Inboxes) ➔ Fluxo Master-Detail
+### f) Metamorfose 6: Multi-Colunas (Chat/Inboxes) ➔ Fluxo Master-Detail (`MasterDetailShell.tsx`)
 NUNCA empilhe colunas de chat/atendimento verticalmente no celular (`flex-direction: column` cego).
-- **Estratégia Obrigatória:** No mobile, exiba apenas a lista de conversas quando nenhum chat estiver selecionado. Ao clicar em uma conversa, oculte a lista e exiba a área de chat em tela cheia com botão tátil de retorno (`← Voltar`) chamando `onCloseChat()` ou limpando o `selectedId`.
+- **Estratégia Obrigatória:** No mobile, exiba apenas a lista de conversas quando nenhum chat estiver selecionado. Ao clicar em uma conversa, oculte a lista e exiba a área de chat em tela cheia (`100dvh`) com botão tátil de retorno (`← Voltar`) chamando `onCloseChat()` ou limpando o `selectedId`.
+- Use o template oficial [templates/MasterDetailShell.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/MasterDetailShell.tsx) e, para atualização por gesto vertical, [templates/PullToRefresh.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/PullToRefresh.tsx).
 - **Eliminação de Cards Vazios:** Oculte placeholders de tela vazia secundários no mobile (`display: none`).
 
 ### g) Clearance de Elementos Fixos (Menu Hambúrguer / Toggles)

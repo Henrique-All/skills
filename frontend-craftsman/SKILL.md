@@ -1,101 +1,230 @@
 ---
 name: frontend-craftsman
-description: Engenharia de Front-end de Alta Fidelidade (Design Engineer). Elimina a 'cara de IA' (gradientes roxos genéricos, blur sem critério, layouts clichês) e produz interfaces artesanais com Framer Motion (física de molas, layoutId), Radix/Tailwind, tipografia refinada, micro-interações táteis e acabamento nível Stripe/Linear/Apple.
+description: Engenharia de Front-end, UX de Produto e Orquestração Multi-Engine de Animações (Design Engineer). Elimina a 'cara de IA' e produz interfaces artesanais 120fps/0-rerender com Motion (Framer Motion v12), GSAP (useGSAP/Flip/ScrollTrigger), AutoAnimate, View Transitions API, Radix/Tailwind, Psicologia de UX e Dual-Theme nível Linear/Stripe/Apple/Raycast.
 ---
 
-# 🎨 Frontend Craftsman — Protocolo de Engenharia de Interface Artesanal
+# 🎨 Frontend Craftsman — Protocolo de Design Engineering, UX & Motion (v4.0)
 
-O **Frontend Craftsman** é o protocolo de engenharia de design (*Design Engineering*) projetado para erradicar o **"AI Slop UI"** (interfaces com cara de template gerado por IA). Ele estabelece regras rígidas para criar aplicações web que pareçam construídas manualmente por equipes de elite de design de produto (como **Linear, Apple, Stripe, Raycast e Vercel**).
-
----
-
-## 🛑 O Diagnóstico: O Que é a "Cara de IA" (*AI Slop UI*)?
-
-Quando IAs geram código de front-end sem diretrizes de artesanato, elas caem invariavelmente nos mesmos 7 vícios:
-
-| Vício da IA Genérica | O Que a IA Faz | Padrão Frontend Craftsman |
-| :--- | :--- | :--- |
-| **1. Síndrome do Roxo Neon** | `from-purple-600 to-indigo-600` em tudo (botões, títulos, bordas). | Paleta monocromática profunda (Zinc/Slate) com **1 única cor de destaque** cirúrgica (< 5% da área visual). |
-| **2. Glassmorphism Sem Critério** | `backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl` em todos os cards sem hierarquia. | Superfícies opacas em camadas (`elevation-1`, `elevation-2`), bordas ultrafinas de 1px com opacidade precisa e **inner-highlights** simulando chanfro de hardware real. |
-| **3. Animações Duras / Ausentes** | `transition-all duration-300` linear ou ausência de micro-interações. | **Framer Motion com física de molas (Spring Physics)** realistas, `layoutId` para transições fluidas e respeito a `prefers-reduced-motion`. |
-| **4. Layout de Hero Clichê** | Título centralizado "Transform your workflow with Next-Gen AI", 2 botões idênticos e 3 cards flutuantes. | Layouts assimétricos, Bento Grids estruturados, tipografia com `tracking-tight` e dashboards interativos reais em vez de ilustrações genéricas. |
-| **5. Ausência de Feedback Tátil** | Botões sem estado de press (`:active` ou `whileTap`), sem anel de foco acessível. | Compressão tátil expressiva (`whileTap={{ scale: 0.98 }}`), efeitos de cursor magnético ou iluminação reativa (*Spotlight Cards*). |
-| **6. Componentes Frágeis na Mão** | Modais e dropdowns feitos com `useState(isOpen)` que quebram acessibilidade, foco e tecla ESC. | Primitivos acessíveis baseados em **Radix UI / Headless UI**, com foco gerenciado, WAI-ARIA e retenção de foco. |
-| **7. Estados de Espera Preguiçosos** | Spinner giratório solitário ou texto "Carregando...". | **Content-Aware Skeletons** que espelham exatamente a anatomia da interface final e evitam Layout Shift (CLS). |
+O **Frontend Craftsman** é o protocolo de engenharia de interface (*Design Engineering*), psicologia de UX e animação de alta performance projetado para erradicar o **"AI Slop UI & UX"** (interfaces genéricas, lentas, sem alma e com usabilidade amadora). Ele estabelece regras determinísticas para construir aplicações web que pareçam esculpidas manualmente por equipes de elite (**Linear, Apple, Stripe, Raycast, Vercel e Emil Kowalski / Rauno Freiberg**).
 
 ---
 
-## 🎯 Quando Acionar Esta Skill
+## 🛑 O Diagnóstico: Os 10 Vícios do "AI Slop UI & UX"
 
-Ative o protocolo sempre que:
-1. For criar **novas telas, componentes ou páginas** de frontend (React, Next.js, Vue, Svelte, HTML/CSS).
-2. O usuário pedir para a interface ficar **"mais profissional"**, **"com cara de produto real"**, **"estilo Linear/Stripe/Apple"** ou **"sem cara de IA"**.
-3. For implementar **animações, transições de abas, modais, gavetas (drawers) ou micro-interações**.
-4. For refatorar um frontend existente que está visualmente poluído ou com baixa qualidade de acabamento.
-5. Antes de entregar código de UI para o usuário final.
+Quando IAs geram front-end sem governança de Design Engineering, elas cometem invariavelmente estes 10 erros:
 
----
-
-## 📐 Os 5 Pilares de Execução do Craftsman
-
-```mermaid
-flowchart TD
-    A["🎯 Requisito de UI"] --> B["1. Estrutura & Tipografia<br/>Grid 4px/8px • Tracking-Tight"]
-    B --> C["2. Superfícies & Profundidade<br/>Camadas • Borda 1px • Inner Shadow"]
-    C --> D["3. Paleta Deliberada<br/>Monocromático • 1 Accent Cirúrgico"]
-    D --> E["4. Dinâmica Framer Motion<br/>Física de Molas • layoutId"]
-    E --> F["5. Micro-Interações & A11y<br/>whileTap • Radix UI • Skeletons"]
-    F --> G["🏆 craft-audit.js<br/>Score ≥ 90 Aprovado"]
-```
+| # | Vício da IA Genérica | O Que a IA Faz | Padrão Frontend Craftsman |
+| :- | :--- | :--- | :--- |
+| **1** | **Síndrome do Roxo Neon** | `from-purple-600 to-indigo-600` em botões, títulos e bordas. | Paleta monocromática profunda (Zinc/Slate) com **1 única cor de destaque** cirúrgica (< 5% da área visual). |
+| **2** | **Glassmorphism Sem Critério** | `backdrop-blur-md bg-white/5 rounded-3xl` em tudo sem hierarquia. | Superfícies em camadas com bordas de 1px (`border-zinc-200/80 dark:border-white/[0.08]`) e **inner highlight** de chanfro físico. |
+| **3** | **Light Mode Quebrado** | Texto `text-white` fixo e card `bg-white/5` que ficam invisíveis no modo claro. | **Coerência Estrita Dual-Theme:** Contraste WCAG AA (4.5:1) garantido tanto no Light quanto no Dark Mode. |
+| **4** | **Animações CPU-Bound (`transition-all`)** | `transition-all duration-300 ease-in-out` causando engasgos de layout. | **Multi-Engine 120fps:** Molas físicas calibradas, `transition-colors`/`transition-transform` e animações restritas à GPU (`transform`, `opacity`). |
+| **5** | **Re-render Thrashing no Mouse** | `useState({ x, y })` dentro de `onMouseMove` ou `onScroll` (60 re-renders/s). | **Zero Re-renders:** Uso obrigatório de `useMotionValue`, `useSpring` e `useMotionTemplate` (atualização direta no DOM/GPU). |
+| **6** | **Listas Secas Sem Fluidez** | Itens aparecem/somem em listas CRUD com corte seco no DOM. | **AutoAnimate (`useAutoAnimate`)** em listas de 1 linha ou `<AnimatePresence mode="popLayout">` + `layout`. |
+| **7** | **Diálogos Nativos Amadores** | Uso de `window.alert()` ou `window.confirm('Deseja excluir?')`. | **UX Tátil Defensiva:** `HoldToConfirmButton` (segurar por 1.2s), `MorphingDialog` (`layoutId`) ou `StackedToast` 3D. |
+| **8** | **Esquecimento dos 5 Estados de UX** | Só codifica o "caminho feliz" e um `"Carregando..."` em texto puro. | **Arquitetura Completa de 5 Estados:** Skeleton content-aware, Empty State com CTA, Filtered Empty State, Error Retry e Populated State. |
+| **9** | **Números Dançantes em Tabelas/KPIs** | Preços, contadores e tabelas sem alinhamento numérico monoespaçado. | **Micro-Tipografia Funcional:** `tabular-nums` obrigatório em todo dado numérico/financeiro e `SpringNumberTicker` em métricas. |
+| **10** | **Falta de Atalhos e Foco (`⌘K`)** | Elementos com `outline-none` sem `focus-visible` e zero suporte a teclado. | **Keyboard-First:** `CommandPalette` (`⌘K`), navegação por setas (`ArrowUp`/`Down`), `Escape` e `focus-visible:ring-2`. |
 
 ---
 
-## ⚡ 1. Guia de Molas do Framer Motion (Spring Physics)
+## ⚡ 1. Matriz Multi-Engine de Animação (120fps / 0 Re-renders)
 
-**NUNCA** use transições lineares ou `ease-in-out` em botões e micro-interações. Use molas calibradas:
+Uma única biblioteca não resolve todos os problemas de movimento. O Design Engineer escolhe a **engine certa para a física certa**:
 
-### Presets Oficiais de Mola:
+| Cenário de Interface | Engine Recomendada | Primitivo / API Chave | Por quê? |
+| :--- | :--- | :--- | :--- |
+| **Micro-interações, Botões, Abas, Modais e Morphing** | **Motion** (`framer-motion` / `motion/react`) | `whileTap`, `layoutId`, `AnimatePresence`, `useSpring` | Física de mola interrompível real (conserva velocidade se o usuário mudar de direção no meio). |
+| **Tracking de Mouse, Spotlight, Tilt 3D, Cursores** | **Motion GPU Values** | `useMotionValue` + `useMotionTemplate` | **0 re-renders do React.** Atualiza variáveis CSS/estilos diretamente no compositor a 120fps. |
+| **Listas CRUD, Filtros de Tabela, Tags, Formulários** | **AutoAnimate** (`@formkit/auto-animate`) | `const [parent] = useAutoAnimate()` | **1 linha de código**, zero configuração, anima inserção, remoção e reordenação automaticamente. |
+| **Timelines Multi-Etapas, Scroll Scrubbing, Grid FLIP** | **GSAP** (`gsap` + `@gsap/react`) | `useGSAP()`, `gsap.timeline()`, `ScrollTrigger`, `Flip` | Controle cirúrgico de tempo, pinning de seções e transição FLIP de grids complexos. |
+| **Rolagem Suave de Página (Marketing / Dashboards)** | **Lenis** (`lenis/react`) | `<ReactLenis root>` + `data-lenis-prevent` | Inércia sedosa sincronizada com `requestAnimationFrame` sem sequestrar barras de scroll nativas. |
+| **Troca de Tema Dark/Light, Popovers Nativos, Entrada CSS** | **CSS Moderno & Web APIs** | `document.startViewTransition`, `@starting-style` | Zero bundle JS adicional, executado 100% na thread do compositor do navegador. |
+
+---
+
+### 1.1 Motion (`framer-motion` / `motion/react`) — Molas & Zero Re-renders
+
+**NUNCA** use curvas lineares ou `transition-all` em interações táteis. Utilize os presets calibrados:
 
 ```typescript
-// Configurações de Mola Padronizadas
 export const SPRINGS = {
-  // Micro-interações táteis: cliques em botões, toggles, badges
-  snappy: { type: 'spring', stiffness: 450, damping: 30, mass: 0.8 },
-
-  // Elementos estruturais: modais, drawers, popovers, dropdowns
-  gentle: { type: 'spring', stiffness: 300, damping: 28 },
-
-  // Transições de layout compartilhado: abas deslizantes, cards expansíveis
-  layout: { type: 'spring', stiffness: 350, damping: 32 },
-
-  // Movimentos orgânicos longos: notificações flutuantes, toasts
-  float: { type: 'spring', stiffness: 200, damping: 22 },
+  // Cliques em botões, switches, checkboxes, hover magnético
+  snappy: { type: 'spring' as const, stiffness: 450, damping: 30, mass: 0.8 },
+  // Modais, drawers, command palettes, popovers
+  gentle: { type: 'spring' as const, stiffness: 320, damping: 28, mass: 0.9 },
+  // Abas deslizantes (layoutId), Morphing Dialogs, expansão de cards
+  layout: { type: 'spring' as const, stiffness: 380, damping: 32 },
+  // Toasts empilhados, elementos flutuantes
+  float:  { type: 'spring' as const, stiffness: 220, damping: 24 },
 };
 ```
 
-### Regras de Ouro de Animação:
-1. **Tabs e Pílulas de Seleção:** Use sempre `layoutId="active-pill"` dentro de um elemento filho `motion.div` com `position: absolute`. Isso garante o deslizamento contínuo estilo macOS.
-2. **Saída de Elementos:** Todo modal, tooltip ou notificação condicional deve estar encapsulado em `<AnimatePresence mode="wait">` ou `popLayout`.
-3. **Respeito à Acessibilidade:** Sempre consulte `useReducedMotion()`. Se ativado, substitua movimento de translação (`x`, `y`) por transição instantânea de opacidade (`opacity: 1`).
+#### 🚨 Regra de Ouro de Performance: Proibido `useState` em `onMouseMove` / `onScroll`
+Atualizar estado do React em eventos que disparam 60–120 vezes por segundo destrói o frame budget. Use sempre `useMotionValue` + `useMotionTemplate`:
+
+```tsx
+// ❌ PROIBIDO (60 re-renders por segundo da árvore React):
+const [pos, setPos] = useState({ x: 0, y: 0 });
+onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
+
+// ✅ OBRIGATÓRIO (0 re-renders — direto na GPU):
+const mouseX = useMotionValue(0);
+const mouseY = useMotionValue(0);
+const background = useMotionTemplate`radial-gradient(380px circle at ${mouseX}px ${mouseY}px, var(--spotlight), transparent 75%)`;
+```
+
+#### Morphing de Elementos Compartilhados (`layoutId`)
+- Para fazer um **botão/card se expandir e virar um modal** (veja `templates/MorphingDialog.tsx`), dê o mesmo `layoutId="dialog-card"` para o gatilho e para o container do modal dentro de `<AnimatePresence>`.
+- Para **abas e listas de comando** (`templates/AnimatedTabs.tsx` e `templates/CommandPalette.tsx`), use uma pílula absoluta com `layoutId` e `transition={SPRINGS.layout}`.
 
 ---
 
-## 💎 2. Superfícies, Iluminação e Profundidade (Adeus ao Blur Poluído)
+### 1.2 AutoAnimate (`@formkit/auto-animate`) — Listas Vivas com 1 Linha
 
-Para dar acabamento de hardware físico (estilo Apple e Linear):
+Em qualquer lista onde itens são adicionados, filtrados, ordenados ou excluídos (tarefas, linhas de tabela, anexos, filtros ativos):
 
-### Anatomia de um Card de Alta Fidelidade (Tailwind):
+```tsx
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
+export function TaskList({ items }: { items: Item[] }) {
+  const [listRef] = useAutoAnimate<HTMLUListElement>({ duration: 220 });
+  return (
+    <ul ref={listRef} className="divide-y divide-zinc-200 dark:divide-white/[0.06]">
+      {items.map((item) => <li key={item.id}>{item.title}</li>)}
+    </ul>
+  );
+}
+```
+
+---
+
+### 1.3 GSAP (`gsap` + `@gsap/react`) — Timelines, `Flip` e `ScrollTrigger`
+
+Quando houver sequência coreografada multi-elemento, mudança abrupta de layout CSS Grid (ex: alternar visualização Lista ➔ Kanban) ou narrativa de scroll:
+
+```tsx
+import gsap from 'gsap';
+import { Flip } from 'gsap/Flip';
+import { useGSAP } from '@gsap/react';
+
+gsap.registerPlugin(Flip);
+
+export function ViewSwitcherGrid({ viewMode }: { viewMode: 'grid' | 'list' }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { contextSafe } = useGSAP({ scope: containerRef });
+
+  const toggleLayout = contextSafe((nextChange: () => void) => {
+    const state = Flip.getState('.grid-card');
+    nextChange(); // Altera estado/DOM
+    requestAnimationFrame(() => {
+      Flip.from(state, {
+        duration: 0.45,
+        ease: 'power3.out',
+        stagger: 0.02,
+        absolute: true,
+      });
+    });
+  });
+
+  return <div ref={containerRef}>...</div>;
+}
+```
+
+> ⚠️ **Regra Lenis + Scroll Interno:** Se usar `<ReactLenis root>`, adicione **sempre** o atributo `data-lenis-prevent` em qualquer modal, `<CommandPalette>`, tabela com scroll próprio ou janela de mensagens de chat, para que o scroll da roda do mouse funcione nativamente dentro do componente.
+
+---
+
+### 1.4 CSS Nativo Moderno (View Transitions API & `@starting-style`)
+
+1. **Alternância de Tema (Light ⇄ Dark) com Reveal Circular:**
+   ```typescript
+   export function toggleThemeWithReveal(event: React.MouseEvent, applyTheme: () => void) {
+     if (!('startViewTransition' in document) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+       applyTheme();
+       return;
+     }
+     const x = event.clientX;
+     const y = event.clientY;
+     const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+     const transition = (document as any).startViewTransition(() => applyTheme());
+     transition.ready.then(() => {
+       document.documentElement.animate(
+         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+         { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' }
+       );
+     });
+   }
+   ```
+2. **Animação de Entrada em CSS Puro (`@starting-style`):**
+   Para elementos nativos `<dialog>` ou `[popover]` sem depender de JS:
+   ```css
+   dialog[open] {
+     opacity: 1;
+     transform: scale(1) translateY(0);
+     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                 overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+     @starting-style {
+       opacity: 0;
+       transform: scale(0.96) translateY(6px);
+     }
+   }
+   ```
+
+---
+
+## 🧠 2. Engenharia de UX & Psicologia de Produto (Nível Linear / Stripe)
+
+Uma interface bonita que trava o fluxo do usuário ou esconde estados críticos é um fracasso de engenharia. Aplique estas **5 Leis de UX de Produto**:
+
+### Lei 2.1 — Arquitetura Obrigatória dos 5 Estados de Tela
+Nenhuma listagem, dashboard ou visão de dados pode ser entregue apenas com o estado "cheio". Você **DEVE** implementar:
+1. **Loading (`Content-Aware Skeleton`):** Usa `ContentSkeleton.tsx` imitando a geometria exata da tela final (CLS = 0). **Proibido** spinner centralizado solto.
+2. **Empty State Primário (Zero Dados na Conta):** Card limpo (`EmptyStateCard`) explicando o valor da funcionalidade com um botão CTA primário imediato (ex.: *"+ Criar primeiro projeto"*).
+3. **Filtered Empty State (Busca/Filtro sem resultados):** Quando `items.length > 0` mas `filteredItems.length === 0`, mostre *"Nenhum resultado para 'X'"* acompanhado do botão tátil **`Limpar filtros`**.
+4. **Error State Recuperável:** Banner inline com a causa legível, botão **`Tentar novamente`** e preservação total do que o usuário já digitou.
+5. **Populated State (Densidade Calibrada):** Hierarquia visual onde o olho identifica título, status e ação primária em menos de 2 segundos.
+
+### Lei 2.2 — Limiar de Doherty (< 400ms) & Optimistic UI
+- Ações frequentes (marcar tarefa, favoritar, arquivar, curtir, alterar coluna de Kanban, enviar mensagem no chat) devem refletir na interface em **menos de 16ms (Optimistic Update)**, sem bloquear o botão com spinner.
+- Se a requisição falhar em background, reverta o estado com mola suave e dispare um `StackedToast` de erro com opção de *Desfazer / Tentar novamente*.
+
+### Lei 2.3 — UX Defensiva: Fim dos Modais de Confirmação Irritantes
+- **TERMINANTEMENTE PROIBIDO** usar `window.alert()`, `window.confirm()` ou `window.prompt()`.
+- Para ações destrutivas rápidas (excluir item, revogar token, limpar fila), substitua o modal bloqueante pelo padrão **`HoldToConfirmButton.tsx`** (o usuário mantém pressionado por `1.2s` enquanto uma barra de progresso preenche o botão; se soltar antes, cancela sem atrito).
+- Para exclusões críticas de conta/repositório, use `MorphingDialog.tsx`.
+
+### Lei 2.4 — Ergonomia Keyboard-First (`⌘K`)
+- Aplicações ricas devem oferecer busca e ações rápidas via `⌘K` / `Ctrl+K` (`CommandPalette.tsx`).
+- Botões de ação importantes exibem dicas sutis de atalho em tags `<kbd className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">⌘K</kbd>`.
+- Todo controle interativo possui anel de foco acessível (`focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2`).
+
+### Lei 2.5 — Micro-Tipografia Funcional (`tabular-nums` & `text-wrap`)
+- **Números Tabulares Obrigatórios (`tabular-nums`):** Qualquer preço (`R$ 1.290,00`), KPI, porcentagem, contador regressivo ou coluna numérica de tabela **DEVE** ter a classe `tabular-nums` (`font-variant-numeric: tabular-nums`) para evitar tremedeira horizontal durante atualizações ou animações (`SpringNumberTicker.tsx`).
+- **Equilíbrio Óptico de Texto:**
+  - Títulos (`h1`, `h2`, `h3`): `tracking-tight text-balance` (`text-wrap: balance`) para evitar linhas órfãs com 1 palavra.
+  - Parágrafos e descrições: `text-pretty leading-relaxed max-w-[65ch]`.
+
+---
+
+## 💎 3. Superfícies, Profundidade & Coerência Dual-Theme (Light + Dark)
+
+Para alcançar acabamento de hardware físico (Apple / Linear / Stripe) nos **dois temas**:
+
+### Anatomia de um Card Dual-Theme de Alta Fidelidade:
 ```tsx
 <motion.div
   whileHover={{ y: -2 }}
   transition={SPRINGS.snappy}
   className="
     relative rounded-xl p-5
-    bg-zinc-900/80 
-    border border-white/[0.08]
-    shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]
-    hover:border-white/[0.16] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.1)]
+    bg-white dark:bg-zinc-900/90
+    text-zinc-900 dark:text-zinc-100
+    border border-zinc-200/80 dark:border-white/[0.08]
+    shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.8)]
+    dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]
+    hover:border-zinc-300 dark:hover:border-white/[0.16]
     transition-colors duration-200
   "
 >
@@ -103,182 +232,70 @@ Para dar acabamento de hardware físico (estilo Apple e Linear):
 </motion.div>
 ```
 
-- **`border-white/[0.08]`**: Borda cirúrgica de 1px com 8% de opacidade (evita bordas cinzas grossas).
-- **`shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]`**: O "inner highlight" superior que simula luz incidindo no chanfro superior da placa.
-- **Fundo**: `#09090b` ou `zinc-900/80` em vez de preto puro `#000000` (que destrói o contraste de sombras).
+### Regras Inegociáveis de Coerência Dual-Theme:
+1. **PROIBIDO Texto Branco Fixo (`color: #fff`, `text-white` sem `dark:`):** No modo claro, o fundo vira claro e o texto some. Use `text-zinc-900 dark:text-zinc-100` ou `isLight(theme) ? '#0f172a' : '#f8fafc'`. (Exceção única: texto sobre botão de acento sólido escuro em ambos os temas).
+2. **PROIBIDO Superfícies Fantasma (`bg-white/5`, `border-white/10` sem `dark:`):** Branco translúcido desaparece sobre fundo claro. Use `bg-white dark:bg-zinc-900/90` e `border-zinc-200/80 dark:border-white/[0.08]`.
+3. **Regra 60-30-10 de Paleta:**
+   - **60% Canvas:** `#f8fafc` (Light) / `#09090b` (Dark — nunca `#000000` puro).
+   - **30% Superfícies:** `#ffffff` (Light) / `#121215` (Dark).
+   - **10% Tipografia:** Alto contraste (`#0f172a` / `#f4f4f5`) e apoio (`#475569` / `#a1a1aa`).
+   - **< 5% Cor de Acento Cirúrgica (Apenas 1):** Amber (`#f59e0b`), Emerald (`#10b981`), Stripe Royal (`#0048e5`), Apple Blue (`#0071e3`) ou Rose Crimson (`#f43f5e`).
 
 ---
 
-## 🎨 3. Paletas de Cores de Elite (Regra 60-30-10)
+## 🧩 4. Catálogo de 10 Templates Artesanais (`templates/`)
 
-1. **60% (Canvas Base):**
-   - **Dark Mode:** Zinc escuro (`bg-[#09090b]`) ou Obsidian (`bg-[#0a0a0c]`). Nunca use preto puro `#000000` (que quebra sombras de elevação).
-   - **Light Mode:** Canvas cerâmico/off-white (`bg-[#f8fafc]` ou `bg-[#f5f5f7]`). Evite branco puro no canvas para permitir destaque aos cards.
-2. **30% (Superfícies & Estrutura):** Tons neutros com passos graduais (`zinc-900`, `zinc-800`, bordas `white/[0.08]` em dark; `bg-white`, bordas `black/[0.06]` em light).
-3. **10% (Tipografia & Alto Contraste):** Títulos em `text-zinc-100` (dark) ou `text-slate-900` (light), textos de apoio em `text-zinc-400` / `text-slate-600`.
-4. **< 5% (Cor de Acento - Escolha APENAS UMA):**
-   - **Amber Linear:** `amber-500` / `amber-400`
-   - **Emerald FinTech:** `emerald-500` / `emerald-400`
-   - **Electric Cobalt:** `blue-500` / `blue-400`
-   - **Crimson Pro:** `rose-500` / `rose-400`
-   - **Stripe Royal Blue (Light):** `#0048e5` (contraste perfeito sobre branco)
-   - **Apple Pure Blue (Light):** `#0071e3`
+Todos os templates são **100% Dual-Theme (Light + Dark)**, possuem **Zero Re-renders em tracking de ponteiro**, acessibilidade **WAI-ARIA** e respeito a **`useReducedMotion()`**:
 
-> ⚠️ **PROIBIDO:** Usar gradientes arco-íris ou combinar roxo com rosa neon sem justificativa formal de marca.
-
----
-
-## 🤝 O Elo Simbiótico: Frontend Craftsman ⟷ Hybrid Orchestrator
-
-Quando ambas as skills estão presentes no repositório ou no perfil global do usuário (`hybrid-orchestrator` + `frontend-craftsman`), elas estabelecem um **elo simbiótico automático**:
-
-### 🎨 Fluxo 1: Design-First (Iniciado no Craftsman)
-> Quando o desenvolvedor ou usuário solicita uma alteração visual, nova tela ou refinamento estético:
-
-```mermaid
-flowchart TD
-    D1["👤 Usuário solicita Front-end / UI"] --> D2["🎨 Craftsman gera DESIGN_SPEC.md<br/>• Paleta, fontes e molas"]
-    D2 --> D3["🖥️ Preview Instantâneo local<br/>(node scripts/preview-spec.js)"]
-    D3 --> D4{"Usuário aprova<br/>o Design?"}
-    
-    D4 -- NÃO --> D5["✏️ Ajustar Paleta,<br/>Fontes ou Wireframe"]
-    D5 --> D2
-    
-    D4 -- SIM (OK) --> D6{"hybrid-orchestrator<br/>está presente?"}
-    
-    D6 -- SIM --> D7["🤝 Handoff para Hybrid (Rota B/C)<br/>• Snapshot de segurança git stash<br/>• Sabatina Q1-Q4 (Q3 preenchido)"]
-    D7 --> D8["⚡ Execução Cirúrgica & Falsifier<br/>• Física de molas real<br/>• Pipeline craft-audit.js (Score ≥ 90)"]
-    
-    D6 -- NÃO --> D9["🎨 Craftsman implementa diretamente<br/>com componentes de alta fidelidade"]
-```
-
-### ⚡ Fluxo 2: Engineering-First (Iniciado no Hybrid)
-> Quando a solicitação começa pela orquestração técnica, bug ou feature de ponta a ponta:
-
-```mermaid
-flowchart TD
-    H1["👤 Usuário solicita feature<br/>no Hybrid Orchestrator"] --> H2{"Demanda toca em<br/>UI / Telas / Componentes?"}
-
-    H2 -- NÃO --> H10["⚙️ Hybrid segue fluxo<br/>backend / regras puras"]
-
-    H2 -- SIM --> H3{"frontend-craftsman<br/>está presente?"}
-
-    H3 -- NÃO --> H9["⚡ Hybrid implementa sem<br/>especificação visual prévia"]
-
-    H3 -- SIM --> H4["🎨 Hybrid invoca Craftsman<br/>para gerar DESIGN_SPEC.md"]
-    H4 --> H5["🛑 Turno 1 (Trava Obrigatória)<br/>DESIGN_SPEC.md anexado ao plano"]
-    
-    H5 --> H6{"Usuário aprova<br/>o Turno 1?"}
-
-    H6 -- SIM --> H7["⚡ Turno 2: Implementação<br/>• Física de Molas & Radix<br/>• Testes & Ataque Falsifier"]
-    H7 --> H8["🏆 Pipeline 7.2: craft-audit.js<br/>Score ≥ 90 Obrigatório"]
-```
-
-### 🛑 Regras Rígidas do Acordo Simbiótico (Trava Obrigatória de Turno):
-
-1. **Detecção Silenciosa & Sem Atrito:**
-## ☀️ 6. Coerência Estrita Dual-Theme (Light Mode Coherence)
-
-O erro mais comum em IAs é desenvolver com foco exclusivo no Dark Mode e quebrar totalmente o Light Mode.
-**Regras Inegociáveis de Coerência Dual-Theme:**
-
-1. **PROIBIDO Texto Branco Fixo (`color: #fff`, `color: white`, `text-white`):**
-   - Nunca use texto branco fixo sobre superfícies que mudam com o tema. No tema claro, o fundo vira branco ou cinza-claro e o texto fica invisível (branco no branco).
-   - Use tokens semânticos (`theme.colors.text`) ou ternárias: `isLight(theme) ? '#0f172a' : '#f8fafc'`. Em Tailwind: `text-zinc-900 dark:text-white`.
-
-2. **PROIBIDO Superfícies Fantasma (`bg-white/5`, `rgba(255, 255, 255, 0.05)`):**
-   - Branco translúcido é excelente no dark mode para criar relevo sutil. No tema claro, ele desaparece completamente sobre fundos brancos/claros, deixando cards e botões sem borda nem contorno.
-   - Use ternárias: `isLight(theme) ? '#ffffff' : 'rgba(255, 255, 255, 0.04)'` e bordas `isLight(theme) ? '#e2e8f0' : 'rgba(255, 255, 255, 0.08)'`. Em Tailwind: `bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10`.
-
-3. **Contraste WCAG AA Obrigatório nos Dois Modos:**
-   - Todo texto deve alcançar contraste mínimo de 4.5:1 (ou 3:1 para títulos grandes) tanto no tema escuro quanto no tema claro.
-   - `craft-audit.js` e `visual-check.js` validam matematicamente a luminância relativa e barram contrastes insuficientes.
+| Template | Categoria | O Que Resolve |
+| :--- | :--- | :--- |
+| [`SpotlightCard.tsx`](templates/SpotlightCard.tsx) | Superfície GPU | Iluminação radial reativa ao cursor via `useMotionValue` + `useMotionTemplate` (**0 re-renders**). |
+| [`MagneticButton.tsx`](templates/MagneticButton.tsx) | Micro-interação | Atração magnética ao cursor via `useSpring` (120fps) com variantes `primary`, `secondary`, `ghost`. |
+| [`AnimatedTabs.tsx`](templates/AnimatedTabs.tsx) | Navegação | Abas deslizantes com `layoutId`, setas do teclado (`ArrowLeft`/`Right`), contadores e `startViewTransition`. |
+| [`SmoothAccordion.tsx`](templates/SmoothAccordion.tsx) | Layout Fluido | Sanfona com altura animada por mola, ícone vetorial rotativo e `aria-expanded`. |
+| [`ContentSkeleton.tsx`](templates/ContentSkeleton.tsx) | Estados de UX | `ShimmerBlock`, `CardSkeleton`, `TableRowSkeleton` e `EmptyStateCard` acionável (Zero CLS). |
+| [`CommandPalette.tsx`](templates/CommandPalette.tsx) | UX Keyboard-First | Paleta `⌘K` / `Ctrl+K` estilo Linear/Raycast com busca instantânea, setas, `layoutId` e `<kbd>`. |
+| [`MorphingDialog.tsx`](templates/MorphingDialog.tsx) | Shared Layout | Card/Botão que se expande fisicamente transformando-se no Modal via `layoutId` compartilhado. |
+| [`SpringNumberTicker.tsx`](templates/SpringNumberTicker.tsx) | Micro-Tipografia | Contador numérico interpolado por mola (`useSpring` + `Intl.NumberFormat` + `tabular-nums`) para KPIs/preços. |
+| [`StackedToast.tsx`](templates/StackedToast.tsx) | Feedback / Optimistic | Pilha 3D de notificações estilo Sonner que colapsa em cascata (`scale`, `y`) e expande no hover. |
+| [`HoldToConfirmButton.tsx`](templates/HoldToConfirmButton.tsx) | UX Defensiva | Botão para ações destrutivas ("Segure para excluir" por 1.2s com barra de mola), eliminando `window.confirm`. |
 
 ---
 
-## 🔄 Fluxo de Trabalho & Resolução Autônoma
+## 🛠️ 5. Ferramentas Determinísticas da Skill
 
-O agente atua com governança completa e proativa, sem exigir comandos avulsos (`/front`, `/orch`):
-
-1. **Ajustes Rápidos, Bugs de UI e Manutenção:**
-   - Identifique os arquivos de estilo afetados.
-   - Aplique as correções diretamente no código preservando coerência dual-theme e ergonomia.
-   - Execute `node scripts/craft-audit.js <caminho>` para garantir Score ≥ 85 sem violações de Light Mode.
-   - Execute `node scripts/visual-check.js <url_ou_html>` para medição visual com Playwright quando um servidor ou preview estiver ativo.
-
-2. **Novas Telas ou Redesigns Estruturais:**
-   - Pode-se gerar um `DESIGN_SPEC.md` com `node scripts/generate-spec.js` para alinhar paleta, tipografia e componentes com o usuário.
-   - Gere o preview visual instantâneo com `node scripts/preview-spec.js`.
-   - Proceda com a implementação refinada, garantindo molas Framer Motion e dual-theme.
-
----
-
-## 🛠️ Ferramentas da Skill
-
-### 1. Auditoria Estática Dual-Theme (`craft-audit.js v3.0.0`)
-Audita arquivos CSS, Styled-Components e Tailwind contra vícios de IA, texto branco no claro e superfícies fantasma:
+### 1. Auditoria Estática de UI, UX & Motion (`craft-audit.js v4.0.0`)
+Audita arquivos CSS, Styled-Components e Tailwind/TSX contra vícios de Light Mode, contraste WCAG, `transition-all`, re-render thrashing em `onMouseMove`/`onScroll`, diálogos nativos (`alert`/`confirm`) e falta de `tabular-nums`:
 ```bash
 node frontend-craftsman/scripts/craft-audit.js src/ --json
 ```
 
-### 2. Verificação Visual Headless (`visual-check.js v1.0.0`)
+### 2. Verificação Visual Headless (`visual-check.js`)
 Executa o Playwright em modo headless para auditar a interface renderizada real em 4 combinações (Desktop/Mobile × Light/Dark):
-- Mede o contraste WCAG real computado pelo browser em todos os elementos de texto.
-- Detecta sobreposição física de elementos via `document.elementFromPoint`.
-- Detecta estouro horizontal de viewport (scroll indesejado).
-- Valida se os touch targets atendem ao mínimo de 44×44px no mobile.
 ```bash
-# Auditar arquivo HTML local:
 node frontend-craftsman/scripts/visual-check.js .craft/preview.html
-
-# Auditar servidor de desenvolvimento local:
 node frontend-craftsman/scripts/visual-check.js http://localhost:3000 --json
 ```
 
-### 3. Preview Visual Instantâneo (`preview-spec.js`)
-Gera e abre no navegador uma página HTML interativa com botões táteis, cards e paletas reais:
+### 3. Preview Visual Interativo Instantâneo (`preview-spec.js`)
+Gera `.craft/preview.html` com demonstração viva de **View Transition Theme Toggle**, **Spotlight Card**, **Animated Tabs**, **Spring Number Ticker**, **Hold-to-Confirm Button** e **Stacked Toast**:
 ```bash
 node frontend-craftsman/scripts/preview-spec.js DESIGN_SPEC.md
 ```
 
-### 4. Gerador de Especificação Visual (`generate-spec.js`)
-Gera a especificação formal de design:
+### 4. Gerador de Especificação Visual (`generate-spec.js`) & Paletas (`craft-palette.js`)
 ```bash
 node frontend-craftsman/scripts/generate-spec.js "Nome da Tela" --preset=linear-dark
-```
-
-### 5. Gerador de Tokens de Paleta (`craft-palette.js`)
-Exporta tokens refinados para Tailwind v3, Tailwind v4 (@theme) ou CSS Variables:
-```bash
-# Tailwind v3
-node frontend-craftsman/scripts/craft-palette.js linear-dark
-
-# Tailwind v4 (@theme CSS-First)
 node frontend-craftsman/scripts/craft-palette.js stripe-clean-light --format=tailwind-v4
-
-# CSS Custom Properties (:root)
-node frontend-craftsman/scripts/craft-palette.js supabase-emerald --format=css
 ```
-
-### 6. Catálogo de Componentes Artesanais (`templates/`)
-A skill inclui templates prontos para copiar e colar:
-- `AnimatedTabs.tsx`: Navegação com pílula deslizante `layoutId`.
-- `SpotlightCard.tsx`: Card escuro com iluminação radial sensível ao ponteiro.
-- `MagneticButton.tsx`: Botão com atração elástica e clique tátil.
-- `SmoothAccordion.tsx`: Sanfona sem saltos de altura usando Framer Motion.
-- `ContentSkeleton.tsx`: Skeletons content-aware com shimmer fluido (zero layout shift).
 
 ---
 
 ## 📋 Checklist de Validação Final (Critérios de Aceite)
 
 Antes de considerar qualquer tela ou ajuste pronto:
-- [ ] **Coerência Dual-Theme:** Nenhum texto branco sobre fundo claro; nenhuma superfície/borda fantasma translúcida invisível no modo claro; contraste WCAG AA 4.5:1 em ambos os temas.
-- [ ] Nenhum gradiente roxo-neon/índigo genérico usado sem aprovação expressa.
-- [ ] Todos os botões possuem feedback tátil no clique (`whileTap={{ scale: 0.98 }}` ou `:active:scale-95`).
-- [ ] Abas e seletores de visualização utilizam `layoutId` para movimento contínuo.
-- [ ] Cards possuem bordas sutis de 1px com opacidade precisa e inner highlight superior.
-- [ ] Textos de títulos utilizam `tracking-tight` com peso tipográfico ponderado.
-- [ ] Estados vazios e de carregamento possuem layouts dedicados (Skeletons content-aware com `ContentSkeleton.tsx`).
-- [ ] `craft-audit.js` executado com score **>= 85/100** e zero erros.
-- [ ] `visual-check.js` executado sem sobreposição de elementos ou quebras de contraste quando houver servidor/preview.
+- [ ] **Coerência Dual-Theme:** Zero texto branco sobre fundo claro; zero superfícies brancas translúcidas soltas no modo claro; contraste WCAG AA >= 4.5:1 nos dois temas.
+- [ ] **Performance de Movimento (120fps):** Zero `transition-all`; zero `useState` dentro de `onMouseMove`/`onScroll` (usar `useMotionValue`).
+- [ ] **Arquitetura dos 5 Estados de UX:** Skeletons content-aware (`ContentSkeleton.tsx`), Empty State acionável (`EmptyStateCard`), Filtered Empty State e Error Retry implementados.
+- [ ] **UX Defensiva & Micro-Tipografia:** Zero `window.alert`/`confirm` (usar `HoldToConfirmButton` ou `MorphingDialog`); classe `tabular-nums` aplicada em preços, métricas e tabelas numéricas.
+- [ ] **Auditoria Aprovada:** `craft-audit.js` com score **>= 90/100** (zero erros) e `visual-check.js` sem sobreposições ou falhas de contraste.

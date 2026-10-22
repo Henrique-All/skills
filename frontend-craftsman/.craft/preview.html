@@ -269,8 +269,15 @@
           A luz direcional sutil segue as coordenadas do ponteiro sem gerar poluição visual ou lentidão. Acabamento artesanal nível Linear e Apple.
         </p>
         <div class="btn-group">
-          <button class="btn btn-primary">Ação de Destaque</button>
-          <button class="btn btn-secondary">Secundário Tátil</button>
+          <button class="btn btn-primary" onclick="bumpMetric()">+ Simular Receita (Spring Ticker)</button>
+          <button class="btn btn-secondary" id="holdBtn" onpointerdown="startHold()" onpointerup="cancelHold()" onpointerleave="cancelHold()" style="position:relative;overflow:hidden;">
+            <span id="holdBar" style="position:absolute;inset:0;background:rgba(244,63,94,0.22);transform:scaleX(0);transform-origin:left;transition:transform 0.18s ease-out;pointer-events:none;"></span>
+            <span id="holdLabel" style="position:relative;z-index:1;">Segure 1.2s p/ Excluir</span>
+          </button>
+        </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-size:12px;color:var(--text-muted);">MRR em Tempo Real (tabular-nums)</span>
+          <span id="tickerValue" style="font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;">R$ 128.450,00</span>
         </div>
       </div>
 
@@ -359,6 +366,47 @@
       const firstTab = document.querySelector('.tab-btn.active');
       if (firstTab) selectTab(0, firstTab);
     });
+
+    // Spring Number Ticker simulation
+    let currentMrr = 128450;
+    const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    function bumpMetric() {
+      const start = currentMrr;
+      const target = currentMrr + Math.floor(Math.random() * 4500 + 1200);
+      currentMrr = target;
+      const t0 = performance.now();
+      const el = document.getElementById('tickerValue');
+      function frame(now) {
+        const p = Math.min(1, (now - t0) / 520);
+        const ease = 1 - Math.pow(1 - p, 4);
+        el.textContent = fmt.format(start + (target - start) * ease);
+        if (p < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    // Hold-to-Confirm simulation
+    let holdTimer = null;
+    function startHold() {
+      const bar = document.getElementById('holdBar');
+      const lbl = document.getElementById('holdLabel');
+      bar.style.transition = 'transform 1.2s linear';
+      bar.style.transform = 'scaleX(1)';
+      lbl.textContent = 'Mantenha pressionado...';
+      holdTimer = setTimeout(() => {
+        lbl.textContent = 'Confirmado ✓';
+      }, 1200);
+    }
+    function cancelHold() {
+      if (holdTimer) clearTimeout(holdTimer);
+      const bar = document.getElementById('holdBar');
+      const lbl = document.getElementById('holdLabel');
+      if (lbl.textContent !== 'Confirmado ✓') {
+        bar.style.transition = 'transform 0.18s ease-out';
+        bar.style.transform = 'scaleX(0)';
+        lbl.textContent = 'Segure 1.2s p/ Excluir';
+      }
+    }
   </script>
 </body>
 </html>

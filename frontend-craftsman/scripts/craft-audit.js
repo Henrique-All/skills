@@ -27,7 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const sb = require('./lib/style-blocks');
 
-const VERSION = '3.0.0';
+const VERSION = '4.0.0';
 
 const RULES = {
   LIGHT_MODE_WHITE_TEXT: { severity: 'error', penalty: 15, name: 'Texto branco fixo sobre superfície que fica clara no tema claro' },
@@ -38,6 +38,10 @@ const RULES = {
   LIGHT_MODE_GHOST_SURFACE: { severity: 'error', penalty: 10, name: 'Superfície/borda branca translúcida que some no tema claro' },
   HARDCODED_DARK_SURFACE: { severity: 'warn', penalty: 5, name: 'Fundo escuro fixo que não acompanha o tema claro' },
   OUTLINE_NONE_WITHOUT_FOCUS: { severity: 'warn', penalty: 5, name: 'outline removido sem estilo de foco visível' },
+  POINTER_STATE_THRASH: { severity: 'warn', penalty: 5, name: 'setState em onMouseMove/onScroll (causa ~60 re-renders/s)' },
+  NATIVE_DIALOG_SLOP: { severity: 'warn', penalty: 5, name: 'Uso de window.alert/confirm/prompt nativo bloqueante' },
+  TRANSITION_ALL_SLOP: { severity: 'warn', penalty: 4, name: 'Uso de transition-all / transition: all (anima layout na CPU)' },
+  MISSING_TABULAR_NUMS: { severity: 'warn', penalty: 3, name: 'Valor monetário/numérico dinâmico sem tabular-nums' },
   PURPLE_GRADIENT_SLOP: { severity: 'warn', penalty: 3, name: 'Gradiente roxo/índigo/rosa genérico' },
   UNREGULATED_BLUR: { severity: 'warn', penalty: 3, name: 'Blur pesado sobre fundo quase transparente' },
   AI_CLICHE_COPY: { severity: 'warn', penalty: 2, name: 'Copy clichê típica de IA' },
@@ -370,6 +374,15 @@ function auditFile(filePath, ctx) {
           { component: compName });
       }
 
+      // --- transition: all (CPU layout thrashing) ---
+      const transDecl = sb.getDecl(block, 'transition') || sb.getDecl(block, 'transition-property');
+      if (transDecl && !transDecl.dynamic && /\ball\b/.test(clean(transDecl.value)) && !ignored('TRANSITION_ALL_SLOP')) {
+        add('TRANSITION_ALL_SLOP', transDecl.line,
+          `transition: ${transDecl.value} anima propriedades de layout na CPU e causa engasgos.`,
+          'Especifique apenas propriedades compostas na GPU (transform, opacity) ou cores (background-color, border-color, color).',
+          { component: compName });
+      }
+
       // --- gradiente roxo genérico ---
       for (const p of BG_PROPS.concat(['background-image'])) {
         const d = sb.getDecl(block, p);
@@ -437,6 +450,9 @@ function auditFile(filePath, ctx) {
     if (bare.includes('outline-none') && !tokens.some((t) => /^focus(-visible|-within)?:(ring|outline|border|shadow)/.test(t)) && !sb.lineIgnored(lines, a.line - 1, 'OUTLINE_NONE_WITHOUT_FOCUS')) {
       add('OUTLINE_NONE_WITHOUT_FOCUS', a.line, '"outline-none" sem focus-visible:ring/outline no mesmo elemento.', 'Adicione "focus-visible:ring-2 focus-visible:ring-offset-2".');
     }
+    if (bare.includes('transition-all') && !sb.lineIgnored(lines, a.line - 1, 'TRANSITION_ALL_SLOP')) {
+      add('TRANSITION_ALL_SLOP', a.line, '"transition-all" anima propriedades de layout na CPU e prejudica a fluidez de 120fps.', 'Use "transition-colors", "transition-transform" ou "transition-opacity".');
+    }
     const from = tokens.find((t) => /^from-(purple|violet|fuchsia|indigo)-\d+$/.test(t));
     const to = tokens.find((t) => /^(to|via)-(pink|indigo|purple|violet|fuchsia)-\d+$/.test(t));
     if (from && to && !sb.lineIgnored(lines, a.line - 1, 'PURPLE_GRADIENT_SLOP')) {
@@ -447,12 +463,43 @@ function auditFile(filePath, ctx) {
     }
   }
 
-  // ---------------- copy ----------------
+  // ---------------- UX, Motion & Copy ----------------
   if (/\.(tsx|jsx|html|vue|svelte)$/.test(ext)) {
-    const re = /Elevate your (?:workflow|experience)|Seamless (?:integration|experience)|Next-Gen (?:platform|solution)|Unleash the power of|Supercharge your|Revolucione (?:seu|sua)|Eleve (?:seu|sua) (?:fluxo|experiência)/i;
+    const copyRe = /Elevate your (?:workflow|experience)|Seamless (?:integration|experience)|Next-Gen (?:platform|solution)|Unleash the power of|Supercharge your|Revolucione (?:seu|sua)|Eleve (?:seu|sua) (?:fluxo|experiência)/i;
+    const dialogRe = /\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/;
+    const inlineThrashRe = /on(?:MouseMove|PointerMove|Scroll)\s*=\s*\{[^}]*\bset[A-Z]\w*\s*\(/;
+    const currencyRe = /(?:R\$\s*(?:\d|\{)|\.toFixed\(2\))/;
+
     lines.forEach((l, i) => {
-      if (re.test(l)) add('AI_CLICHE_COPY', i + 1, `Copy genérica: "${l.trim().slice(0, 80)}".`, 'Escreva o benefício concreto para o usuário, em linguagem direta.');
+      const trimmed = l.trim();
+      if (/^(?:\/\/|\/\*|\*)/.test(trimmed)) return;
+      if (copyRe.test(l)) {
+        add('AI_CLICHE_COPY', i + 1, `Copy genérica: "${trimmed.slice(0, 80)}".`, 'Escreva o benefício concreto para o usuário, em linguagem direta.');
+      }
+      if (dialogRe.test(l)) {
+        add('NATIVE_DIALOG_SLOP', i + 1, `Diálogo nativo bloqueante (${trimmed.slice(0, 50)}) quebra a experiência do produto.`, 'Use HoldToConfirmButton para ações destrutivas rápidas, MorphingDialog para modais ou StackedToast.');
+      }
+      if (inlineThrashRe.test(l)) {
+        add('POINTER_STATE_THRASH', i + 1, 'setState dentro de onMouseMove/onScroll dispara ~60 re-renders/s no React.', 'Use useMotionValue + useSpring/useMotionTemplate (Framer Motion) ou CSS variables via ref.');
+      }
+      if (currencyRe.test(l)) {
+        const nearby = lines.slice(Math.max(0, i - 6), Math.min(lines.length, i + 7)).join('\n');
+        if (!/tabular-nums/.test(nearby)) {
+          add('MISSING_TABULAR_NUMS', i + 1, 'Valor monetário/numérico formatado sem "tabular-nums" (causa desalinhamento e tremedeira de dígitos).', 'Adicione a classe "tabular-nums" ou "font-variant-numeric: tabular-nums".');
+        }
+      }
     });
+
+    const fnThrashRe = /(?:const|function)\s+(?:handle|on)(?:MouseMove|PointerMove|Scroll)\b[\s\S]{0,280}?\b(set[A-Z]\w*)\s*\(/g;
+    let m;
+    while ((m = fnThrashRe.exec(content)) !== null) {
+      if (/requestAnimationFrame/.test(m[0])) continue;
+      const setPos = m.index + m[0].lastIndexOf(m[1]);
+      const lineNum = sb.lineAt(lineIndex, setPos);
+      if (!findings.some((f) => f.ruleId === 'POINTER_STATE_THRASH' && f.line === lineNum)) {
+        add('POINTER_STATE_THRASH', lineNum, `Chamada a ${m[1]}() dentro de handler de ponteiro/scroll causa ~60 re-renders/s no React.`, 'Substitua useState por useMotionValue + useSpring/useMotionTemplate (0 re-renders).');
+      }
+    }
   }
 
   return { rel, findings };

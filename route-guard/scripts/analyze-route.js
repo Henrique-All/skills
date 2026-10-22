@@ -1,15 +1,10 @@
 #!/usr/bin/env node
 /**
- * scripts/analyze-route.js - Analisador Universal de Rotas, Impacto e Contratos
- * 
- * Localiza declaração de rotas no backend, mapeia consumidores no frontend/serviços
- * e calcula nível de risco de quebra de contrato.
- * Zero dependências externas obrigatórias.
- * 
- * Uso:
- *   node analyze-route.js <METHOD> <ENDPOINT> [projectDir]
- *   node analyze-route.js POST /orders
- *   node analyze-route.js GET /users/:id --json
+ * scripts/analyze-route.js - Analisador Universal de Rotas, Server Actions, tRPC e Zero-Trust (v2.0)
+ *
+ * Localiza declaração de rotas no backend (Express, Fastify, Hono, Next.js App Router,
+ * Next.js Server Actions 'use server', tRPC procedures e NestJS), mapeia consumidores
+ * e audita resiliência Zero-Trust (Validação Zod, Idempotency-Key e Rate Limiting).
  */
 
 const fs = require('fs');
@@ -37,7 +32,6 @@ if (cleanArgs.length === 1) {
 
 const targetDir = cleanArgs[2] || process.cwd();
 
-// Normalização do endpoint
 inputEndpoint = inputEndpoint.split('?')[0];
 if (!inputEndpoint.startsWith('/')) inputEndpoint = '/' + inputEndpoint;
 
@@ -58,15 +52,6 @@ function getProjectFiles(dir, ignores = ['node_modules', '.git', 'dist', 'build'
   return results;
 }
 
-// Carregar route-guard.config.json (se existir)
-let routeConfig = {};
-const configPath = path.join(targetDir, 'route-guard.config.json');
-if (fs.existsSync(configPath)) {
-  try {
-    routeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } catch (e) {}
-}
-
 const allFiles = getProjectFiles(targetDir);
 const codeFiles = allFiles.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
 
@@ -79,12 +64,12 @@ function normalizeRoutePattern(routeStr) {
 
 const normalizedInput = normalizeRoutePattern(inputEndpoint);
 const strippedInput = normalizeRoutePattern(inputEndpoint.replace(/^\/api(?:\/v\d+)?/, '') || '/');
+const lastSegment = normalizedInput.split('/').filter(Boolean).pop() || '';
 
 function endpointsMatch(declaredEndpoint) {
   const normDecl = normalizeRoutePattern(declaredEndpoint);
   if (normDecl === normalizedInput || normDecl === strippedInput) return true;
   if (normDecl.endsWith(normalizedInput) || normalizedInput.endsWith(normDecl)) return true;
-  // Compara convertendo segmentos dinâmicos (:id) em curingas
   const regexStr = '^' + normDecl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:[a-zA-Z0-9_]+/g, '[^/]+') + '$';
   try {
     if (new RegExp(regexStr, 'i').test(normalizedInput)) return true;
@@ -92,7 +77,25 @@ function endpointsMatch(declaredEndpoint) {
   return false;
 }
 
-// 1. Procurar onde a rota está declarada no backend (Express/Fastify, Next.js App Router, NestJS)
+function buildAdvisories(content, method, endpoint) {
+  const advisories = [];
+  const hasValidation = /safeParse|\.parse\(|validate\(|Schema|z\.object|Joi\.|yup\./i.test(content);
+  if (['POST', 'PUT', 'PATCH'].includes(method) && !hasValidation) {
+    advisories.push('MISSING_SCHEMA_VALIDATION: Handler de escrita sem validação de schema (Zod/DTO) detectada.');
+  }
+  if (method === 'POST' && /(?:order|payment|checkout|transfer|invoice|charge|withdraw|pedido|pagamento)/i.test(endpoint)) {
+    if (!/idempotency[-_]?key/i.test(content)) {
+      advisories.push('MISSING_IDEMPOTENCY_KEY: Endpoint financeiro/pedido POST sem verificação de Idempotency-Key.');
+    }
+  }
+  if (/(?:login|auth|register|signup|otp|reset-password|forgot-password)/i.test(endpoint)) {
+    if (!/rateLimit|Ratelimit|Throttler|limiter/i.test(content)) {
+      advisories.push('MISSING_RATE_LIMIT: Endpoint sensível de autenticação sem Rate Limiter explícito.');
+    }
+  }
+  return advisories;
+}
+
 const backendMatches = [];
 const routeDeclRegex = /(?:router|app|fastify)\.(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
 
@@ -119,7 +122,9 @@ for (const file of codeFiles) {
           line: lineNum,
           method,
           endpoint,
-          hasAuth
+          kind: 'HTTP_ROUTE',
+          hasAuth,
+          advisories: buildAdvisories(content, method, endpoint),
         });
       }
     }
@@ -141,7 +146,9 @@ for (const file of codeFiles) {
               line: lineNum,
               method,
               endpoint: inferredEndpoint,
-              hasAuth
+              kind: 'NEXT_APP_ROUTE',
+              hasAuth,
+              advisories: buildAdvisories(content, method, inferredEndpoint),
             });
           }
         }
@@ -166,7 +173,54 @@ for (const file of codeFiles) {
             line: lineNum,
             method,
             endpoint: fullEndpoint,
-            hasAuth
+            kind: 'NEST_CONTROLLER',
+            hasAuth,
+            advisories: buildAdvisories(content, method, fullEndpoint),
+          });
+        }
+      }
+    }
+
+    // 1D. Next.js Server Actions ('use server')
+    if (/['"]use server['"]/.test(content) && lastSegment) {
+      const actionRegex = /export\s+async\s+function\s+([A-Za-z0-9_]+)\s*\(/g;
+      let aMatch;
+      while ((aMatch = actionRegex.exec(content)) !== null) {
+        const fnName = aMatch[1];
+        if (fnName.toLowerCase() === lastSegment.toLowerCase() || endpointsMatch(`/actions/${fnName}`)) {
+          const lineNum = content.slice(0, aMatch.index).split('\n').length;
+          const hasAuth = /getServerSession|auth\(|currentUser|verifyToken|cookies\(\)/i.test(content);
+          backendMatches.push({
+            file: relFile,
+            line: lineNum,
+            method: 'ACTION',
+            endpoint: `/actions/${fnName}`,
+            kind: 'SERVER_ACTION',
+            hasAuth,
+            advisories: buildAdvisories(content, 'POST', `/actions/${fnName}`),
+          });
+        }
+      }
+    }
+
+    // 1E. tRPC Procedures (publicProcedure / protectedProcedure)
+    if (/Procedure\b/.test(content) && lastSegment) {
+      const trpcRegex = /([A-Za-z0-9_]+)\s*:\s*(publicProcedure|protectedProcedure|adminProcedure|authedProcedure)[\s\S]{0,160}?\.(query|mutation)\s*\(/g;
+      let trMatch;
+      while ((trMatch = trpcRegex.exec(content)) !== null) {
+        const procName = trMatch[1];
+        const procKind = trMatch[2];
+        const opType = trMatch[3] === 'mutation' ? 'POST' : 'GET';
+        if (procName.toLowerCase() === lastSegment.toLowerCase() || endpointsMatch(`/trpc/${procName}`)) {
+          const lineNum = content.slice(0, trMatch.index).split('\n').length;
+          backendMatches.push({
+            file: relFile,
+            line: lineNum,
+            method: opType,
+            endpoint: `/trpc/${procName}`,
+            kind: 'TRPC_PROCEDURE',
+            hasAuth: procKind !== 'publicProcedure',
+            advisories: buildAdvisories(content, opType, `/trpc/${procName}`),
           });
         }
       }
@@ -176,7 +230,6 @@ for (const file of codeFiles) {
 
 // 2. Procurar consumidores no Frontend / Clientes HTTP
 const callers = [];
-// Constrói regex que casa tanto a rota literal quanto interpolações de parâmetros (:id -> ${...} ou valor)
 const staticPrefix = normalizedInput.split('/:')[0];
 const dynamicConsumerRegex = new RegExp(
   normalizedInput
@@ -191,7 +244,8 @@ for (const file of codeFiles) {
     if (backendMatches.some((m) => m.file === relFile)) continue;
 
     const content = fs.readFileSync(file, 'utf-8');
-    if (!content.includes(staticPrefix) && !dynamicConsumerRegex.test(content)) continue;
+    const matchesActionOrTrpc = lastSegment.length > 3 && content.includes(lastSegment);
+    if (!content.includes(staticPrefix) && !dynamicConsumerRegex.test(content) && !matchesActionOrTrpc) continue;
 
     const lines = content.split('\n');
     lines.forEach((line, idx) => {
@@ -200,24 +254,26 @@ for (const file of codeFiles) {
       if (
         line.includes(inputEndpoint) ||
         dynamicConsumerRegex.test(line) ||
-        (staticPrefix.length > 4 && line.includes(staticPrefix) && /(?:fetch|axios|api\.|useQuery|useSWR|useMutation|http)/i.test(line))
+        (staticPrefix.length > 4 && line.includes(staticPrefix) && /(?:fetch|axios|api\.|useQuery|useSWR|useMutation|http)/i.test(line)) ||
+        (matchesActionOrTrpc && new RegExp(`\\b${lastSegment}\\s*\\(|trpc\\.[\\w.]+\\.${lastSegment}\\b`).test(line))
       ) {
         callers.push({
           file: relFile,
           line: idx + 1,
-          snippet: trimmed
+          snippet: trimmed,
         });
       }
     });
   } catch (e) {}
 }
 
-// 3. Avaliação de Risco e Status
 const exists = backendMatches.length > 0;
 let riskLevel = 'BAIXO';
 if (exists) {
-  riskLevel = callers.length > 2 ? 'ALTO' : (callers.length > 0 ? 'MÉDIO' : 'BAIXO');
+  riskLevel = callers.length > 2 ? 'ALTO' : callers.length > 0 ? 'MÉDIO' : 'BAIXO';
 }
+
+const securityAdvisories = backendMatches.flatMap((m) => m.advisories || []);
 
 const report = {
   method: inputMethod,
@@ -226,14 +282,15 @@ const report = {
   riskLevel,
   declarations: backendMatches,
   consumersCount: callers.length,
-  consumers: callers
+  consumers: callers,
+  securityAdvisories,
 };
 
 if (isJson) {
   console.log(JSON.stringify(report, null, 2));
 } else {
   console.log('===============================================================');
-  console.log('🛡️  ROUTE GUARD — ANÁLISE DE IMPACTO E CONTRATO DE ROTA');
+  console.log('🛡️  ROUTE GUARD v2.0 — ANÁLISE DE IMPACTO, SERVER ACTIONS & tRPC');
   console.log('===============================================================\n');
 
   console.log(`🎯 Alvo: [${inputMethod}] ${inputEndpoint}`);
@@ -246,9 +303,12 @@ if (isJson) {
     console.log('📍 DECLARAÇÃO NO BACKEND:');
     console.log('---------------------------------------------------------------');
     backendMatches.forEach((m) => {
-      console.log(`   - [${m.method}] ${m.endpoint}`);
+      console.log(`   - [${m.method}] ${m.endpoint} (${m.kind})`);
       console.log(`     Arquivo: ${m.file}:${m.line}`);
       console.log(`     Protegido com Autenticação: ${m.hasAuth ? '✅ SIM' : '❌ NÃO / PÚBLICO'}`);
+      if (m.advisories && m.advisories.length > 0) {
+        m.advisories.forEach((adv) => console.log(`     ⚠️  ${adv}`));
+      }
     });
     console.log('');
   }
@@ -262,12 +322,6 @@ if (isJson) {
       console.log(`     Snippet: "${c.snippet}"`);
     });
     console.log('');
-  }
-
-  if (exists && callers.length > 0) {
-    console.log('🛑 AVISO DE CONTRATO: Esta rota já alimenta telas existentes.');
-    console.log('   Qualquer alteração no payload de entrada (body/query) ou na resposta (JSON)');
-    console.log('   exige a Trava de Permissão e garantia de retrocompatibilidade.');
   }
 
   console.log('\n===============================================================\n');

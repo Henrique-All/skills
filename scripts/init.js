@@ -102,14 +102,42 @@ console.log(`   • ORM / Dados:   ${stack.orm ? colors.cyan + stack.orm : color
 // 3. Criação de Pastas e Configurações Recomendadas
 console.log(`\n📦 ${colors.bold}Aplicando Calibração Automática...${colors.reset}`);
 
-// A. Pasta .code-map para cache da Cartografia
+// A. Pasta .code-map e Indexação 360° da Cartografia (graph.json + INDEX.md)
 const codeMapDir = path.join(targetDir, '.code-map');
-if (!fs.existsSync(codeMapDir)) {
-  fs.mkdirSync(codeMapDir, { recursive: true });
-  fs.writeFileSync(path.join(codeMapDir, '.gitkeep'), '');
-  console.log(`   ✅ ${colors.green}[CRIADO]${colors.reset} Diretório .code-map/ para cache de alta performance`);
+const graphJsonPath = path.join(codeMapDir, 'graph.json');
+const indexMdPath = path.join(codeMapDir, 'INDEX.md');
+let needsCartographyInit = isForce || !fs.existsSync(graphJsonPath) || !fs.existsSync(indexMdPath);
+if (!needsCartographyInit && fs.existsSync(graphJsonPath)) {
+  try {
+    const g = JSON.parse(fs.readFileSync(graphJsonPath, 'utf-8'));
+    if (!g.nodes || g.nodes.length === 0) needsCartographyInit = true;
+  } catch {
+    needsCartographyInit = true;
+  }
+}
+
+if (needsCartographyInit) {
+  if (!fs.existsSync(codeMapDir)) fs.mkdirSync(codeMapDir, { recursive: true });
+  const cartCandidates = [
+    path.resolve(__dirname, '..', 'repo-cartographer', 'scripts', 'cartographer.js'),
+    path.resolve(__dirname, '..', 'skills', 'repo-cartographer', 'scripts', 'cartographer.js')
+  ];
+  const cartScript = cartCandidates.find((c) => fs.existsSync(c));
+  if (cartScript) {
+    try {
+      const { execSync } = require('child_process');
+      execSync(`node "${cartScript}" init "${targetDir}"`, { cwd: targetDir, stdio: 'pipe' });
+      console.log(`   ✅ ${colors.green}[MAPEADO]${colors.reset} Cartografia 360° gerada em .code-map/INDEX.md e .code-map/graph.json`);
+    } catch {
+      fs.writeFileSync(path.join(codeMapDir, '.gitkeep'), '');
+      console.log(`   ✅ ${colors.green}[CRIADO]${colors.reset} Diretório .code-map/ preparado`);
+    }
+  } else {
+    fs.writeFileSync(path.join(codeMapDir, '.gitkeep'), '');
+    console.log(`   ✅ ${colors.green}[CRIADO]${colors.reset} Diretório .code-map/ para cache de alta performance`);
+  }
 } else {
-  console.log(`   ℹ️  Diretório .code-map/ já existente`);
+  console.log(`   ℹ️  Cartografia .code-map/ (INDEX.md + graph.json) já existente e populada`);
 }
 
 // B. route-guard.config.json
@@ -122,7 +150,7 @@ if (!fs.existsSync(routeGuardConfigPath) || isForce) {
 
   const routeGuardConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.5.0",
+    version: "2.5.1",
     routesDirectory: routesDir,
     clientScanDirectories: ["src", "app", "components", "pages"].filter(d => fs.existsSync(path.join(targetDir, d))),
     framework: stack.backend || stack.frontend || "custom",
@@ -143,7 +171,7 @@ if (!fs.existsSync(auditConfigPath) || isForce) {
   const excludeDirs = ["node_modules", "dist", "build", ".next", ".git", ".agents", ".code-map"];
   const auditConfig = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    version: "2.5.0",
+    version: "2.5.1",
     autoDetect: true,
     scanDirectories: targetScanDirs.length > 0 ? targetScanDirs : ["."],
     exclude: excludeDirs,
@@ -170,6 +198,33 @@ if (!fs.existsSync(auditConfigPath) || isForce) {
   console.log(`   ✅ ${colors.green}[CRIADO]${colors.reset} audit.config.json configurado com os 18 pilares OWASP`);
 } else {
   console.log(`   ℹ️  audit.config.json já existente`);
+}
+
+// D. AGENTS.md na raiz do projeto (carregado nativamente por Antigravity, Claude Code, Cursor e Copilot)
+const agentsMdPath = path.join(targetDir, 'AGENTS.md');
+const cartographyDirective = `# 🗺️ Diretriz de Cartografia 360° (Enterprise AI Suite)
+
+## 1. PASSO ZERO OBRIGATÓRIO: Olhar a Cartografia Primeiro (Proibido Dar Voltas)
+- Antes de executar buscas às cegas (\`grep_search\`, \`find_by_name\`, \`list_dir\` em cascata), **leia imediatamente \`.code-map/INDEX.md\`** (ou \`.code-map/graph.json\`) usando \`view_file\`.
+- Use os caminhos das 6 camadas (UI → Estado → API → Backend → Banco → Infra) já mapeados lá para abrir diretamente os arquivos exatos da demanda.
+- Para filtrar um termo no grafo: \`node "$env:USERPROFILE\\.gemini\\config\\plugins\\enterprise-ai-suite\\skills\\repo-cartographer\\scripts\\cartographer.js" query "<termo>"\`
+
+## 2. PASSO FINAL OBRIGATÓRIO: Atualizar a Cartografia ao Concluir
+- Sempre que criar, remover ou editar arquivos que alterem imports, rotas, componentes ou schemas, **atualize o mapa antes de encerrar a tarefa** rodando:
+  \`node "$env:USERPROFILE\\.gemini\\config\\plugins\\enterprise-ai-suite\\skills\\repo-cartographer\\scripts\\cartographer.js" init .\`
+`;
+
+if (!fs.existsSync(agentsMdPath)) {
+  fs.writeFileSync(agentsMdPath, cartographyDirective, 'utf-8');
+  console.log(`   ✅ ${colors.green}[CRIADO]${colors.reset} AGENTS.md na raiz do projeto (avisa a IA sobre o .code-map/ automaticamente)`);
+} else {
+  const existingAgents = fs.readFileSync(agentsMdPath, 'utf-8');
+  if (!existingAgents.includes('.code-map/INDEX.md')) {
+    fs.writeFileSync(agentsMdPath, cartographyDirective + '\n---\n\n' + existingAgents, 'utf-8');
+    console.log(`   ✅ ${colors.green}[ATUALIZADO]${colors.reset} AGENTS.md injetado com a regra de Cartografia-First & Sync Final`);
+  } else {
+    console.log(`   ℹ️  AGENTS.md já contém a diretriz de Cartografia-First`);
+  }
 }
 
 // 4. Orientações de Produtividade no Chat

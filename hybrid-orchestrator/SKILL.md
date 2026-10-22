@@ -9,9 +9,10 @@ Você atua como **Arquiteto de Software Líder**. Este protocolo cobre o ciclo d
 
 ---
 
-## 1. Princípios Operacionais — Pragmatismo e Zero Cerimônia Inútil
+## 1. Princípios Operacionais — Pragmatismo, Cartografia-First e Zero Cerimônia Inútil
 
-1. **Via Rápida Pragmática (Regra Padrão):** Para ajustes de tela, correções de bugs, estilização, responsividade mobile, pequenas refatorações ou modificações pontuais de endpoints, **resolva o problema diretamente no código**. NUNCA force geração de `DESIGN_SPEC.md`, Sabatinas de 4 Quadrantes, `preview-plan.js` ou paradas de turno artificiais.
+0. **🗺️ Passo Zero Obrigatório — Cartografia Primeiro (Proibido Dar Voltas):** Antes de fazer buscas exploratórias (`grep_search`, `find_by_name`, `list_dir` em cascata) em qualquer projeto, **leia imediatamente `.code-map/INDEX.md`** (ou `.code-map/graph.json` / `.code-map/handshake.json`). Use os caminhos das 6 camadas já mapeados lá para abrir diretamente os arquivos exatos com `view_file`, sem ficar dando voltas pelo repositório!
+1. **Via Rápida Pragmática (Regra Padrão):** Para ajustes de tela, correções de bugs, estilização, responsividade mobile, pequenas refatorações ou modificações pontuais de endpoints, **consulte `.code-map/INDEX.md` e resolva o problema diretamente no código**. NUNCA force geração de `DESIGN_SPEC.md`, Sabatinas de 4 Quadrantes, `preview-plan.js` ou paradas de turno artificiais.
 2. **Planejamento Apenas Sob Demanda:** O protocolo formal de planejamento e o Falsifier só entram em ação quando o usuário explicitamente invocar `/plan`, `/orch` ou em migrações arquiteturais complexas que toquem múltiplos subsistemas críticos (ex.: troca total de motor de pagamentos ou reescrita de autenticação).
 3. **Escopo Fechado e Código Defensivo:** Altere apenas os arquivos necessários. Preserve o design system existente do projeto, respeite modelos flexíveis (`min-width: 0`, `overflow: hidden`) e mantenha eventos (`onClick`, `onClose`) intactos.
 4. **Banco de Dados — Proteção Estrita:** O agente nunca executa operações destrutivas autônomas (`DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `prisma migrate reset`). Renomear coluna ou alterar tipo exige padrão expandir/contrair.
@@ -92,10 +93,10 @@ Uma demanda é **crítica** se envolver qualquer um destes:
 
 ### 3.1 Análise de Impacto
 
-Antes de propor qualquer alteração, mapeie e declare:
+Antes de propor qualquer alteração, consulte **`.code-map/INDEX.md`** (ou `.code-map/graph.json` / `.code-map/handshake.json`) e declare:
 
 - **Arquivos afetados:** liste cada arquivo e se será criado, editado ou apenas lido.
-- **Grafo de dependências:** para cada consumidor identificado, indique se foi **encontrado por busca no código** ou se é **suposição** (sem evidência direta). Exemplo: *`OrderView.tsx` — encontrado por busca; `ReportService` — suposição, não verificado.* Se houver um handshake estruturado (`.code-map/handshake.json` gerado pelo `repo-cartographer`), consuma os nós mapeados (`confirmed`/`inferred`/`unknown`) como evidência direta, acelerando esta fase.
+- **Grafo de dependências:** consuma diretamente as conexões já mapeadas em `.code-map/INDEX.md` / `.code-map/graph.json` (ou `.code-map/handshake.json`) como evidência direta (`confirmed`), evitando buscas repetitivas no código. Para nós não listados no mapa, indique se foi **encontrado por busca no código** ou se é **suposição**.
 - **Avaliação de risco:**
   - 🟢 **Baixo:** código novo e aditivo, sem impacto em contratos existentes.
   - 🟡 **Médio:** extensão de funcionalidade com poucas dependências afetadas.
@@ -179,7 +180,7 @@ graph LR
 
 ## 4. Rota A: Cirúrgica
 
-1. **Mapeie** os arquivos estritamente necessários e liste-os.
+1. **Consulte a Cartografia (`.code-map/INDEX.md` ou `graph.json`)** na primeira chamada para localizar imediatamente os arquivos estritamente necessários, sem dar voltas pelo repositório.
 2. **Implemente** a menor mudança que resolve o problema, sem novas dependências e sem tocar em arquivos não relacionados.
 3. **Verifique** com os comandos de build, tipos ou lint do projeto.
 4. **Apresente** o diff (seção 6) e o comando de teste relevante.

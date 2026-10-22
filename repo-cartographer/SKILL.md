@@ -99,20 +99,24 @@ No workspace analisado, o cartógrafo mantém um diretório leve e padronizado:
 
 ```
 .code-map/
-├── graph.json            # Representação Intermediária (Context IR) em JSON
+├── INDEX.md              # Índice Arquitetural 360° ultracompacto para leitura de 1 turno pela IA (Passo Zero)
+├── graph.json            # Representação Intermediária (Context IR) em JSON com hashes e arestas
 ├── handshake.json        # Contrato da última demanda entregue ao hybrid-orchestrator
 └── obsidian/             # (Opcional) Visualização humana
     ├── graph.canvas      # Canvas interativo do Obsidian
     └── *.md              # Notas interligadas por [[wikilinks]]
 ```
 
-### Regra do Cache Incremental:
-1. Se `.code-map/graph.json` existir, leia os nós correspondentes à rota/tela solicitada.
-2. Cheque a integridade: o arquivo ainda existe? Seu tamanho/hash mudou?
+### Regra do Passo Zero & Cache Incremental:
+1. **Leitura Imediata (`INDEX.md`):** Antes de qualquer busca cega no repositório, a IA deve ler `.code-map/INDEX.md` (ou executar `node scripts/cartographer.js query <termo>`) para localizar os arquivos exatos das 6 camadas.
+2. **Validação de Hash (`graph.json`):** Cheque se o arquivo ainda existe e se seu tamanho/hash mudou:
    - **Sim (inalterado):** Reutilize o nó imediatamente (economia de 95% de tokens).
    - **Não (modificado ou ausente):** Reindexe cirurgicamente apenas este nó e seus dependentes.
 
 ### Capacidades Avançadas do Scanner Determinístico:
+- **Índice Markdown Instantâneo (`.code-map/INDEX.md`):** Agrupa automaticamente Top Hubs, as 6 camadas (UI, Estado, API, Backend, Banco, Infra) e o fluxo direto `Quem Chama Quem` para consumo imediato pela LLM.
+- **Consulta Instantânea (`query <termo>`):** Filtra nós e exibe quem chama (`In`) e quem é chamado (`Out`) em milissegundos.
+- **Suporte Fullstack & Monorepo:** Varre automaticamente `src`, `frontend/src`, `backend/src`, `client/src`, `server/src`, `apps/*` e `packages/*`.
 - **Resolução de Path Aliases:** Carrega automaticamente `tsconfig.json`/`jsconfig.json` para resolver `@/components`, `~services` e `baseUrl`.
 - **Rastreamento de Barrel Files:** Se um import apontar para um `index` com `export * from '...'` ou `export { Foo }`, o cartógrafo segue a cadeia recursivamente até o componente ou serviço de origem.
 - **Detecção de Endpoints Literais:** Mapeia chamadas `axios.get/post(...)` e `fetch(...)` literais diretamente para nós virtuais da Camada 3 (`api`).
