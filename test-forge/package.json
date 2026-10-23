@@ -1,10 +1,10 @@
 {
   "name": "test-forge-skill",
-  "version": "1.0.0",
+  "version": "2.7.0",
   "description": "Engenharia de Testes Automatizados de Alta Fidelidade (Anti-Mock Slop), Testes de Integração e E2E Playwright",
   "main": "scripts/test-audit.js",
   "scripts": {
-    "test": "node test/validate.js"
+    "test": "node test/validate.js && node test/precision.check.js"
   },
   "keywords": [
     "antigravity",

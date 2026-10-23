@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.6.0)
+ * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.7.0)
  * Executa testes de integridade das skills, do Plugin oficial, dos Subagentes e dos Hooks.
  */
 
@@ -9,7 +9,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.6.0');
+console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.7.0');
 console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
@@ -98,6 +98,23 @@ try {
 
 } catch (err) {
   console.error(`   ❌ Falha na validação do Plugin: ${err.message}`);
+  hasFailures = true;
+}
+
+// 1.1 CONSISTENCIA DE VERSOES E DO NUCLEO COMPARTILHADO (shared/)
+try {
+  execSync(`node "${path.join(rootDir, 'scripts', 'sync-versions.js')}" --check`, { stdio: 'inherit' });
+  execSync(`node "${path.join(rootDir, 'scripts', 'sync-shared.js')}" --check`, { stdio: 'inherit' });
+} catch (err) {
+  console.error('   ❌ Versões ou núcleo compartilhado fora de sincronia (rode sync-versions.js / sync-shared.js).');
+  hasFailures = true;
+}
+
+// 1.2 TESTES DIRETOS DO NUCLEO COMPARTILHADO (shared/suite-core.js)
+try {
+  execSync(`node "${path.join(rootDir, 'shared', 'test', 'suite-core.check.js')}"`, { stdio: 'inherit' });
+} catch (err) {
+  console.error('   ❌ Testes do núcleo compartilhado (shared/test/suite-core.check.js) falharam.');
   hasFailures = true;
 }
 

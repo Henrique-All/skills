@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/audit.js - Motor Universal DevSecOps de Auditoria de Segurança (v2.6.0)
+ * scripts/audit.js - Motor Universal DevSecOps de Auditoria de Segurança (v2.7.0)
  * 
  * Executa checagens mecânicas dos 18 pilares de segurança em qualquer repositório.
  * Zero dependências externas.
@@ -13,7 +13,21 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const crypto = require('crypto');
+const { execSync, execFileSync } = require('child_process');
+const core = require('./lib/suite-core');
+
+const AUDIT_VERSION = '2.7.0';
+
+// Regras cujas evidências podem conter segredos: somente elas são mascaradas no relatório.
+const SECRET_RULE_IDS = new Set([
+  'HARDCODED_SECRET_DETECTED',
+  'JWT_SECRET_FALLBACK',
+  'RULE_WEBHOOK_MISSING_HMAC_SIGNATURE',
+  'DB_SUPERUSER_CONNECTION',
+  'RULE_AUTH_HARDCODED_MASTER_PASSWORDS',
+  'RULE_AUTH_MFA_UNIVERSAL_BYPASS'
+]);
 
 const args = process.argv.slice(2);
 const isJsonOutput = args.includes('--json');
@@ -109,7 +123,7 @@ function isExcepted(ruleId, filePath) {
   });
 }
 
-function addFinding({ id, pilar, severity, file, line, message, evidence, remediation }) {
+function addFinding({ id, pilar, severity, file, line, message, evidence, remediation, fingerprintKey, pkg }) {
   if (selectedPilares && !selectedPilares.includes(pilar)) return;
   // Pilar 16 (Segredos & Credenciais) NUNCA pode ser suprimido via .audit-exceptions.json
   if (pilar !== 16 && isExcepted(id, file)) return;
@@ -118,16 +132,24 @@ function addFinding({ id, pilar, severity, file, line, message, evidence, remedi
     ? path.relative(projectDir, file).replace(/\\/g, '/')
     : file.replace(/\\/g, '/');
 
-  findings.push({
+  const finding = {
     id,
     pilar,
     severity,
     file: relFile,
     line: line || 1,
     message,
-    evidence: evidence ? maskSecret(evidence.trim()) : undefined,
+    // Mascara apenas evidências de regras que podem conter segredos; as demais ficam legíveis (truncadas)
+    evidence: evidence
+      ? (SECRET_RULE_IDS.has(id) ? maskSecret(evidence.trim()) : evidence.trim().slice(0, 180))
+      : undefined,
     remediation
-  });
+  };
+  // Achados sem linha própria (lockfile, tsconfig) informam uma chave estável para o fingerprint/baseline
+  if (fingerprintKey) finding.fingerprintKey = fingerprintKey;
+  // Pacote afetado (usado pelo --fix para corrigir só o pacote do achado)
+  if (pkg) finding.pkg = pkg;
+  findings.push(finding);
 }
 
 // 2. Leitura Recursiva Resiliente de Arquivos
@@ -137,26 +159,8 @@ const defaultIgnoreList = Array.from(new Set([
   'node_modules', '.git', 'dist', 'build', '.code-map'
 ]));
 
-function getProjectFiles(dir, ignores = defaultIgnoreList) {
-  let results = [];
-  try {
-    const list = fs.readdirSync(dir, { withFileTypes: true });
-    for (const item of list) {
-      if (ignores.includes(item.name)) continue;
-      const fullPath = path.join(dir, item.name);
-      if (item.isDirectory()) {
-        results = results.concat(getProjectFiles(fullPath, ignores));
-      } else {
-        results.push(fullPath);
-      }
-    }
-  } catch (e) {
-    // Diretório inacessível
-  }
-  return results;
-}
-
-const allFiles = getProjectFiles(projectDir);
+// Varredura única do núcleo comum (respeita ignores padrão, config.exclude e .gitignore)
+const allFiles = core.walkFiles(projectDir, { extraIgnores: defaultIgnoreList });
 const codeFiles = allFiles.filter((f) => /\.(ts|tsx|js|jsx|py|go|php|java)$/.test(f));
 
 // 3. Execução dos Pilares Mecânicos
@@ -169,6 +173,16 @@ if (!selectedPilares || selectedPilares.includes(1)) {
       execSync('npx tsc --noEmit', { cwd: projectDir, stdio: 'pipe' });
     } catch (err) {
       const output = err.stdout ? err.stdout.toString() : err.message;
+      // Chave estável: o conjunto de erros do tsc sem posição (linha,coluna) e sem cores.
+      // Um erro novo muda a chave, então o baseline não esconde falhas novas de tipagem.
+      const tsErrors = Array.from(new Set(
+        output
+          .split('\n')
+          .map((l) => l.replace(/\x1b\[[0-9;]*m/g, ''))
+          .filter((l) => /error TS\d+/.test(l))
+          .map((l) => l.replace(/\(\d+,\d+\)/g, '').replace(/:\d+:\d+(?=\s+-\s+error)/g, '').trim())
+      )).sort();
+      const tscDigest = crypto.createHash('sha1').update(tsErrors.length > 0 ? tsErrors.join('\n') : output).digest('hex').slice(0, 16);
       addFinding({
         id: 'TYPESCRIPT_BUILD_FAIL',
         pilar: 1,
@@ -176,7 +190,8 @@ if (!selectedPilares || selectedPilares.includes(1)) {
         file: 'tsconfig.json',
         message: 'Falha no build do TypeScript (erros de tipo ou sintaxe detectados).',
         evidence: output.split('\n')[0],
-        remediation: 'Corrija os erros de tipagem apontados pelo compilador antes de prosseguir.'
+        remediation: 'Corrija os erros de tipagem apontados pelo compilador antes de prosseguir.',
+        fingerprintKey: `tsc:${tscDigest}`
       });
     }
   }
@@ -752,6 +767,81 @@ function parseSemver(verStr) {
   return [Number(m[1]), Number(m[2]), Number(m[3])];
 }
 
+// ---------------------------------------------------------------------------
+// Leitura de lockfiles (npm / pnpm / yarn) — sem dependências externas.
+// Retorna Map<nomeDoPacote, string[] de versões instaladas>.
+// ---------------------------------------------------------------------------
+let lockfileIndexCache = null;
+function loadLockfileIndex(baseDir) {
+  if (lockfileIndexCache) return lockfileIndexCache;
+  const index = { source: null, direct: new Map(), all: new Map() };
+  const add = (map, name, version) => {
+    if (!name || !version || !/^\d+\.\d+\.\d+/.test(version)) return;
+    if (!map.has(name)) map.set(name, []);
+    if (!map.get(name).includes(version)) map.get(name).push(version);
+  };
+
+  const npmLock = path.join(baseDir, 'package-lock.json');
+  const pnpmLock = path.join(baseDir, 'pnpm-lock.yaml');
+  const yarnLock = path.join(baseDir, 'yarn.lock');
+
+  try {
+    if (fs.existsSync(npmLock)) {
+      index.source = 'package-lock.json';
+      const lock = JSON.parse(fs.readFileSync(npmLock, 'utf-8'));
+      if (lock.packages) {
+        for (const [key, meta] of Object.entries(lock.packages)) {
+          if (!key || !meta || !meta.version) continue;
+          const name = key.replace(/^.*node_modules\//, '');
+          add(index.all, name, meta.version);
+          // Dependência direta = node_modules/<nome> no topo (sem aninhamento)
+          if (/^node_modules\/(?:@[^/]+\/)?[^/]+$/.test(key)) add(index.direct, name, meta.version);
+        }
+      } else if (lock.dependencies) {
+        for (const [name, meta] of Object.entries(lock.dependencies)) {
+          if (meta && meta.version) { add(index.all, name, meta.version); add(index.direct, name, meta.version); }
+        }
+      }
+    } else if (fs.existsSync(pnpmLock)) {
+      index.source = 'pnpm-lock.yaml';
+      const raw = fs.readFileSync(pnpmLock, 'utf-8');
+      // Chaves de pacotes: "/axios@1.7.9:" (v6) | "axios@1.7.9:" (v9) | "/@scope/pkg@1.2.3(peer):"
+      const keyRx = /^\s{2}['"]?\/?((?:@[^@/\s'"]+\/)?[^@/\s'"]+)@(\d+\.\d+\.\d+[^:('"\s]*)/gm;
+      let m;
+      while ((m = keyRx.exec(raw)) !== null) add(index.all, m[1], m[2]);
+      // Importers (v6+): "      axios:\n        specifier: ^1.5.0\n        version: 1.7.9"
+      const importerRx = /^\s{6}['"]?((?:@[^\s'":]+\/)?[^\s'":]+)['"]?:\s*\n\s{8}specifier:[^\n]*\n\s{8}version:\s*['"]?(\d+\.\d+\.\d+)/gm;
+      while ((m = importerRx.exec(raw)) !== null) add(index.direct, m[1], m[2]);
+    } else if (fs.existsSync(yarnLock)) {
+      index.source = 'yarn.lock';
+      const raw = fs.readFileSync(yarnLock, 'utf-8');
+      // Blocos: '"axios@^1.5.0", "axios@^1.6.0":' seguido de '  version "1.7.9"' (v1) ou '  version: 1.7.9' (berry)
+      const blockRx = /^"?((?:@[^@\s"]+\/)?[^@\s",]+)@[^\n]*:\s*\n(?:\s{2}[^\n]*\n)*?\s{2}version:?\s+"?(\d+\.\d+\.\d+[^"\s]*)"?/gm;
+      let m;
+      while ((m = blockRx.exec(raw)) !== null) { add(index.all, m[1], m[2]); add(index.direct, m[1], m[2]); }
+    }
+  } catch {
+    // Lockfile corrompido: segue sem versões resolvidas
+  }
+
+  lockfileIndexCache = index;
+  return index;
+}
+
+/** Versão instalada mais baixa do pacote (abordagem conservadora: qualquer cópia vulnerável é risco). */
+function resolveInstalledVersion(baseDir, depName) {
+  const index = loadLockfileIndex(baseDir);
+  const versions = index.direct.get(depName) || index.all.get(depName);
+  if (!versions || versions.length === 0) return null;
+  return versions
+    .slice()
+    .sort((a, b) => {
+      const pa = parseSemver(a); const pb = parseSemver(b);
+      if (!pa || !pb) return 0;
+      return isSemverLess(pa, pb) ? -1 : isSemverLess(pb, pa) ? 1 : 0;
+    })[0];
+}
+
 function isSemverLess(verTuple, targetTuple) {
   for (let i = 0; i < 3; i++) {
     if (verTuple[i] < targetTuple[i]) return true;
@@ -884,19 +974,27 @@ if (!selectedPilares || selectedPilares.includes(13)) {
         }
 
         // Radar Offline Instantâneo de CVEs Conhecidos
+        // Prioriza a versão REALMENTE instalada (lockfile); sem lockfile, usa o mínimo do range
+        // e rebaixa a severidade para MEDIUM ("possível"), evitando bloquear o pipeline por falso positivo.
         const advisory = KNOWN_CVE_ADVISORIES.find((a) => a.pkg === depName);
         if (advisory) {
-          const parsedVer = parseSemver(String(depVer));
-          if (advisory.pkg === 'vm2' || (parsedVer && advisory.isVulnerable(parsedVer))) {
+          const installedVer = resolveInstalledVersion(projectDir, depName);
+          const parsedVer = parseSemver(installedVer || String(depVer));
+          const isDeprecatedPkg = advisory.patched === null;
+          if (isDeprecatedPkg || (parsedVer && advisory.isVulnerable(parsedVer))) {
+            const confirmed = Boolean(installedVer) || isDeprecatedPkg;
+            const versionLabel = installedVer ? `instalado ${installedVer}` : `range ${depVer}, sem lockfile`;
             addFinding({
               id: 'SUPPLY_CHAIN_KNOWN_CVE',
               pilar: 13,
-              severity: advisory.severity,
+              severity: confirmed ? advisory.severity : 'MEDIUM',
               file: pkgJsonPath,
               line: lineNum,
-              message: `[${advisory.cve}] Pacote "${depName}" (${depVer}): ${advisory.description}`,
-              evidence: `"${depName}": "${depVer}"`,
-              remediation: advisory.remediation
+              message: `[${advisory.cve}] ${confirmed ? '' : '(Possível — versão mínima do range) '}Pacote "${depName}" (${versionLabel}): ${advisory.description}`,
+              evidence: `"${depName}": "${depVer}"${installedVer ? ` (lock: ${installedVer})` : ''}`,
+              remediation: advisory.remediation,
+              fingerprintKey: `radar:${depName}@${installedVer || depVer}|${advisory.cve}`,
+              pkg: depName
             });
           }
         }
@@ -968,6 +1066,8 @@ if (!selectedPilares || selectedPilares.includes(13)) {
                 ? 'Execute `npm audit fix` para atualizar para uma versão corrigida.'
                 : `Atualize "${pkgName}" manualmente ou substitua a dependência afetada.`;
 
+              // Todos os achados do npm audit apontam para a linha 1 do lockfile: a chave usa pacote + advisories
+              const viaKey = viaObjects.map((v) => String(v.url || v.source || v.title || '')).filter(Boolean).sort().join(',');
               addFinding({
                 id: 'SUPPLY_CHAIN_NPM_AUDIT_CVE',
                 pilar: 13,
@@ -976,10 +1076,62 @@ if (!selectedPilares || selectedPilares.includes(13)) {
                 line: 1,
                 message: `[npm audit] Pacote "${pkgName}" (${info.range || '*'}): ${advisoryTitle}${advisoryUrl ? ` (${advisoryUrl})` : ''}`,
                 evidence: `${pkgName}@${info.range || 'instalado'}`,
-                remediation: fixCmd
+                remediation: fixCmd,
+                fingerprintKey: `npm-audit:${pkgName}@${info.range || ''}|${viaKey}`
               });
             }
           } catch {}
+        }
+      }
+
+      // Camada 3 (opt-in): Consulta online OSV.dev (--online) sobre TODA a árvore do lockfile.
+      // Envia somente nome+versão dos pacotes. Sem rede/timeout -> segue com o radar offline.
+      if (core.parseCommonArgs(args).online) {
+        const lockIndex = loadLockfileIndex(projectDir);
+        const queryPackages = [];
+        for (const [name, versions] of lockIndex.all.entries()) {
+          versions.forEach((version) => queryPackages.push({ name, version }));
+        }
+        if (queryPackages.length > 0) {
+          let osvOut = '';
+          try {
+            osvOut = execFileSync(process.execPath, [path.join(__dirname, 'lib', 'osv-query.js')], {
+              input: JSON.stringify({ packages: queryPackages }),
+              timeout: 15000,
+              stdio: ['pipe', 'pipe', 'ignore']
+            }).toString();
+          } catch (osvErr) {
+            osvOut = osvErr.stdout ? osvErr.stdout.toString() : '';
+          }
+          let osvJson = null;
+          try { osvJson = JSON.parse(osvOut); } catch { osvJson = null; }
+          if (!osvJson || osvJson.error) {
+            if (!isJsonOutput && !isSarifOutput) {
+              console.warn(`⚠️  OSV.dev indisponível (${osvJson && osvJson.error ? osvJson.error : 'sem resposta'}). Usando apenas o radar offline.`);
+            }
+          } else {
+            for (const hit of osvJson.results || []) {
+              const alreadyReported = findings.some(
+                (f) => /^SUPPLY_CHAIN_(?:KNOWN_CVE|NPM_AUDIT_CVE)$/.test(f.id) && f.message.includes(`"${hit.name}"`)
+              );
+              if (alreadyReported) continue;
+              const rank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+              const worst = hit.vulns.reduce((acc, v) => (rank[v.severity] > rank[acc] ? v.severity : acc), 'LOW');
+              const ids = hit.vulns.map((v) => [v.id, ...(v.aliases || []).filter((a) => a.startsWith('CVE-'))].join('/')).slice(0, 4);
+              const summary = (hit.vulns.find((v) => v.summary) || {}).summary || 'Vulnerabilidade conhecida no OSV.dev';
+              addFinding({
+                id: 'SUPPLY_CHAIN_OSV_CVE',
+                pilar: 13,
+                severity: worst,
+                file: path.join(projectDir, lockIndex.source || 'package.json'),
+                line: 1,
+                message: `[OSV.dev ${ids.join(', ')}] Pacote "${hit.name}" (instalado ${hit.version}): ${summary}`,
+                evidence: `${hit.name}@${hit.version}`,
+                remediation: `Atualize "${hit.name}" para uma versão corrigida (veja https://osv.dev/vulnerability/${hit.vulns[0].id}).`,
+                fingerprintKey: `osv:${hit.name}@${hit.version}|${hit.vulns.map((v) => v.id).sort().join(',')}`
+              });
+            }
+          }
         }
       }
     } catch (e) {}
@@ -1044,69 +1196,111 @@ if (!selectedPilares || selectedPilares.includes(12)) {
 }
 
 // 4. Autofix (se ativado via --fix / --autofix) ANTES da consolidação do relatório
+// Cada regra corrige só a linha (ou o pacote) do próprio achado. O achado só sai do relatório
+// quando foi corrigido de fato, e o arquivo só é gravado quando o conteúdo mudou.
 const fixedFiles = new Set();
 if (shouldFix && findings.length > 0) {
   const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS', 'SUPPLY_CHAIN_KNOWN_CVE']);
-  for (let i = findings.length - 1; i >= 0; i--) {
-    const f = findings[i];
-    const absFile = path.resolve(projectDir, f.file);
+  const installCommandByLockfile = { 'package-lock.json': 'npm install', 'pnpm-lock.yaml': 'pnpm install', 'yarn.lock': 'yarn install' };
+
+  // Agrupa por arquivo os índices dos achados corrigíveis
+  const fixableByFile = new Map();
+  findings.forEach((f, idx) => {
+    if (!fixableRuleIds.has(f.id)) return;
+    if (!fixableByFile.has(f.file)) fixableByFile.set(f.file, []);
+    fixableByFile.get(f.file).push(idx);
+  });
+
+  const fixedIndexes = new Set();
+  for (const [relFile, indexes] of fixableByFile.entries()) {
+    const absFile = path.resolve(projectDir, relFile);
     if (!fs.existsSync(absFile)) continue;
     try {
-      let content = fs.readFileSync(absFile, 'utf-8');
-      let changed = false;
+      const original = fs.readFileSync(absFile, 'utf-8');
+      let updated = original;
+      const fixedHere = [];
+      const remediationUpdates = [];
 
-      // Fix 1: Reverse Tabnabbing (target="_blank")
-      if (content.includes('target="_blank"') && !content.includes('rel="noopener')) {
-        content = content.replace(/target="_blank"(?!\s+rel=)/g, 'target="_blank" rel="noopener noreferrer"');
-        changed = true;
-      }
-
-      // Fix 2: Cookie Security (adiciona httpOnly, sameSite e secure)
-      if (content.includes('res.cookie(') && (!content.includes('httpOnly') || !content.includes('sameSite'))) {
-        content = content.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
-          let opts = p2.trim();
-          if (!opts.includes('httpOnly')) opts += (opts ? ', ' : '') + 'httpOnly: true';
-          if (!opts.includes('sameSite')) opts += (opts ? ', ' : '') + "sameSite: 'strict'";
-          if (!opts.includes('secure')) opts += (opts ? ', ' : '') + 'secure: true';
-          return `${p1} ${opts} ${p3}`;
-        });
-        changed = true;
-      }
-
-      // Fix 3: Supply Chain Known CVE em package.json (atualiza para a versão mínima segura)
-      if (f.id === 'SUPPLY_CHAIN_KNOWN_CVE' && path.basename(absFile) === 'package.json') {
-        const pkgObj = JSON.parse(content);
-        for (const adv of KNOWN_CVE_ADVISORIES) {
-          if (!adv.patched) continue;
-          if (pkgObj.dependencies && pkgObj.dependencies[adv.pkg]) {
-            const v = parseSemver(String(pkgObj.dependencies[adv.pkg]));
-            if (v && adv.isVulnerable(v)) {
-              pkgObj.dependencies[adv.pkg] = adv.patched;
-              changed = true;
+      if (path.basename(absFile) === 'package.json') {
+        // Fix 3: CVE conhecido -> atualiza só o range do pacote do achado para a versão mínima segura
+        const pkgObj = JSON.parse(original);
+        let pkgChanged = false;
+        for (const idx of indexes) {
+          const f = findings[idx];
+          if (f.id !== 'SUPPLY_CHAIN_KNOWN_CVE' || !f.pkg) continue;
+          const adv = KNOWN_CVE_ADVISORIES.find((a) => a.pkg === f.pkg);
+          if (!adv || !adv.patched) continue; // ex.: vm2 não tem versão corrigida e continua no relatório
+          let rangeChanged = false;
+          let rangeIsPatched = false;
+          for (const section of ['dependencies', 'devDependencies']) {
+            if (!pkgObj[section] || !pkgObj[section][f.pkg]) continue;
+            if (pkgObj[section][f.pkg] !== adv.patched) {
+              pkgObj[section][f.pkg] = adv.patched;
+              rangeChanged = true;
             }
+            rangeIsPatched = true;
           }
-          if (pkgObj.devDependencies && pkgObj.devDependencies[adv.pkg]) {
-            const v = parseSemver(String(pkgObj.devDependencies[adv.pkg]));
-            if (v && adv.isVulnerable(v)) {
-              pkgObj.devDependencies[adv.pkg] = adv.patched;
-              changed = true;
-            }
+          if (!rangeIsPatched) continue;
+          if (rangeChanged) pkgChanged = true;
+          if (resolveInstalledVersion(projectDir, f.pkg)) {
+            // O lockfile define a versão instalada: o alerta continua até ela ser segura
+            const installCmd = installCommandByLockfile[loadLockfileIndex(projectDir).source] || 'npm install';
+            remediationUpdates.push({
+              idx,
+              text: `Range atualizado para ${adv.patched} no package.json. Rode \`${installCmd}\` para atualizar o lockfile; o alerta continua até a versão instalada ser segura.`
+            });
+          } else if (rangeChanged) {
+            fixedHere.push(idx); // sem lockfile, o range do package.json é a única fonte da versão
           }
         }
-        if (changed) {
-          content = JSON.stringify(pkgObj, null, 2) + '\n';
+        if (pkgChanged) updated = JSON.stringify(pkgObj, null, 2) + '\n';
+      } else {
+        // Fix 1 (tabnabbing) e Fix 2 (cookie): só na linha do achado, e só se a linha passa na
+        // mesma checagem que gerou o achado (o \r de arquivos CRLF fica preservado em cada linha)
+        const lines = original.split('\n');
+        for (const idx of indexes) {
+          const f = findings[idx];
+          const lineIdx = (f.line || 1) - 1;
+          if (lineIdx < 0 || lineIdx >= lines.length) continue;
+          const before = lines[lineIdx];
+          let after = before;
+          let resolved = false;
+          if (f.id === 'FRONTEND_REVERSE_TABNABBING') {
+            if (!/\brel\s*=/i.test(before)) {
+              after = before.replace(/target=(["'])_blank\1/i, (m) => `${m} rel="noopener noreferrer"`);
+            }
+            resolved = /rel=["'][^"']*(?:noopener|noreferrer)/i.test(after);
+          } else if (f.id === 'COOKIE_INSECURE_FLAGS') {
+            after = before.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
+              let opts = p2.trim();
+              if (!opts.includes('httpOnly')) opts += (opts ? ', ' : '') + 'httpOnly: true';
+              if (!opts.includes('sameSite')) opts += (opts ? ', ' : '') + "sameSite: 'strict'";
+              if (!opts.includes('secure')) opts += (opts ? ', ' : '') + 'secure: true';
+              return `${p1} ${opts} ${p3}`;
+            });
+            resolved = /httpOnly\s*:\s*true/i.test(after) && /sameSite\s*:/i.test(after);
+          }
+          if (resolved && after !== before) {
+            lines[lineIdx] = after;
+            fixedHere.push(idx);
+          }
         }
+        updated = lines.join('\n');
       }
 
-      if (changed) {
-        fs.writeFileSync(absFile, content, 'utf-8');
-        fixedFiles.add(f.file);
+      if (updated !== original) {
+        fs.writeFileSync(absFile, updated, 'utf-8');
+        fixedFiles.add(relFile);
       }
-      if (fixableRuleIds.has(f.id) && fixedFiles.has(f.file)) {
-        findings.splice(i, 1);
-      }
-    } catch {}
+      fixedHere.forEach((idx) => fixedIndexes.add(idx));
+      remediationUpdates.forEach(({ idx, text }) => { findings[idx].remediation = text; });
+    } catch {
+      // Arquivo ilegível ou JSON inválido: nada é corrigido e os achados continuam no relatório
+    }
   }
+
+  // Remove do relatório só os achados corrigidos de fato (de trás para frente)
+  Array.from(fixedIndexes).sort((a, b) => b - a).forEach((idx) => findings.splice(idx, 1));
 
   if (fixedFiles.size > 0 && !isJsonOutput && !isSarifOutput) {
     console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
@@ -1114,6 +1308,17 @@ if (shouldFix && findings.length > 0) {
 }
 
 // 5. Consolidação do Relatório
+// Núcleo comum: --changed, supressão inline com motivo (Pilar 16 nunca), --baseline/--update-baseline e SARIF.
+const processed = core.postProcess(findings, {
+  projectDir,
+  toolName: 'devsecops-audit',
+  version: AUDIT_VERSION,
+  argv: args,
+  neverSuppress: (f) => f.pilar === 16
+});
+findings.length = 0;
+findings.push(...processed.findings);
+
 const criticalCount = findings.filter((f) => f.severity === 'CRITICAL').length;
 const highCount = findings.filter((f) => f.severity === 'HIGH').length;
 const mediumCount = findings.filter((f) => f.severity === 'MEDIUM').length;
@@ -1123,7 +1328,7 @@ const isBlocked = criticalCount > 0 || highCount > 0;
 const status = isBlocked ? 'BLOQUEADO' : (mediumCount > 0 ? 'AVISOS' : 'APROVADO');
 
 const report = {
-  version: '2.6.0',
+  version: AUDIT_VERSION,
   timestamp: new Date().toISOString(),
   summary: {
     totalFindings: findings.length,
@@ -1132,48 +1337,19 @@ const report = {
     medium: mediumCount,
     low: lowCount,
     autoFixedFiles: Array.from(fixedFiles),
+    suppressedInline: processed.meta.suppressed.length,
+    baselined: processed.meta.baselined,
+    baselineUpdated: processed.meta.baselineUpdated,
+    changedOnly: processed.meta.changedOnly,
     status
   },
+  suppressions: processed.meta.suppressed,
   findings
 };
 
 if (isSarifOutput) {
-  const sarif = {
-    $schema: "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-    version: "2.1.0",
-    runs: [{
-      tool: {
-        driver: {
-          name: "devsecops-audit",
-          version: "2.6.0",
-          informationUri: "https://github.com/Henrique-All/skills",
-          rules: Array.from(new Set(findings.map((f) => f.id))).map((id) => ({
-            id,
-            shortDescription: { text: id }
-          }))
-        }
-      },
-      results: findings.map((f) => ({
-        ruleId: f.id,
-        level: f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'error' : (f.severity === 'MEDIUM' ? 'warning' : 'note'),
-        message: { text: `${f.message} -> ${f.remediation}` },
-        locations: [{
-          physicalLocation: {
-            artifactLocation: { uri: f.file },
-            region: { startLine: f.line || 1 }
-          }
-        }]
-      }))
-    }]
-  };
-  const sarifString = JSON.stringify(sarif, null, 2);
-  if (sarifOutFile) {
-    const absSarifOut = path.resolve(projectDir, sarifOutFile);
-    const sarifDir = path.dirname(absSarifOut);
-    if (!fs.existsSync(sarifDir)) fs.mkdirSync(sarifDir, { recursive: true });
-    fs.writeFileSync(absSarifOut, sarifString, 'utf-8');
-  }
-  console.log(sarifString);
+  const sarif = processed.meta.sarif || core.toSarif(findings, { toolName: 'devsecops-audit', version: AUDIT_VERSION, projectDir });
+  console.log(JSON.stringify(sarif, null, 2));
   process.exit(isBlocked ? 1 : 0);
 }
 

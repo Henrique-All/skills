@@ -596,12 +596,21 @@ if (shouldFix) {
   if (fixed.length) results = runAudit(files);
 }
 
-const findings = results.flatMap((r) => r.findings);
+const rawFindings = results.flatMap((r) => r.findings);
+// Núcleo comum (v2.7.0): --changed, supressão inline com motivo, --baseline/--update-baseline e --sarif
+const core = require('./lib/suite-core');
+const processed = core.postProcess(rawFindings, { projectDir: process.cwd(), toolName: 'mobile-audit', version: VERSION, argv: process.argv.slice(2) });
+const findings = processed.findings;
 const errors = findings.filter((f) => f.severity === 'error');
 const warnings = findings.filter((f) => f.severity === 'warn');
 const finalScore = score(findings);
 const parseErrors = results.filter((r) => r.error).map((r) => ({ file: r.rel, error: r.error }));
 const failed = errors.length > 0 || (minScore > 0 && finalScore < minScore);
+
+if (processed.opts.sarif) {
+  if (processed.opts.sarif === true) console.log(JSON.stringify(processed.meta.sarif, null, 2));
+  process.exit(failed ? 1 : 0);
+}
 
 if (asJson) {
   console.log(JSON.stringify({
@@ -613,6 +622,8 @@ if (asJson) {
     errors: errors.length,
     warnings: warnings.length,
     passed: !failed,
+    suppressed: processed.meta.suppressed.length,
+    baselined: processed.meta.baselined,
     findings,
     fixed,
     parseErrors,

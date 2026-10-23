@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * scripts/falsify.js - Runner Automatizado do Falsifier Adversário (v2.6.0)
+ * scripts/falsify.js - Runner Automatizado do Falsifier Adversário (v2.7.0)
  * Testa ativamente se a implementação do Builder resiste aos 8 vetores de estresse:
  * 1. Consultas N+1 em loops assíncronos (ORM / DB)
- * 2. Inputs nulos, vazios e maliciosos (Boundary Checks)
+ * 2. Inputs nulos, vazios e maliciosos (Boundary Checks)        -> avaliado POR FUNÇÃO/ROTA
  * 3. Timeouts e falhas de rede em chamadas externas
- * 4. Transações de banco e atomicidade em mutações múltiplas
+ * 4. Transações de banco e atomicidade em mutações múltiplas     -> avaliado POR FUNÇÃO/ROTA
  * 5. Bloqueio de Event Loop em I/O síncrono em servidores
  * 6. Condição de Corrida Read-Modify-Write (Lost Update / Double-Spend)
  * 7. Vazamento de Memória e Listeners Órfãos em useEffect
@@ -13,28 +13,43 @@
  *
  * Uso:
  *   node scripts/falsify.js [caminho-ou-arquivo] [--strict] [--json]
+ *                           [--changed] [--baseline[=arquivo]] [--update-baseline] [--sarif[=arquivo]]
+ *
+ * Supressão inline (motivo obrigatório):
+ *   // audit-ignore-next-line LOST_UPDATE_RACE_CONDITION: saldo protegido por lock distribuído no gateway
  */
 
 const fs = require('fs');
 const path = require('path');
+const core = require('./lib/suite-core');
 
-const cleanArgs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const FALSIFY_VERSION = '2.7.0';
+const argv = process.argv.slice(2);
+const cleanArgs = argv.filter((a) => !a.startsWith('--'));
 const targetPath = cleanArgs[0] || '.';
-const isStrict = process.argv.includes('--strict');
-const isJson = process.argv.includes('--json');
+const isStrict = argv.includes('--strict');
+const isJson = argv.includes('--json');
+const commonOpts = core.parseCommonArgs(argv);
+const isSarifStdout = commonOpts.sarif === true;
+const quiet = isJson || Boolean(commonOpts.sarif);
 
-if (!isJson) {
+if (!quiet) {
   console.log('===============================================================');
   console.log('🧪 HYBRID ORCHESTRATOR — ADVERSARIAL FALSIFIER RUNNER (8 VETORES)');
   console.log('===============================================================');
   console.log(`🎯 Alvo do Ataque: ${targetPath}\n`);
 }
 
-function findLineNumber(content, regex) {
+function findLineNumber(content, regex, baseLine = 1) {
   const m = regex.exec(content);
-  if (!m || typeof m.index !== 'number') return 1;
-  return content.slice(0, m.index).split('\n').length;
+  if (!m || typeof m.index !== 'number') return baseLine;
+  return baseLine + content.slice(0, m.index).split('\n').length - 1;
 }
+
+const VALIDATION_MARKERS = /\.(?:parse|safeParse|parseAsync|validate|validateSync)\s*\(|\bif\s*\(\s*!|\bz\.|\bzod\b|[Ss]chema\b|\bJoi\.|\byup\.|ValidationPipe|class-validator|typeof\s+\w+(?:\.\w+)*\s*[!=]==/;
+const TRANSACTION_MARKERS = /\$transaction|\.transaction\s*\(|beginTransaction|\bCOMMIT\b|startSession|withTransaction/;
+const ORM_MUTATION_REGEX = /(?:prisma\.\w+|db(?:\.\w+)?|tx(?:\.\w+)?|manager(?:\.\w+)?|\b\w*(?:Repo|Repository|Model|Dao))\s*\.\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany|insert|save|destroy)\s*\(/g;
+const SQL_MUTATION_REGEX = /\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/gi;
 
 const attacks = [
   {
@@ -44,33 +59,32 @@ const attacks = [
     check: (content) => {
       const loopAwaitRegex = /(?:for\s*\([^)]+\)|for\s+await|\.map\(async|\.forEach\(async)[^}]*await\s+(?:prisma|db|repository|Model|query|find|select)/s;
       if (loopAwaitRegex.test(content)) {
-        return {
+        return [{
           line: findLineNumber(content, loopAwaitRegex),
           message: 'Possível query N+1 detectada: await em loop de banco. Utilize batching (findMany com "in") ou DataLoader.'
-        };
+        }];
       }
-      return null;
+      return [];
     }
   },
   {
     id: 'UNVALIDATED_PAYLOAD_BOUNDARY',
     severity: 'HIGH',
     name: 'Vetor 2: Tratamento de Inputs Nulos e Indefinidos (Boundary Checks)',
+    // Escopo POR FUNÇÃO: uma validação em outra rota do mesmo arquivo não mascara esta.
     check: (content) => {
-      if (
-        (content.includes('req.body') || content.includes('req.params.')) &&
-        !content.includes('zod') &&
-        !content.includes('.parse') &&
-        !content.includes('safeParse') &&
-        !content.includes('if (!') &&
-        !content.includes('validate')
-      ) {
-        return {
-          line: findLineNumber(content, /req\.(?:body|params\.)/),
-          message: 'Falta de validação de payload: inputs consumidos sem verificação de schema ou nulidade.'
-        };
+      const issues = [];
+      for (const block of core.splitHandlers(content)) {
+        if (block.isPreamble) continue;
+        const usesInput = /req\.body\b|req\.params\.|req\.query\.|await\s+request\.json\s*\(/.test(block.text);
+        if (!usesInput) continue;
+        if (VALIDATION_MARKERS.test(block.text)) continue;
+        issues.push({
+          line: findLineNumber(block.text, /req\.(?:body|params\.|query\.)|request\.json/, block.startLine),
+          message: 'Falta de validação de payload nesta função/rota: inputs consumidos sem schema (zod/Joi/yup) ou checagem de nulidade.'
+        });
       }
-      return null;
+      return issues;
     }
   },
   {
@@ -85,38 +99,34 @@ const attacks = [
         !content.includes('AbortController') &&
         !content.includes('signal')
       ) {
-        return {
+        return [{
           line: findLineNumber(content, httpRegex),
           message: 'Chamadas HTTP externas sem timeout configurado: risco de deadlock em falha de rede.'
-        };
+        }];
       }
-      return null;
+      return [];
     }
   },
   {
     id: 'NON_ATOMIC_MULTI_MUTATION',
     severity: 'HIGH',
     name: 'Vetor 4: Atomicidade e Transações em Operações Múltiplas',
+    // Escopo POR FUNÇÃO: duas funções com 1 escrita cada não são "operação múltipla".
     check: (content) => {
-      const ormMutationRegex = /(?:prisma\.\w+|db(?:\.\w+)?|tx(?:\.\w+)?|manager(?:\.\w+)?|\b\w*(?:Repo|Repository|Model|Dao))\s*\.\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany|insert|save|destroy)\s*\(/g;
-      const sqlMutationRegex = /\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/gi;
-      const ormCount = (content.match(ormMutationRegex) || []).length;
-      const sqlCount = (content.match(sqlMutationRegex) || []).length;
-      const dbMutations = ormCount + sqlCount;
-
-      if (
-        dbMutations > 1 &&
-        !content.includes('$transaction') &&
-        !content.includes('.transaction(') &&
-        !content.includes('beginTransaction') &&
-        !content.includes('COMMIT')
-      ) {
-        return {
-          line: findLineNumber(content, /(?:prisma\.\w+|db(?:\.\w+)?)\s*\.\s*(?:create|update|delete|insert)|\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET)/i),
-          message: `Múltiplas operações de escrita no banco (${dbMutations}) sem bloco de transação. Risco de estado inconsistente em caso de erro intermediário.`
-        };
+      const issues = [];
+      for (const block of core.splitHandlers(content)) {
+        if (block.isPreamble) continue;
+        const ormCount = (block.text.match(ORM_MUTATION_REGEX) || []).length;
+        const sqlCount = (block.text.match(SQL_MUTATION_REGEX) || []).length;
+        const dbMutations = ormCount + sqlCount;
+        if (dbMutations > 1 && !TRANSACTION_MARKERS.test(block.text)) {
+          issues.push({
+            line: block.startLine,
+            message: `Função com ${dbMutations} escritas no banco sem bloco de transação. Risco de estado inconsistente em caso de erro intermediário.`
+          });
+        }
       }
-      return null;
+      return issues;
     }
   },
   {
@@ -125,14 +135,13 @@ const attacks = [
     name: 'Vetor 5: Bloqueio de Event Loop em I/O Síncrono',
     check: (content, filePath) => {
       const isServerHandler = /(?:req\s*,\s*res|NextRequest|@Controller|router\.(?:get|post|put|delete|patch)|app\.(?:get|post|put|delete|patch)|fastify\.|socket\.on\()/i.test(content);
-      const isCliOrTest = /(?:^|[\\/])(?:scripts|bin|test|tests|migrations|prisma|drizzle)[\\/]/i.test(filePath || '') || content.startsWith('#!/usr/bin/env node');
-      if (isServerHandler && !isCliOrTest && (content.includes('fs.readFileSync') || content.includes('fs.writeFileSync'))) {
-        return {
+      if (isServerHandler && !core.isCliOrTest(filePath, content) && (content.includes('fs.readFileSync') || content.includes('fs.writeFileSync'))) {
+        return [{
           line: findLineNumber(content, /fs\.(?:readFileSync|writeFileSync)/),
           message: 'Uso de operações de disco síncronas (fs.*Sync) em rota/handler de servidor. Risco de degradação sob carga concorrente.'
-        };
+        }];
       }
-      return null;
+      return [];
     }
   },
   {
@@ -145,12 +154,12 @@ const attacks = [
         rmwRegex.test(content) &&
         !/(?:increment\s*:|decrement\s*:|\$transaction|FOR\s+UPDATE|version\s*:)/i.test(content)
       ) {
-        return {
+        return [{
           line: findLineNumber(content, rmwRegex),
           message: 'Padrão Read-Modify-Write não-atômico em saldo/estoque detectado (Lost Update / Double-Spend). Use { increment / decrement }, lock pessimista (SELECT ... FOR UPDATE) ou controle de concorrência otimista (version).'
-        };
+        }];
       }
-      return null;
+      return [];
     }
   },
   {
@@ -158,18 +167,21 @@ const attacks = [
     severity: 'MEDIUM',
     name: 'Vetor 7: Vazamento de Memória e Listeners Órfãos em Effects',
     check: (content) => {
-      const effectBlocks = content.match(/useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[[^\]]*\]\s*\)/g) || [];
-      for (const block of effectBlocks) {
-        const hasSubscription = /\b(?:addEventListener|setInterval|new\s+IntersectionObserver|new\s+ResizeObserver)\s*\(/.test(block);
+      const issues = [];
+      const effectRx = /useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[[^\]]*\]\s*\)/g;
+      let m;
+      while ((m = effectRx.exec(content)) !== null) {
+        const block = m[0];
+        const hasSubscription = /\b(?:addEventListener|setInterval|new\s+IntersectionObserver|new\s+ResizeObserver|new\s+MutationObserver)\s*\(/.test(block);
         const hasCleanup = /return\s+(?:\(\s*\)\s*=>|function)|removeEventListener|clearInterval|\.disconnect\s*\(/.test(block);
         if (hasSubscription && !hasCleanup) {
-          return {
-            line: findLineNumber(content, /useEffect\s*\(/),
-            message: 'useEffect registra listener/timer/observer (addEventListener, setInterval, Observer) sem função de cleanup no return. Risco de memory leak e handlers duplicados.'
-          };
+          issues.push({
+            line: content.slice(0, m.index).split('\n').length,
+            message: 'useEffect registra listener/timer/observer sem função de cleanup no return. Risco de memory leak e handlers duplicados.'
+          });
         }
       }
-      return null;
+      return issues;
     }
   },
   {
@@ -177,89 +189,98 @@ const attacks = [
     severity: 'MEDIUM',
     name: 'Vetor 8: Exceção Engolida Silenciosamente (Empty Catch Block)',
     check: (content, filePath) => {
-      const isCliOrTest = /(?:^|[\\/])(?:scripts|bin|test|tests|migrations|prisma|drizzle)[\\/]/i.test(filePath || '') || content.startsWith('#!/usr/bin/env node');
-      if (isCliOrTest) return null;
-      const emptyCatchRegex = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:\/\/[^\n]*\s*)*\}/;
-      if (emptyCatchRegex.test(content)) {
-        return {
-          line: findLineNumber(content, emptyCatchRegex),
+      if (core.isCliOrTest(filePath, content)) return [];
+      const emptyCatchRegex = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:\/\/[^\n]*\s*)*\}/g;
+      const issues = [];
+      let m;
+      while ((m = emptyCatchRegex.exec(content)) !== null) {
+        issues.push({
+          line: content.slice(0, m.index).split('\n').length,
           message: 'Bloco catch vazio engole exceção silenciosamente sem log estruturado, rethrow ou retorno de erro explícito.'
-        };
+        });
       }
-      return null;
+      return issues;
     }
   }
 ];
 
-function scanFiles(dir) {
-  if (!fs.existsSync(dir)) return [];
-  const stat = fs.statSync(dir);
-  if (!stat.isDirectory()) return [dir];
-
-  const results = [];
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.') || entry.name === 'dist') continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...scanFiles(full));
-    } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
-      results.push(full);
-    }
-  }
-  return results;
+function collectFiles(target) {
+  const abs = path.resolve(process.cwd(), target);
+  if (!fs.existsSync(abs)) return [];
+  if (!fs.statSync(abs).isDirectory()) return [abs];
+  return core.walkFiles(abs, { extensions: /\.(?:ts|tsx|js|jsx|mjs|cjs)$/ });
 }
 
-const files = scanFiles(path.resolve(process.cwd(), targetPath));
-const findings = [];
+const files = collectFiles(targetPath);
+const rawFindings = [];
 
 files.forEach((file) => {
   const rel = path.relative(process.cwd(), file).replace(/\\/g, '/');
-  const content = fs.readFileSync(file, 'utf-8');
+  let content = '';
+  try { content = fs.readFileSync(file, 'utf-8'); } catch { return; }
 
   attacks.forEach((attack) => {
-    const issue = attack.check(content, file);
-    if (issue) {
-      const message = typeof issue === 'string' ? issue : issue.message;
-      const line = typeof issue === 'object' && issue.line ? issue.line : 1;
-      findings.push({
+    const issues = attack.check(content, file) || [];
+    issues.forEach((issue) => {
+      rawFindings.push({
         file: rel,
-        line,
+        line: issue.line || 1,
         rule: attack.id,
         vector: attack.name,
         severity: attack.severity,
-        message
+        message: issue.message
       });
-      if (!isJson) {
-        console.log(`💥 [FALSIFIER FALHOU] ${rel}:${line}`);
-        console.log(`   🏷️  ${attack.name}`);
-        console.log(`   💡 Diagnóstico: ${message}\n`);
-      }
-    }
+    });
   });
 });
 
+// Núcleo comum: --changed, supressão inline com motivo, baseline e SARIF
+const processed = core.postProcess(rawFindings, {
+  projectDir: process.cwd(),
+  toolName: 'falsifier',
+  version: FALSIFY_VERSION,
+  argv
+});
+const findings = processed.findings;
 const vulnerabilitiesFound = findings.length;
+
+if (commonOpts.sarif) {
+  if (isSarifStdout) console.log(JSON.stringify(processed.meta.sarif, null, 2));
+  process.exit(vulnerabilitiesFound > 0 && isStrict ? 1 : 0);
+}
 
 if (isJson) {
   console.log(
     JSON.stringify(
       {
+        version: FALSIFY_VERSION,
         targetPath,
         passed: vulnerabilitiesFound === 0,
         vectorsFailed: vulnerabilitiesFound,
+        suppressed: processed.meta.suppressed.length,
+        baselined: processed.meta.baselined,
         findings
       },
       null,
       2
     )
   );
-  if (vulnerabilitiesFound > 0 && isStrict) process.exit(1);
-  process.exit(0);
+  process.exit(vulnerabilitiesFound > 0 && isStrict ? 1 : 0);
 }
 
+findings.forEach((f) => {
+  console.log(`💥 [FALSIFIER FALHOU] ${f.file}:${f.line}`);
+  console.log(`   🏷️  ${f.vector}`);
+  console.log(`   💡 Diagnóstico: ${f.message}\n`);
+});
+
 console.log('---------------------------------------------------------------');
+if (processed.meta.suppressed.length > 0) {
+  console.log(`🔕 ${processed.meta.suppressed.length} achado(s) suprimido(s) inline com motivo registrado.`);
+}
+if (processed.meta.baselined > 0) {
+  console.log(`📌 ${processed.meta.baselined} achado(s) já conhecido(s) ocultado(s) pelo baseline.`);
+}
 if (vulnerabilitiesFound === 0) {
   console.log('🛡️  FALSIFIER APROVADO! O código resistiu a todos os 8 vetores de estresse.');
   console.log('✅ Nenhuma regressão, N+1, Lost Update ou falha de concorrência detectada.\n');

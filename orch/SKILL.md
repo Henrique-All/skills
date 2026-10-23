@@ -33,6 +33,11 @@ Quando o usuário invocar `/orch <demanda>`:
 
 3. O script gera automaticamente o `.plan/PLAN.md` no projeto com 0 tokens de LLM!
 
+4. **Código de saída do pipeline** (leia antes de concluir que algo deu errado):
+   - `0` — todas as etapas rodaram e nenhum auditor bloqueou.
+   - `1` — todas as etapas rodaram, mas há achados bloqueantes (ex.: segredo exposto, CVE crítico). **Não é erro do comando:** leia o `.plan/PLAN.md` e apresente os achados.
+   - `2` — alguma etapa não rodou (`NÃO EXECUTADO`: script da skill ausente na instalação) ou falhou. Informe quais etapas ficaram de fora; o resultado está incompleto.
+
 ---
 
 ### 📄 PASSO 2: APRESENTAÇÃO CONCISA NO CHAT & TRAVA (TURNO 1)

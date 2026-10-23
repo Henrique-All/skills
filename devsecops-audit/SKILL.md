@@ -86,6 +86,31 @@ node scripts/audit.js --pilares=2,3,5
 node scripts/audit.js --json
 ```
 
+### 🎯 Precisão, Adoção em Projetos Legados & CVEs (v2.7.0)
+
+```bash
+# Só achados de arquivos alterados/não rastreados no git (a varredura continua completa)
+node scripts/audit.js --changed
+
+# Projeto legado: grava o estado atual uma vez; depois só achados NOVOS quebram o build
+# (segredos do Pilar 16 nunca entram no baseline e continuam bloqueando)
+node scripts/audit.js --update-baseline      # cria .audit-baseline.json (versione no git)
+node scripts/audit.js --baseline             # oculta os achados já conhecidos
+
+# Consulta online de CVEs no OSV.dev (opt-in; envia só nome+versão; até 1000 pacotes do lockfile)
+node scripts/audit.js --online
+
+# SARIF 2.1.0 para a aba Security do GitHub
+node scripts/audit.js --sarif=reports/devsecops.sarif
+```
+
+- **Radar de CVE ciente do lockfile:** compara a versão **instalada** (`package-lock.json`, `pnpm-lock.yaml` ou `yarn.lock`), não o range do `package.json`. Sem lockfile, o alerta vira `MEDIUM` ("possível") em vez de bloquear.
+- **Supressão inline com motivo obrigatório** (sem motivo, é ignorada; Pilar 16 nunca é suprimido):
+  ```ts
+  // audit-ignore-next-line RULE_TIMING_ATTACK_STRING_COMPARE: comparação de enum público, não é segredo
+  ```
+- **Evidência legível:** apenas regras que podem conter segredos têm a evidência mascarada.
+
 ### Exit Codes
 
 | Exit Code | Significado | Comportamento no CI |

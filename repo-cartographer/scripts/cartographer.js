@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/cartographer.js - Engine utilitária do Repo Cartographer (v2.6.0)
+ * scripts/cartographer.js - Engine utilitária do Repo Cartographer (v2.7.0)
  * 
  * Executa tarefas determinísticas de I/O, cache incremental, validação de hash,
  * resolução de path aliases (tsconfig/jsconfig), detecção de ciclos, módulos órfãos e exportação Obsidian.
@@ -108,23 +108,43 @@ function resolveImportPath(importStr, currentFilePath, projectDir, tsConfig) {
 }
 
 // 2. Classificação de Camada
+// Ordem importa: testes, instaladores e scripts/CLI vão para a Camada 6 ANTES das demais regras,
+// evitando que "install.js" vire "API" ou que "scripts/hooks/*.js" vire "Estado".
 function classifyLayer(filePath, content) {
   const normalized = filePath.replace(/\\/g, '/').toLowerCase();
   const baseName = path.basename(filePath);
+  const isReactLike = /\.(?:tsx|jsx|ts)$/.test(normalized);
 
-  if (normalized.includes('/pages/') || normalized.includes('/views/') || normalized.includes('/components/') || normalized.includes('/screens/') || normalized.endsWith('.tsx') || normalized.endsWith('.jsx')) {
+  const isTestOrTooling =
+    /(?:^|\/)(?:test|tests|__tests__|fixtures|e2e)\//.test(normalized) ||
+    /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized) ||
+    /(?:^|\/)install\.[cm]?js$/.test(normalized) ||
+    normalized.startsWith('scripts/') || normalized.includes('/scripts/') || normalized.startsWith('bin/') ||
+    String(content).startsWith('#!/usr/bin/env node');
+  if (isTestOrTooling) {
+    return { layer: 6, type: 'infra' };
+  }
+
+  if (normalized.includes('/pages/') || normalized.includes('/views/') || normalized.includes('/components/') || normalized.includes('/screens/') || normalized.includes('/templates/') || normalized.endsWith('.tsx') || normalized.endsWith('.jsx')) {
+    // Hooks React em .tsx (useX.tsx) continuam sendo Estado
+    if (/^use[A-Z]/.test(baseName) && !normalized.includes('/components/')) return { layer: 2, type: 'state' };
     return { layer: 1, type: 'ui' };
   }
   if (normalized.includes('/models/') || normalized.includes('/schemas/') || normalized.includes('/entities/') || normalized.includes('/repositories/') || normalized.includes('prisma') || content.includes('@prisma/client') || content.includes('typeorm') || content.includes('drizzle-orm')) {
     return { layer: 5, type: 'database' };
   }
-  if (normalized.includes('/controllers/') || normalized.includes('/routes/') || normalized.includes('/services/') || normalized.includes('/middlewares/') || normalized.includes('/server/') || content.includes('express(') || content.includes('router.')) {
+  if (normalized.includes('/controllers/') || normalized.includes('/routes/') || normalized.includes('/services/') || normalized.includes('/middlewares/') || normalized.includes('/middleware/') || normalized.includes('/server/') || /(?:^|\/)app\/api\//.test(normalized) || /(?:^|\/)route\.[jt]s$/.test(normalized) || content.includes('express(') || /\brouter\.(?:get|post|put|patch|delete|use)\s*\(/.test(content) || content.includes("'use server'") || content.includes('"use server"')) {
     return { layer: 4, type: 'backend' };
   }
-  if (normalized.includes('/store') || normalized.includes('/slices') || normalized.includes('/context') || normalized.includes('/hooks/') || /^use[A-Z]/.test(baseName) || content.includes('from \'zustand\'') || content.includes('from "zustand"') || content.includes('createContext(')) {
+  const isStateFile =
+    normalized.includes('/store') || normalized.includes('/slices') || normalized.includes('/context') ||
+    (normalized.includes('/hooks/') && isReactLike && /^use[A-Z]/.test(baseName)) ||
+    (isReactLike && /^use[A-Z]/.test(baseName)) ||
+    content.includes('from \'zustand\'') || content.includes('from "zustand"') || content.includes('createContext(');
+  if (isStateFile) {
     return { layer: 2, type: 'state' };
   }
-  if (normalized.includes('redis') || normalized.includes('queue') || normalized.includes('worker') || normalized.includes('kafka') || normalized.startsWith('scripts/') || normalized.includes('/scripts/') || normalized.startsWith('bin/')) {
+  if (normalized.includes('redis') || normalized.includes('queue') || normalized.includes('worker') || normalized.includes('kafka') || normalized.includes('/hooks/') || normalized.includes('/lib/') || normalized.startsWith('lib/') || normalized.startsWith('shared/') || normalized.includes('/shared/')) {
     return { layer: 6, type: 'infra' };
   }
   return { layer: 3, type: 'api' };
@@ -173,6 +193,41 @@ function getNodeId(relPath) {
   return noExt || path.basename(relPath, path.extname(relPath));
 }
 
+// Limites de varredura (ajustáveis via CARTOGRAPHER_MAX_FILES). Com a indexação incremental,
+// arquivos não modificados não são relidos, então os limites podem ser bem maiores que na v2.6.
+const CARTOGRAPHER_VERSION = '2.7.0';
+const MAX_SEED_FILES = Number(process.env.CARTOGRAPHER_MAX_FILES) || 800;
+const MAX_GRAPH_NODES = Math.max(MAX_SEED_FILES, Number(process.env.CARTOGRAPHER_MAX_FILES) || 2000);
+
+/** Índice do graph.json anterior para reaproveitamento incremental (descartado se a versão mudou). */
+function loadPreviousGraphIndex(projectDir) {
+  const empty = { byPath: new Map(), byId: new Map(), outgoing: new Map() };
+  const graphPath = path.join(getCodeMapDir(projectDir), 'graph.json');
+  if (!fs.existsSync(graphPath)) return empty;
+  try {
+    const prev = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+    if (!prev || prev.version !== CARTOGRAPHER_VERSION) return empty; // classificador pode ter mudado
+    for (const n of prev.nodes || []) {
+      empty.byId.set(n.id, n);
+      if (n.hash !== 'virtual') empty.byPath.set(n.path, n);
+    }
+    for (const e of prev.edges || []) {
+      if (!empty.outgoing.has(e.source)) empty.outgoing.set(e.source, []);
+      empty.outgoing.get(e.source).push(e);
+    }
+    return empty;
+  } catch {
+    return empty;
+  }
+}
+
+/** Caminho da CLI que está rodando AGORA (relativo ao projeto quando estiver dentro dele). */
+function getCliPathForDocs(projectDir) {
+  const rel = path.relative(projectDir, __filename).replace(/\\/g, '/');
+  const isInside = rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+  return isInside ? rel : __filename.replace(/\\/g, '/');
+}
+
 // 4. Trace 360° Determinístico
 function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = []) {
   const tsConfig = loadTsConfigPaths(projectDir);
@@ -187,6 +242,8 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
   const edges = [];
   const visitedFiles = new Set();
   const queue = [];
+  let nodeCapHit = false;
+  let reusedCount = 0;
 
   if (fullEntry && fs.existsSync(fullEntry)) queue.push(fullEntry);
   for (const f of extraEntryFiles) {
@@ -195,15 +252,44 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
 
   const addEdgeUnique = (source, target, relation, status = 'confirmed') => {
     if (source === target) return;
-    if (!edges.some((e) => e.source === source && e.target === target && e.relation === relation)) {
-      edges.push({ source, target, relation, status });
-    }
+    const key = `${source}\u0000${target}\u0000${relation}`;
+    if (edgeKeys.has(key)) return;
+    edgeKeys.add(key);
+    edges.push({ source, target, relation, status });
+  };
+  const edgeKeys = new Set();
+
+  // C2 — Cartografia incremental: reaproveita nós cujo mtime não mudou (sem reler nem re-parsear o arquivo)
+  const previous = loadPreviousGraphIndex(projectDir);
+
+  const enqueue = (absPath) => {
+    if (visitedFiles.has(absPath) || queue.includes(absPath)) return;
+    if (visitedFiles.size + queue.length >= MAX_GRAPH_NODES) { nodeCapHit = true; return; }
+    queue.push(absPath);
   };
 
   while (queue.length > 0) {
     const current = queue.shift();
     if (visitedFiles.has(current)) continue;
     visitedFiles.add(current);
+
+    let stat;
+    try { stat = fs.statSync(current); } catch { continue; }
+    const relPath = path.relative(projectDir, current).replace(/\\/g, '/');
+    const mtime = Math.floor(stat.mtimeMs);
+
+    const prevNode = previous.byPath.get(relPath);
+    if (prevNode && prevNode.mtime === mtime && prevNode.hash && prevNode.metadata && Array.isArray(prevNode.metadata.deps)) {
+      reusedCount++;
+      if (!nodes.some((n) => n.id === prevNode.id)) nodes.push(prevNode);
+      for (const e of previous.outgoing.get(prevNode.id) || []) {
+        addEdgeUnique(e.source, e.target, e.relation, e.status);
+        const endpointNode = previous.byId.get(e.target);
+        if (endpointNode && endpointNode.hash === 'virtual' && !nodes.some((n) => n.id === endpointNode.id)) nodes.push(endpointNode);
+      }
+      for (const depRel of prevNode.metadata.deps) enqueue(path.resolve(projectDir, depRel));
+      continue;
+    }
 
     let content = '';
     try {
@@ -212,23 +298,22 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
       continue;
     }
 
-    const relPath = path.relative(projectDir, current).replace(/\\/g, '/');
     const hash = calculateFileHash(current);
-    const mtime = fs.statSync(current).mtimeMs;
     const classification = classifyLayer(relPath, content);
 
     const nodeId = getNodeId(relPath);
-    if (!nodes.some((n) => n.id === nodeId)) {
-      nodes.push({
-        id: nodeId,
-        path: relPath,
-        type: classification.type,
-        layer: classification.layer,
-        hash,
-        mtime: Math.floor(mtime),
-        lastIndexed: new Date().toISOString()
-      });
-    }
+    const deps = [];
+    const nodeRecord = {
+      id: nodeId,
+      path: relPath,
+      type: classification.type,
+      layer: classification.layer,
+      hash,
+      mtime,
+      lastIndexed: new Date().toISOString(),
+      metadata: { deps }
+    };
+    if (!nodes.some((n) => n.id === nodeId)) nodes.push(nodeRecord);
 
     // Scanner regex expandido: static imports, requires, dynamic imports e re-exports (barrels)
     const importRegex = /(?:import\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s*\(\s*['"]([^'"]+)['"]\s*\)|export\s+(?:[\w*\s{},]*)\s+from\s+['"]([^'"]+)['"])/g;
@@ -245,10 +330,8 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
 
         // Sempre registra a aresta (mesmo para nós já visitados) para permitir detecção real de ciclos e grafos DAG
         addEdgeUnique(nodeId, targetId, relType, 'confirmed');
-
-        if (!visitedFiles.has(resolved) && !queue.includes(resolved) && visitedFiles.size + queue.length < 250) {
-          queue.push(resolved);
-        }
+        if (!deps.includes(targetRel)) deps.push(targetRel);
+        enqueue(resolved);
       }
     }
 
@@ -265,7 +348,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
           type: 'api',
           layer: 3,
           hash: 'virtual',
-          mtime: Math.floor(mtime),
+          mtime,
           lastIndexed: new Date().toISOString()
         });
       }
@@ -284,8 +367,14 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
   const mapDir = getCodeMapDir(projectDir);
   if (!fs.existsSync(mapDir)) fs.mkdirSync(mapDir, { recursive: true });
 
+  const seedsTruncated = Boolean(extraEntryFiles && extraEntryFiles.truncated);
+  const truncated = seedsTruncated || nodeCapHit;
+  if (truncated) {
+    console.log(`⚠️  Mapa PARCIAL: limite de ${seedsTruncated ? MAX_SEED_FILES + ' arquivos-semente' : MAX_GRAPH_NODES + ' nós'} atingido. Ajuste com CARTOGRAPHER_MAX_FILES=<n>.`);
+  }
+
   const graphData = {
-    version: '2.6.0',
+    version: CARTOGRAPHER_VERSION,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrypoint: entrypointRelative || 'project-scan',
@@ -293,7 +382,11 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
       generator: 'repo-cartographer',
       nodesCount: nodes.length,
       edgesCount: edges.length,
-      cyclesFound: cycles.length
+      cyclesFound: cycles.length,
+      scannedFiles: visitedFiles.size,
+      reusedFromCache: reusedCount,
+      truncated,
+      limits: { seedFiles: MAX_SEED_FILES, graphNodes: MAX_GRAPH_NODES }
     },
     nodes,
     edges
@@ -302,7 +395,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
   fs.writeFileSync(path.join(mapDir, 'graph.json'), JSON.stringify(graphData, null, 2), 'utf-8');
   generateIndexMarkdown(projectDir, graphData);
   console.log(`✅ Grafo 360° gerado com sucesso em .code-map/graph.json e .code-map/INDEX.md!`);
-  console.log(`   - Nós identificados: ${nodes.length}`);
+  console.log(`   - Nós identificados: ${nodes.length} (${reusedCount} reaproveitados do cache incremental)`);
   console.log(`   - Conexões (arestas): ${edges.length}`);
   console.log(`   - Ciclos: ${cycles.length}`);
   return { nodes, edges, cycles };
@@ -332,9 +425,14 @@ function generateIndexMarkdown(projectDir, graphData) {
   let md = `# 🗺️ Índice Arquitetural 360° (.code-map/INDEX.md)\n\n`;
   md += `> ⚡ **LEITURA OBRIGATÓRIA PARA AGENTES DE IA (PASSO ZERO — ANTI-VOLTAS):**\n`;
   md += `> Este arquivo resume a cartografia completa do projeto. Consulte as camadas e conexões abaixo para abrir diretamente os arquivos exatos com \`view_file\`, sem fazer buscas cegas pelo repositório.\n\n`;
+  if (graphData.metadata && graphData.metadata.truncated) {
+    const lim = graphData.metadata.limits || {};
+    md += `> [!WARNING]\n> **Mapa PARCIAL:** o limite de varredura (${lim.seedFiles || '?'} arquivos-semente / ${lim.graphNodes || '?'} nós) foi atingido. Arquivos fora do mapa existem — use \`query\` ou busca direcionada antes de concluir que algo não existe. Para ampliar: \`CARTOGRAPHER_MAX_FILES=<n>\`.\n\n`;
+  }
   md += `- **Atualizado em:** \`${graphData.updatedAt}\`\n`;
   md += `- **Métricas:** **${nodes.length}** nós mapeados | **${edges.length}** conexões | **${graphData.metadata?.cyclesFound || 0}** ciclos\n`;
-  md += `- **Busca Rápida via CLI:** \`node .agents/plugins/enterprise-ai-suite/skills/repo-cartographer/scripts/cartographer.js query <termo>\`\n\n`;
+  md += `- **Busca Rápida via CLI:** \`node "${getCliPathForDocs(projectDir)}" query <termo>\`\n`;
+  md += `- **Módulos órfãos (dead code):** \`node "${getCliPathForDocs(projectDir)}" orphans\`\n\n`;
 
   // Top Hubs
   const rankedNodes = [...nodes]
@@ -401,7 +499,7 @@ function generateIndexMarkdown(projectDir, graphData) {
   fs.writeFileSync(path.join(mapDir, 'INDEX.md'), md, 'utf-8');
 }
 
-function discoverProjectSeeds(projectDir, limit = 160) {
+function discoverProjectSeeds(projectDir, limit = MAX_SEED_FILES) {
   const seeds = [];
   const seen = new Set();
   const skipDirs = new Set([
@@ -449,6 +547,7 @@ function discoverProjectSeeds(projectDir, limit = 160) {
 
   // Complementa com demais pastas da raiz se ainda houver espaço no limite
   if (seeds.length < limit) walk(projectDir);
+  if (seeds.length >= limit) seeds.truncated = true; // sinaliza mapa parcial para o INDEX.md
   return seeds;
 }
 
@@ -464,7 +563,7 @@ function initCodeMap(projectDir) {
     fs.mkdirSync(obsidianDir, { recursive: true });
   }
 
-  const seeds = discoverProjectSeeds(resolvedDir, 160);
+  const seeds = discoverProjectSeeds(resolvedDir, MAX_SEED_FILES);
   if (seeds.length > 0) {
     const firstRel = path.relative(resolvedDir, seeds[0]).replace(/\\/g, '/');
     return traceDependencies(firstRel, resolvedDir, seeds);
@@ -473,7 +572,7 @@ function initCodeMap(projectDir) {
   const graphPath = path.join(mapDir, 'graph.json');
   if (!fs.existsSync(graphPath)) {
     const template = {
-      version: '2.6.0',
+      version: CARTOGRAPHER_VERSION,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {

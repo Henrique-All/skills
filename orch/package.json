@@ -1,10 +1,10 @@
 {
   "name": "orch-skill",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Atalho mestre para o Hybrid Orchestrator e Enterprise AI Suite",
   "main": "install.js",
   "scripts": {
-    "test": "node test/validate.js"
+    "test": "node test/validate.js && node test/installed-layout.check.js"
   },
   "keywords": [
     "antigravity",

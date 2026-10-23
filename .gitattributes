@@ -1,0 +1,10 @@
+# Normaliza line endings (evita os avisos LF/CRLF a cada commit no Windows)
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff2 binary

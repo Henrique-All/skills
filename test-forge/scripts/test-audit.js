@@ -49,6 +49,13 @@ function findTestFiles(dir) {
 const testFiles = findTestFiles(targetDir);
 
 if (testFiles.length === 0) {
+  if (process.argv.some((a) => a === '--sarif' || a.startsWith('--sarif='))) {
+    // SARIF vazio para manter o passo de CI estável mesmo sem arquivos de teste
+    const coreEmpty = require('./lib/suite-core');
+    const processedEmpty = coreEmpty.postProcess([], { projectDir: process.cwd(), toolName: 'test-forge', version: '2.7.0' });
+    if (processedEmpty.opts.sarif === true) console.log(JSON.stringify(processedEmpty.meta.sarif, null, 2));
+    process.exit(0);
+  }
   if (isJson) {
     console.log(JSON.stringify({ score: 0, error: 'Nenhum arquivo de teste (.test/.spec) encontrado.' }));
   } else {
@@ -135,6 +142,13 @@ testFiles.forEach(file => {
   }
 });
 
+// Núcleo comum (v2.7.0): --changed, supressão inline com motivo, --baseline/--update-baseline e --sarif
+const core = require('./lib/suite-core');
+const testProjectDir = fs.existsSync(targetDir) && fs.statSync(targetDir).isDirectory() ? targetDir : process.cwd();
+const processed = core.postProcess(findings, { projectDir: testProjectDir, toolName: 'test-forge', version: '2.7.0' });
+findings.length = 0;
+findings.push(...processed.findings);
+
 let score = 100;
 findings.forEach(f => {
   if (f.severity === 'HIGH') score -= 20;
@@ -142,8 +156,13 @@ findings.forEach(f => {
 });
 if (score < 0) score = 0;
 
+if (processed.opts.sarif) {
+  if (processed.opts.sarif === true) console.log(JSON.stringify(processed.meta.sarif, null, 2));
+  process.exit(0);
+}
+
 if (isJson) {
-  console.log(JSON.stringify({ score, totalFiles: testFiles.length, totalMocks, totalAsserts, findings }, null, 2));
+  console.log(JSON.stringify({ score, totalFiles: testFiles.length, totalMocks, totalAsserts, suppressed: processed.meta.suppressed.length, baselined: processed.meta.baselined, findings }, null, 2));
   process.exit(0);
 }
 

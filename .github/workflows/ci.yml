@@ -2,9 +2,9 @@ name: Skills CI
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ master, main, '[0-9]+.[0-9]+*' ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ master, main ]
 
 jobs:
   validate-skills:
@@ -24,3 +24,21 @@ jobs:
 
       - name: Run Monorepo Validation Tests
         run: npm test
+
+  security-sarif:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: DevSecOps Audit (SARIF)
+        run: node devsecops-audit/scripts/audit.js . --sarif=reports/devsecops.sarif --no-npm-audit || true
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/devsecops.sarif
+          category: devsecops-audit

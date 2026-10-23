@@ -5,6 +5,41 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.7.0] - 2026-10-23 — 🎯 Precisão Antes de Volume: CVE ciente do lockfile, OSV.dev, Baseline, `--changed`, Supressão com Motivo, SARIF Universal & Cartografia Incremental
+
+### 🐛 1. Correções Confirmadas (bugs da v2.6.0)
+- **Falso positivo de CVE (`devsecops-audit`):** o radar comparava o range do `package.json` (`^1.5.0`) em vez da versão instalada. Agora lê `package-lock.json` (v1/v2/v3), `pnpm-lock.yaml` (v6/v9) e `yarn.lock` (v1/berry). Sem lockfile, o alerta é rebaixado para `MEDIUM` ("possível") em vez de bloquear o pipeline. O `--fix` também só reescreve o range quando a versão instalada é vulnerável.
+- **Evidência ilegível:** `maskSecret()` era aplicado a toda evidência (`"axi****.0"`). Agora só regras que podem conter segredos são mascaradas.
+- **CI não rodava nas releases:** `ci.yml` passa a disparar em branches `X.Y*`, tags `v*` e todo pull request, e ganha o job `security-sarif` que publica os achados na aba Security do GitHub.
+- **Versões inconsistentes:** 5 skills ainda estavam em `1.0.0`. Novo `scripts/sync-versions.js` alinha tudo à versão raiz e o `npm test` falha se houver divergência.
+- **Cartografia enganosa:** `install.js` era classificado como "API" e `scripts/hooks/*.js` como "Estado". Testes, instaladores, scripts e `shared/` agora vão para a Camada 6. O INDEX passa a mostrar o caminho real da CLI (não mais `.agents/plugins/...` fixo).
+- **Truncamento silencioso:** quando o limite de varredura é atingido, `graph.json` registra `metadata.truncated` e o INDEX exibe o aviso **Mapa PARCIAL**.
+- **Falsifier com escopo de arquivo:** os Vetores 2 (validação de payload) e 4 (atomicidade) avaliam separadamente cada função declarada com `function`, cada arrow atribuída a `const`/`let`/`var` sem tipo de retorno, cada método com a assinatura em uma linha e cada rota `router/app.METHOD(`. Um `if (!` em outra rota não mascara mais a falta de validação, e duas funções com uma escrita cada não contam como "operação múltipla". Arrow com tipo de retorno (`): Promise<void> =>`), variável anotada (`const x: Tipo = ...`) e assinaturas em várias linhas ainda são avaliadas junto com o bloco vizinho ou o arquivo inteiro; validação feita só no middleware da rota pode ser acusada no handler.
+- **`--fix` honesto (`devsecops-audit`):** cada correção vale só para a linha (ou o pacote) do próprio achado, e o arquivo só é gravado quando o conteúdo muda. O `--fix` só remove do relatório o que de fato corrigiu; o CVE continua até o lockfile ter uma versão segura (rode o install do seu gerenciador de pacotes). Antes, qualquer achado corrigível do arquivo sumia, mesmo sem correção.
+- **`/orch` no plugin instalado:** o pipeline e o `orch audit` funcionam no plugin instalado (procuram as skills em `skills/<nome>/`), marcam etapas sem script como **NÃO EXECUTADO** e saem com `0` (ok), `1` (achados bloqueantes) ou `2` (etapa não executada ou falha). Antes, as etapas eram puladas em silêncio e o pipeline sempre saía com `0`.
+- **Line endings:** novo `.gitattributes` (`eol=lf`) elimina os avisos LF/CRLF.
+
+### 🎯 2. Precisão & Adoção em Projetos Reais (todos os auditores)
+- **Núcleo comum `shared/suite-core.js`:** varredura com `.gitignore`, `splitHandlers()`, fingerprint, baseline, supressão inline e SARIF em uma única fonte, copiada para cada skill por `scripts/sync-shared.js` (as skills continuam instaláveis de forma avulsa no Claude Code e Cursor). `style-blocks.js` e `visual-check.js` também passaram para `shared/`.
+- **`--baseline` / `--update-baseline`:** grava `.audit-baseline.json` e, a partir daí, só achados novos aparecem. Segredos (Pilar 16) nunca entram no baseline e continuam no relatório e no exit code, inclusive durante `--update-baseline`.
+- **Fingerprint estável:** achados sem linha própria (npm audit, OSV, tsc) e o radar offline usam `fingerprintKey` (pacote@versão + IDs dos advisories; no tsc, o conjunto de erros). Um CVE novo depois do baseline continua aparecendo, mesmo apontando para a mesma linha do lockfile.
+- **`--changed`:** filtra o relatório para arquivos alterados ou não rastreados no git; a varredura continua completa. Limitações conhecidas: arquivos novos quando o alvo é uma subpasta do repositório (monorepo) e arquivos com acento no nome. Não combine com `--update-baseline`, ou o baseline passa a guardar só os achados dos arquivos alterados.
+- **Supressão inline com motivo obrigatório:** `// audit-ignore-next-line REGRA: motivo` (ou `// audit-ignore REGRA: motivo` na mesma linha). Sem motivo, a supressão é ignorada; as supressões aplicadas aparecem no relatório.
+- **`--sarif` em todos os auditores:** `craft-audit`, `mobile-audit`, `db-audit`, `test-audit` e `falsify` passam a exportar SARIF 2.1.0 com `partialFingerprints`.
+- **`--online` (OSV.dev, opt-in):** consulta até 1000 pares nome@versão do lockfile por execução na API pública do OSV.dev (envia apenas nome e versão) e busca a severidade de até 40 vulnerabilidades; as demais aparecem como MEDIUM. Tem timeout e volta automática para o radar offline. Novo achado `SUPPLY_CHAIN_OSV_CVE`, sem repetir pacotes que o radar offline ou o `npm audit` já reportaram.
+- **Pipeline `/orch`:** repassa `--changed`, `--baseline`, `--update-baseline` e `--online` para todos os auditores.
+
+### 🧪 3. Fixtures Negativas (testes de "não pode gritar à toa")
+- `devsecops-audit/test/precision.check.js`, `db-sentinel/test/precision.check.js`, `test-forge/test/precision.check.js` e novos cenários em `hybrid-orchestrator` e `repo-cartographer` garantem 0 achados em código correto, além de validar supressão, baseline, SARIF, escopo por função, cache incremental e aviso de mapa parcial.
+- `devsecops-audit/test/precision.check.js` também cobre segredo durante `--update-baseline`, CVE novo do `npm audit` depois do baseline (com um `npm` falso no PATH, sem rede) e o `--fix` que só remove o que corrigiu.
+- `shared/test/suite-core.check.js` testa o núcleo direto (baseline com achados protegidos e `fingerprintKey`), e `orch/test/installed-layout.check.js` instala o plugin numa pasta temporária e roda o `/orch` da cópia instalada (etapas encontradas, `NÃO EXECUTADO` e exit codes 0/1/2).
+
+### ⚡ 4. Desempenho & Contexto
+- **Cartografia incremental:** nós com `mtime` inalterado são reaproveitados sem reler o arquivo, o que permitiu subir os limites de 160/250 para 800 sementes / 2.000 nós (ajustável via `CARTOGRAPHER_MAX_FILES`).
+- **SKILL.md enxutos:** `hybrid-orchestrator` (28→10 KB) e `frontend-craftsman` (20→7 KB) mantêm só o núcleo, com o conteúdo detalhado movido integralmente para `references/*.md`, carregados sob demanda.
+
+---
+
 ## [2.6.0] - 2026-10-22 — 🎨 Design Engineering Multi-Engine (120fps / 0 Re-renders), Psicologia de UX, Mobile 4.0, DB Sentinel 2.0, Route Guard 2.0 & Test Forge 2.0
 
 ### 🎨 1. Frontend Craftsman v4.0 — UI, UX & Orquestração Multi-Engine de Animações

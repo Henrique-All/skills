@@ -8,3 +8,6 @@ node_modules/
 .cursor/
 .DS_Store
 Thumbs.db
+.kito
+.kiro/
+.swarm
