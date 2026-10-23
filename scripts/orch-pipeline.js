@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/orch-pipeline.js
- * Pipeline de Execução Unificada do Enterprise AI Suite (v2.6.0)
+ * Pipeline de Execução Unificada do Enterprise AI Suite (v2.7.0)
  * 
  * Executa determinística e compulsoriamente auditorias locais (Node.js na CPU):
  * - S1: Cartografia 360° (AST & Nós) — SEMPRE OBRIGATÓRIA (Fundação)
@@ -35,6 +35,12 @@ const hasTest = args.includes('--test');
 
 const isTargeted = hasFront || hasMobile || hasDb || hasSec || hasApi || hasTest;
 
+// v2.7.0: flags repassadas a todos os auditores (modo incremental, baseline e consulta OSV online)
+const passThroughFlags = args
+  .filter((a) => a === '--changed' || a === '--online' || a === '--update-baseline' || a === '--baseline' || a.startsWith('--baseline='))
+  .map((a) => ' ' + a)
+  .join('');
+
 function isExistingDir(candidate) {
   try {
     return Boolean(candidate) && fs.existsSync(candidate) && fs.statSync(candidate).isDirectory();
@@ -43,12 +49,31 @@ function isExistingDir(candidate) {
   }
 }
 
+// Procura o script da skill nos dois layouts suportados:
+//  - monorepo:          <raiz>/<skill>/scripts/<arquivo>
+//  - plugin instalado:  <raiz>/skills/<skill>/scripts/<arquivo>
+function resolveSkillScript(skill, ...parts) {
+  const candidates = [
+    path.join(rootDir, skill, ...parts),
+    path.join(rootDir, 'skills', skill, ...parts)
+  ];
+  return candidates.find((c) => fs.existsSync(c)) || null;
+}
+
+const NOT_RUN = 'NÃO EXECUTADO';
+
+/** Marca a etapa como não executada (script da skill ausente nesta instalação). */
+function markNotRun(stepResult, skill, file) {
+  stepResult.status = NOT_RUN;
+  console.log(`❌ ${NOT_RUN} (Script não encontrado: ${skill}/scripts/${file})`);
+}
+
 const targetArg = args.find((a) => !a.startsWith('--') && isExistingDir(a));
 const projectDir = targetArg ? path.resolve(targetArg) : process.cwd();
 const demand = args.filter((a) => a !== targetArg && !a.startsWith('--')).join(' ') || 'Orquestração e Desenvolvimento do Projeto';
 
 console.log('===============================================================');
-console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA (v2.6.0)');
+console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA (v2.7.0)');
 console.log('===============================================================');
 console.log(`📁 Projeto Alvo: ${projectDir}`);
 console.log(`🎯 Demanda: "${demand}"`);
@@ -67,14 +92,15 @@ if (isTargeted) {
 }
 console.log('');
 
+// exitCode: código de saída do auditor de cada etapa (> 0 = o auditor bloqueou pela própria regra)
 const results = {
-  cartography: { status: 'OK', layers: 6, nodes: 0, edges: 0, cycles: 0 },
-  security: { status: isTargeted && !hasSec && !hasApi ? 'IGNORADO' : 'PENDENTE', findings: 0, critical: 0, high: 0 },
-  uiCraft: { status: isTargeted && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 },
-  mobile: { status: isTargeted && !hasMobile && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 },
-  database: { status: isTargeted && !hasDb ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, missingIndexes: 0 },
-  falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0 },
-  testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0 }
+  cartography: { status: 'OK', layers: 6, nodes: 0, edges: 0, cycles: 0, exitCode: 0 },
+  security: { status: isTargeted && !hasSec && !hasApi ? 'IGNORADO' : 'PENDENTE', findings: 0, critical: 0, high: 0, exitCode: 0 },
+  uiCraft: { status: isTargeted && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 },
+  mobile: { status: isTargeted && !hasMobile && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 },
+  database: { status: isTargeted && !hasDb ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, missingIndexes: 0, exitCode: 0 },
+  falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0, exitCode: 0 },
+  testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 }
 };
 
 const collectedFindings = [];
@@ -94,23 +120,26 @@ function pushFindings(sourceLabel, items = []) {
 
 // 1. CARTOGRAFIA 360° (SEMPRE OBRIGATÓRIA - FUNDAÇÃO ARQUITETURAL)
 process.stdout.write('🗺️  [1/7] Executando Cartografia 360° & AST (Fundação)... ');
-try {
-  const cartScript = path.join(rootDir, 'repo-cartographer', 'scripts', 'cartographer.js');
-  if (fs.existsSync(cartScript)) {
+const cartScript = resolveSkillScript('repo-cartographer', 'scripts', 'cartographer.js');
+if (!cartScript) {
+  // Sem o cartógrafo, um graph.json antigo não é apresentado como resultado desta execução
+  markNotRun(results.cartography, 'repo-cartographer', 'cartographer.js');
+} else {
+  try {
     execSync(`node "${cartScript}" init "${projectDir}"`, { cwd: projectDir, stdio: 'pipe' });
+    const graphPath = path.join(projectDir, '.code-map', 'graph.json');
+    if (fs.existsSync(graphPath)) {
+      const graphData = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
+      results.cartography.nodes = (graphData.nodes || []).length;
+      results.cartography.edges = (graphData.edges || []).length;
+      results.cartography.cycles = graphData.metadata?.cyclesFound || 0;
+    }
+    results.cartography.status = results.cartography.cycles > 0 ? 'CICLOS DETECTADOS' : 'CONCLUÍDO';
+    console.log(`✅ OK (${results.cartography.nodes} nós, ${results.cartography.edges} conexões, ${results.cartography.cycles} ciclos)`);
+  } catch (e) {
+    results.cartography.status = 'ALERTA';
+    console.log('⚠️ Alerta');
   }
-  const graphPath = path.join(projectDir, '.code-map', 'graph.json');
-  if (fs.existsSync(graphPath)) {
-    const graphData = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    results.cartography.nodes = (graphData.nodes || []).length;
-    results.cartography.edges = (graphData.edges || []).length;
-    results.cartography.cycles = graphData.metadata?.cyclesFound || 0;
-  }
-  results.cartography.status = results.cartography.cycles > 0 ? 'CICLOS DETECTADOS' : 'CONCLUÍDO';
-  console.log(`✅ OK (${results.cartography.nodes} nós, ${results.cartography.edges} conexões, ${results.cartography.cycles} ciclos)`);
-} catch (e) {
-  results.cartography.status = 'ALERTA';
-  console.log('⚠️ Alerta');
 }
 
 // 2. SEGURANÇA (DEVSECOPS AUDIT)
@@ -125,21 +154,25 @@ function parseSecurityOutput(raw) {
 
 if (!isTargeted || hasSec || hasApi) {
   process.stdout.write('🔒 [2/7] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
-  try {
-    const secScript = path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js');
-    if (fs.existsSync(secScript)) {
-      const raw = execSync(`node "${secScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
-      parseSecurityOutput(raw);
-    }
-    console.log(`✅ ${results.security.findings} apontamentos (${results.security.critical} críticos)`);
-  } catch (e) {
+  const secScript = resolveSkillScript('devsecops-audit', 'scripts', 'audit.js');
+  if (!secScript) {
+    markNotRun(results.security, 'devsecops-audit', 'audit.js');
+  } else {
     try {
-      const raw = e.stdout ? e.stdout.toString() : '';
+      const raw = execSync(`node "${secScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
       parseSecurityOutput(raw);
-      console.log(`⚠️ ${results.security.findings} apontamentos (${results.security.critical} críticos, ${results.security.high} altos)`);
-    } catch {
-      results.security.status = 'FALHA';
-      console.log('❌ Falha na execução do devsecops-audit');
+      results.security.exitCode = 0;
+      console.log(`✅ ${results.security.findings} apontamentos (${results.security.critical} críticos)`);
+    } catch (e) {
+      try {
+        const raw = e.stdout ? e.stdout.toString() : '';
+        parseSecurityOutput(raw);
+        results.security.exitCode = e.status ?? 1;
+        console.log(`⚠️ ${results.security.findings} apontamentos (${results.security.critical} críticos, ${results.security.high} altos)`);
+      } catch {
+        results.security.status = 'FALHA';
+        console.log('❌ Falha na execução do devsecops-audit');
+      }
     }
   }
 } else {
@@ -149,33 +182,34 @@ if (!isTargeted || hasSec || hasApi) {
 // 3. UI CRAFTSMAN (CRAFT AUDIT)
 if (!isTargeted || hasFront) {
   process.stdout.write('🎨 [3/7] Executando Auditoria de Design Engineering (Anti-Slop)... ');
-  try {
-    const craftScript = path.join(rootDir, 'frontend-craftsman', 'scripts', 'craft-audit.js');
-    if (fs.existsSync(craftScript)) {
-      const raw = execSync(`node "${craftScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+  const craftScript = resolveSkillScript('frontend-craftsman', 'scripts', 'craft-audit.js');
+  if (!craftScript) {
+    markNotRun(results.uiCraft, 'frontend-craftsman', 'craft-audit.js');
+  } else {
+    try {
+      const raw = execSync(`node "${craftScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);
       results.uiCraft.score = data.score ?? 100;
       results.uiCraft.issues = (data.findings || []).length;
       results.uiCraft.status = data.passed ? 'APROVADO' : 'ALERTA';
+      results.uiCraft.exitCode = 0;
       pushFindings('🎨 UI Craft', data.findings || []);
       console.log(`✅ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
-    } else {
-      results.uiCraft.status = 'IGNORADO';
-      console.log('⏭️ Script não encontrado');
-    }
-  } catch (e) {
-    try {
-      const raw = e.stdout ? e.stdout.toString() : '';
-      const data = JSON.parse(raw);
-      results.uiCraft.score = data.score ?? 0;
-      results.uiCraft.issues = (data.findings || []).length;
-      results.uiCraft.status = results.uiCraft.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
-      pushFindings('🎨 UI Craft', data.findings || []);
-      console.log(`⚠️ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
-    } catch {
-      results.uiCraft.score = 0;
-      results.uiCraft.status = 'FALHA';
-      console.log('❌ Falha na execução do craft-audit');
+    } catch (e) {
+      try {
+        const raw = e.stdout ? e.stdout.toString() : '';
+        const data = JSON.parse(raw);
+        results.uiCraft.score = data.score ?? 0;
+        results.uiCraft.issues = (data.findings || []).length;
+        results.uiCraft.status = results.uiCraft.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+        results.uiCraft.exitCode = e.status ?? 1;
+        pushFindings('🎨 UI Craft', data.findings || []);
+        console.log(`⚠️ Score: ${results.uiCraft.score}/100 (${results.uiCraft.issues} apontamentos)`);
+      } catch {
+        results.uiCraft.score = 0;
+        results.uiCraft.status = 'FALHA';
+        console.log('❌ Falha na execução do craft-audit');
+      }
     }
   }
 } else {
@@ -185,33 +219,34 @@ if (!isTargeted || hasFront) {
 // 4. MOBILE CONVERTER (MOBILE AUDIT)
 if (!isTargeted || hasMobile || hasFront) {
   process.stdout.write('📱 [4/7] Executando Auditoria de Ergonomia Mobile (44px+, dvh)... ');
-  try {
-    const mobScript = path.join(rootDir, 'mobile-converter', 'scripts', 'mobile-audit.js');
-    if (fs.existsSync(mobScript)) {
-      const raw = execSync(`node "${mobScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+  const mobScript = resolveSkillScript('mobile-converter', 'scripts', 'mobile-audit.js');
+  if (!mobScript) {
+    markNotRun(results.mobile, 'mobile-converter', 'mobile-audit.js');
+  } else {
+    try {
+      const raw = execSync(`node "${mobScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
       const data = JSON.parse(raw);
       results.mobile.score = data.score ?? 100;
       results.mobile.issues = (data.findings || []).length;
       results.mobile.status = data.passed ? 'APROVADO' : 'ATENÇÃO';
+      results.mobile.exitCode = 0;
       pushFindings('📱 Mobile', data.findings || []);
       console.log(`✅ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
-    } else {
-      results.mobile.status = 'IGNORADO';
-      console.log('⏭️ Script não encontrado');
-    }
-  } catch (e) {
-    try {
-      const raw = e.stdout ? e.stdout.toString() : '';
-      const data = JSON.parse(raw);
-      results.mobile.score = data.score ?? 0;
-      results.mobile.issues = (data.findings || []).length;
-      results.mobile.status = results.mobile.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
-      pushFindings('📱 Mobile', data.findings || []);
-      console.log(`⚠️ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
-    } catch {
-      results.mobile.score = 0;
-      results.mobile.status = 'FALHA';
-      console.log('❌ Falha na execução do mobile-audit');
+    } catch (e) {
+      try {
+        const raw = e.stdout ? e.stdout.toString() : '';
+        const data = JSON.parse(raw);
+        results.mobile.score = data.score ?? 0;
+        results.mobile.issues = (data.findings || []).length;
+        results.mobile.status = results.mobile.score >= 85 ? 'ATENÇÃO' : 'CRÍTICO';
+        results.mobile.exitCode = e.status ?? 1;
+        pushFindings('📱 Mobile', data.findings || []);
+        console.log(`⚠️ Score: ${results.mobile.score}/100 (${results.mobile.issues} apontamentos)`);
+      } catch {
+        results.mobile.score = 0;
+        results.mobile.status = 'FALHA';
+        console.log('❌ Falha na execução do mobile-audit');
+      }
     }
   }
 } else {
@@ -236,21 +271,25 @@ function parseDbOutput(raw) {
 
 if (!isTargeted || hasDb) {
   process.stdout.write('🗄️  [5/7] Executando Auditoria de Banco de Dados & Índices... ');
-  try {
-    const dbScript = path.join(rootDir, 'db-sentinel', 'scripts', 'db-audit.js');
-    if (fs.existsSync(dbScript)) {
-      const out = execSync(`node "${dbScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
-      parseDbOutput(out);
-      console.log(`✅ Score: ${results.database.score}/100 (${results.database.missingIndexes} FKs sem índice)`);
-    }
-  } catch (e) {
+  const dbScript = resolveSkillScript('db-sentinel', 'scripts', 'db-audit.js');
+  if (!dbScript) {
+    markNotRun(results.database, 'db-sentinel', 'db-audit.js');
+  } else {
     try {
-      const raw = e.stdout ? e.stdout.toString() : '';
-      parseDbOutput(raw);
-      console.log(`⚠️ Score: ${results.database.score}/100 (${results.database.issues} apontamentos, ${results.database.missingIndexes} FKs sem índice)`);
-    } catch {
-      results.database.status = 'FALHA';
-      console.log('❌ Falha na execução do db-audit');
+      const out = execSync(`node "${dbScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      parseDbOutput(out);
+      results.database.exitCode = 0;
+      console.log(`✅ Score: ${results.database.score}/100 (${results.database.missingIndexes} FKs sem índice)`);
+    } catch (e) {
+      try {
+        const raw = e.stdout ? e.stdout.toString() : '';
+        parseDbOutput(raw);
+        results.database.exitCode = e.status ?? 1;
+        console.log(`⚠️ Score: ${results.database.score}/100 (${results.database.issues} apontamentos, ${results.database.missingIndexes} FKs sem índice)`);
+      } catch {
+        results.database.status = 'FALHA';
+        console.log('❌ Falha na execução do db-audit');
+      }
     }
   }
 } else {
@@ -274,21 +313,25 @@ function parseFalsifierOutput(out) {
 
 if (!isTargeted || hasDb || hasApi) {
   process.stdout.write('⚡ [6/7] Executando Falsifier (8 Vetores de Estresse Concorrente)... ');
-  try {
-    const falsifyScript = path.join(rootDir, 'hybrid-orchestrator', 'scripts', 'falsify.js');
-    if (fs.existsSync(falsifyScript)) {
-      const out = execSync(`node "${falsifyScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+  const falsifyScript = resolveSkillScript('hybrid-orchestrator', 'scripts', 'falsify.js');
+  if (!falsifyScript) {
+    markNotRun(results.falsifier, 'hybrid-orchestrator', 'falsify.js');
+  } else {
+    try {
+      const out = execSync(`node "${falsifyScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
       parseFalsifierOutput(out);
+      results.falsifier.exitCode = 0;
       console.log(`✅ ${results.falsifier.vectorsFailed} vetores identificados`);
-    }
-  } catch (e) {
-    const raw = e.stdout ? e.stdout.toString() : '';
-    if (raw) {
-      parseFalsifierOutput(raw);
-      console.log(`⚠️ ${results.falsifier.vectorsFailed} vetores identificados`);
-    } else {
-      results.falsifier.status = 'FALHA';
-      console.log('❌ Falha na execução do falsify.js');
+    } catch (e) {
+      const raw = e.stdout ? e.stdout.toString() : '';
+      if (raw) {
+        parseFalsifierOutput(raw);
+        results.falsifier.exitCode = e.status ?? 1;
+        console.log(`⚠️ ${results.falsifier.vectorsFailed} vetores identificados`);
+      } else {
+        results.falsifier.status = 'FALHA';
+        console.log('❌ Falha na execução do falsify.js');
+      }
     }
   }
 } else {
@@ -298,11 +341,14 @@ if (!isTargeted || hasDb || hasApi) {
 // 7. TEST FORGE (QUALIDADE DE TESTES & ANTI-MOCK SLOP)
 if (!isTargeted || hasTest) {
   process.stdout.write('🧪 [7/7] Executando Test Forge (Auditoria Anti-Mock Slop)... ');
-  try {
-    const testScript = path.join(rootDir, 'test-forge', 'scripts', 'test-audit.js');
-    if (fs.existsSync(testScript)) {
-      const out = execSync(`node "${testScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+  const testScript = resolveSkillScript('test-forge', 'scripts', 'test-audit.js');
+  if (!testScript) {
+    markNotRun(results.testForge, 'test-forge', 'test-audit.js');
+  } else {
+    try {
+      const out = execSync(`node "${testScript}" "${projectDir}" --json${passThroughFlags}`, { cwd: projectDir, stdio: 'pipe' }).toString();
       const data = JSON.parse(out);
+      results.testForge.exitCode = 0;
       if (data.error) {
         results.testForge.status = 'SEM TESTES';
         results.testForge.score = 0;
@@ -314,14 +360,30 @@ if (!isTargeted || hasTest) {
         pushFindings('🧪 Test Forge', data.findings || []);
         console.log(`✅ Score: ${results.testForge.score}/100 (${results.testForge.issues} apontamentos)`);
       }
+    } catch (e) {
+      results.testForge.status = 'FALHA';
+      console.log('❌ Falha na execução do test-audit');
     }
-  } catch (e) {
-    results.testForge.status = 'FALHA';
-    console.log('❌ Falha na execução do test-audit');
   }
 } else {
   console.log('🧪 [7/7] Test Forge (Anti-Mock Slop)... ⏭️  Ignorada (flag direcionada ativa)');
 }
+
+// Código de saída do pipeline (política 0/1/2):
+//   2 = alguma etapa não executou (script ausente) ou falhou (saída ilegível)
+//   1 = todas rodaram, mas algum auditor bloqueou pela própria regra (exit > 0)
+//   0 = todas rodaram e nada bloqueou
+// IGNORADO (flag), SEM SCHEMA, SEM TESTES e ALERTA da cartografia não contam como falha.
+const stepResults = [
+  results.cartography, results.security, results.uiCraft, results.mobile,
+  results.database, results.falsifier, results.testForge
+];
+const incompleteSteps = stepResults.filter((r) => r.status === NOT_RUN || r.status === 'FALHA' || r.status === 'PENDENTE').length;
+const blockingSteps = stepResults.filter((r) => (r.exitCode || 0) > 0).length;
+const finalExitCode = incompleteSteps > 0 ? 2 : blockingSteps > 0 ? 1 : 0;
+const planStatus = finalExitCode === 2
+  ? `⚠️ Incompleto: ${incompleteSteps} etapa(s) não executada(s) ou com falha`
+  : finalExitCode === 1 ? '🔴 Concluído com bloqueios' : '🟢 Concluído sem bloqueios';
 
 // Ordenação dos Top Apontamentos por severidade
 const severityRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -346,12 +408,32 @@ if (topFindings.length > 0) {
 const planDir = path.join(projectDir, '.plan');
 if (!fs.existsSync(planDir)) fs.mkdirSync(planDir, { recursive: true });
 
-const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2.6.0)
+// Etapa ignorada por flag, não executada ou com falha não exibe os valores padrão (score 100, 0 achados)
+function metricCell(r, text) {
+  if (r.status === 'IGNORADO') return 'Bypass via Flag';
+  if (r.status === NOT_RUN) return 'Não executado';
+  if (r.status === 'FALHA') return 'Sem resultado';
+  return text;
+}
+function diagnosisCell(r, text) {
+  if (r.status === 'IGNORADO') return 'Não requisitado na flag';
+  if (r.status === NOT_RUN) return 'Script da skill não encontrado nesta instalação';
+  if (r.status === 'FALHA') return 'Falha na execução do auditor (saída ilegível)';
+  return text;
+}
+function quadrantValue(r, label, text) {
+  if (r.status === 'IGNORADO') return `${label} ignorado`;
+  if (r.status === NOT_RUN) return `${label} não executado`;
+  if (r.status === 'FALHA') return `${label} com falha`;
+  return text;
+}
+
+const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2.7.0)
 
 > **Demanda:** "${demand}"  
 > **Projeto:** \`${path.basename(projectDir)}\`  
 > **Modo de Execução:** ${isTargeted ? '🎯 Filtrado por Flag Direta' : '⚡ Completo (Governança 6 Camadas)'}  
-> **Status:** 🟡 Validado pelo Pipeline Local (Aguardando Aprovação)  
+> **Status:** ${planStatus} (Aguardando Aprovação)  
 > **Data:** ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}
 
 ---
@@ -360,13 +442,13 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2
 
 | Especialista | Status | Métrica / Score | Diagnóstico Técnico |
 | :--- | :---: | :---: | :--- |
-| 🗺️ **Repo Cartographer** | **${results.cartography.status}** | ${results.cartography.nodes} nós / ${results.cartography.edges} arestas | AST e grafo mapeados em \`.code-map/graph.json\` (${results.cartography.cycles} ciclos) |
-| 🔒 **DevSecOps Auditor** | **${results.security.status}** | ${results.security.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.security.findings} apontamentos`} | ${results.security.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.security.critical} críticos, ${results.security.high} altos (OWASP / RBAC / Auth / IA)`} |
-| 🎨 **UI Craftsman (Anti-Slop)** | **${results.uiCraft.status}** | ${results.uiCraft.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.uiCraft.score}/100`} | ${results.uiCraft.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.uiCraft.issues} apontamentos de contraste dual-theme ou estética`} |
-| 📱 **Mobile Converter** | **${results.mobile.status}** | ${results.mobile.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.mobile.score}/100`} | ${results.mobile.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.mobile.issues} apontamentos (Touch targets 44px+, Safe Areas, 100dvh)`} |
-| 🗄️ **DB Sentinel** | **${results.database.status}** | ${results.database.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.database.score}/100`} | ${results.database.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.database.missingIndexes} FKs sem índice (${results.database.issues} alertas totais)`} |
-| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${results.falsifier.status === 'IGNORADO' ? 'Bypass via Flag' : `${results.falsifier.vectorsFailed} vetores`} | ${results.falsifier.status === 'IGNORADO' ? 'Não requisitado na flag' : '8 vetores: concorrência, Lost Update, N+1, memory leaks e transações'} |
-| 🧪 **Test Forge** | **${results.testForge.status}** | ${results.testForge.status === 'IGNORADO' ? 'Bypass via Flag' : `Score: ${results.testForge.score}/100`} | ${results.testForge.status === 'IGNORADO' ? 'Não requisitado na flag' : `${results.testForge.issues} alertas de mocks excessivos, .only ou sleeps fixos`} |
+| 🗺️ **Repo Cartographer** | **${results.cartography.status}** | ${metricCell(results.cartography, `${results.cartography.nodes} nós / ${results.cartography.edges} arestas`)} | ${diagnosisCell(results.cartography, `AST e grafo mapeados em \`.code-map/graph.json\` (${results.cartography.cycles} ciclos)`)} |
+| 🔒 **DevSecOps Auditor** | **${results.security.status}** | ${metricCell(results.security, `${results.security.findings} apontamentos`)} | ${diagnosisCell(results.security, `${results.security.critical} críticos, ${results.security.high} altos (OWASP / RBAC / Auth / IA)`)} |
+| 🎨 **UI Craftsman (Anti-Slop)** | **${results.uiCraft.status}** | ${metricCell(results.uiCraft, `Score: ${results.uiCraft.score}/100`)} | ${diagnosisCell(results.uiCraft, `${results.uiCraft.issues} apontamentos de contraste dual-theme ou estética`)} |
+| 📱 **Mobile Converter** | **${results.mobile.status}** | ${metricCell(results.mobile, `Score: ${results.mobile.score}/100`)} | ${diagnosisCell(results.mobile, `${results.mobile.issues} apontamentos (Touch targets 44px+, Safe Areas, 100dvh)`)} |
+| 🗄️ **DB Sentinel** | **${results.database.status}** | ${metricCell(results.database, `Score: ${results.database.score}/100`)} | ${diagnosisCell(results.database, `${results.database.missingIndexes} FKs sem índice (${results.database.issues} alertas totais)`)} |
+| ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${metricCell(results.falsifier, `${results.falsifier.vectorsFailed} vetores`)} | ${diagnosisCell(results.falsifier, '8 vetores: concorrência, Lost Update, N+1, memory leaks e transações')} |
+| 🧪 **Test Forge** | **${results.testForge.status}** | ${metricCell(results.testForge, `Score: ${results.testForge.score}/100`)} | ${diagnosisCell(results.testForge, `${results.testForge.issues} alertas de mocks excessivos, .only ou sleeps fixos`)} |
 ${topFindingsSection}
 ---
 
@@ -374,10 +456,10 @@ ${topFindingsSection}
 
 | Quadrante | Diagnóstico do Pipeline | Resolução da Arquitetura |
 | :--- | :--- | :--- |
-| **Q1: Contratos & Tipagem** | ${results.cartography.nodes} módulos rastreados no grafo AST | Validação estrita de contratos (Zod/DTO), preservação de payloads e zero breaking changes |
-| **Q2: Dados & Concorrência** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${results.falsifier.vectorsFailed} vetores de estresse • ${results.database.missingIndexes} FKs sem índice`} | Transações atômicas em escritas múltiplas, prevenção de N+1, anti-Lost Update e indexação de FKs |
-| **Q3: Design Dual-Theme & Mobile** | Craft: ${results.uiCraft.score}/100 • Mobile: ${results.mobile.score}/100 | Coerência obrigatória Light/Dark mode (WCAG AA), fluxo Master-Detail mobile, 100dvh e alvos >= 44px |
-| **Q4: Segurança & Zero-Trust** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : `${results.security.critical} críticos • ${results.security.high} altos`} | Isolamento de propriedade (anti-BOLA/IDOR), proteção de env público e bloqueio de segredos hardcoded |
+| **Q1: Contratos & Tipagem** | ${quadrantValue(results.cartography, 'Cartografia', `${results.cartography.nodes} módulos rastreados no grafo AST`)} | Validação estrita de contratos (Zod/DTO), preservação de payloads e zero breaking changes |
+| **Q2: Dados & Concorrência** | ${results.falsifier.status === 'IGNORADO' ? 'Não estressado (Modo Focado)' : `${quadrantValue(results.falsifier, 'Falsifier', `${results.falsifier.vectorsFailed} vetores de estresse`)} • ${quadrantValue(results.database, 'DB Sentinel', `${results.database.missingIndexes} FKs sem índice`)}`} | Transações atômicas em escritas múltiplas, prevenção de N+1, anti-Lost Update e indexação de FKs |
+| **Q3: Design Dual-Theme & Mobile** | ${quadrantValue(results.uiCraft, 'Craft', `Craft: ${results.uiCraft.score}/100`)} • ${quadrantValue(results.mobile, 'Mobile', `Mobile: ${results.mobile.score}/100`)} | Coerência obrigatória Light/Dark mode (WCAG AA), fluxo Master-Detail mobile, 100dvh e alvos >= 44px |
+| **Q4: Segurança & Zero-Trust** | ${results.security.status === 'IGNORADO' ? 'Não auditado (Modo Focado)' : quadrantValue(results.security, 'DevSecOps', `${results.security.critical} críticos • ${results.security.high} altos`)} | Isolamento de propriedade (anti-BOLA/IDOR), proteção de env público e bloqueio de segredos hardcoded |
 
 ---
 
@@ -391,6 +473,14 @@ ${topFindingsSection}
 fs.writeFileSync(path.join(planDir, 'PLAN.md'), planMd, 'utf8');
 
 console.log('\n---------------------------------------------------------------');
-console.log('🎉 PIPELINE CONCLUÍDO COM SUCESSO (0 TOKENS DE LLM GASTOS)');
+if (finalExitCode === 0) {
+  console.log('🎉 PIPELINE CONCLUÍDO COM SUCESSO (0 TOKENS DE LLM GASTOS)');
+} else if (finalExitCode === 1) {
+  console.log('🔴 PIPELINE CONCLUÍDO COM BLOQUEIOS (veja .plan/PLAN.md)');
+} else {
+  console.log(`⚠️  PIPELINE INCOMPLETO: ${incompleteSteps} etapa(s) não executada(s) ou com falha`);
+}
 console.log(`📄 Relatório visual gerado em: ${path.join(planDir, 'PLAN.md')}`);
 console.log('---------------------------------------------------------------\n');
+
+process.exitCode = finalExitCode;

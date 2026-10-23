@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 /**
  * bin/orch.js
- * CLI Master do Enterprise AI Suite (v2.6.0)
+ * CLI Master do Enterprise AI Suite (v2.7.0)
  * Permite acionar diagnósticos, inicialização de projetos, testes e trocas de versão.
  */
 
 const { spawn } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const command = args[0] || 'help';
+
+// Scripts de skill: monorepo (<raiz>/<skill>) ou plugin instalado (<raiz>/skills/<skill>)
+const auditCandidates = [
+  path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js'),
+  path.join(rootDir, 'skills', 'devsecops-audit', 'scripts', 'audit.js')
+];
 
 const commands = {
   run: path.join(rootDir, 'scripts', 'orch-pipeline.js'),
@@ -18,12 +25,13 @@ const commands = {
   init: path.join(rootDir, 'scripts', 'init.js'),
   switch: path.join(rootDir, 'scripts', 'switch-version.js'),
   test: path.join(rootDir, 'scripts', 'test-all.js'),
-  audit: path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js')
+  audit: auditCandidates.find((c) => fs.existsSync(c)) || null
 };
+const searchedPaths = { audit: auditCandidates };
 
 function printHelp() {
   console.log(`
-⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.6.0)
+⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.7.0)
 
 Uso:
   orch <comando> [opções]
@@ -49,12 +57,18 @@ if (command === 'help' || command === '--help' || command === '-h') {
   process.exit(0);
 }
 
-const targetScript = commands[command];
-
-if (!targetScript) {
+if (!Object.prototype.hasOwnProperty.call(commands, command)) {
   console.error(`❌ Comando desconhecido: "${command}"\n`);
   printHelp();
   process.exit(1);
+}
+
+const targetScript = commands[command];
+
+if (!targetScript) {
+  console.error(`❌ Script do comando "${command}" não encontrado nesta instalação. Caminhos procurados:`);
+  (searchedPaths[command] || []).forEach((p) => console.error(`   - ${p}`));
+  process.exit(2);
 }
 
 const subArgs = args.slice(1);
@@ -63,6 +77,7 @@ const child = spawn(process.execPath, [targetScript, ...subArgs], {
   cwd: process.cwd()
 });
 
+// Repassa o código de saída do script; se ele terminou por sinal (code === null), sai com 1
 child.on('exit', (code) => {
-  process.exit(code || 0);
+  process.exit(code === null ? 1 : code);
 });

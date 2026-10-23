@@ -1,6 +1,6 @@
 {
   "name": "frontend-craftsman-skill",
-  "version": "1.0.0",
+  "version": "2.7.0",
   "description": "Engenharia de Front-end de Alta Fidelidade (Design Engineer). Elimina a 'cara de IA' e produz interfaces artesanais com Framer Motion, física de molas, Radix/Tailwind e micro-interações táteis nível Linear/Stripe/Apple.",
   "main": "scripts/craft-audit.js",
   "scripts": {

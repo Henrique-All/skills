@@ -1,6 +1,6 @@
 {
   "name": "route-guard-skill",
-  "version": "1.0.0",
+  "version": "2.7.0",
   "description": "Guardião de contratos de rotas/endpoints, análise de impacto e blindagem Zero-Trust",
   "main": "scripts/analyze-route.js",
   "scripts": {

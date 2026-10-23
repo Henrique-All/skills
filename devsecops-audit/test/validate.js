@@ -111,6 +111,15 @@ try {
   hasErrors = true;
 }
 
+// 6. Testes de Precisão (fixtures negativas, supressão inline e baseline) — v2.7.0
+try {
+  execSync(`node "${path.join(__dirname, 'precision.check.js')}"`, { stdio: 'inherit' });
+  console.log('✅ Testes de precisão (0 falsos positivos, supressão e baseline) aprovados');
+} catch (err) {
+  console.error('❌ Falha nos testes de precisão:', err.message);
+  hasErrors = true;
+}
+
 if (hasErrors) {
   console.error('\n❌ Falha na validação dos componentes!');
   process.exit(1);

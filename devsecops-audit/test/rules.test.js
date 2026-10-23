@@ -1,12 +1,12 @@
 /**
- * test/rules.test.js - Teste Unitário dos 20 Vetores Avançados de AppSec & Red Team (v2.6.0)
+ * test/rules.test.js - Teste Unitário dos 20 Vetores Avançados de AppSec & Red Team (v2.7.0)
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('🧪 Executando Bateria de Testes dos 20 Vetores de Ataque Avançados (DevSecOps Red Team v2.6.0)...\n');
+console.log('🧪 Executando Bateria de Testes dos 20 Vetores de Ataque Avançados (DevSecOps Red Team v2.7.0)...\n');
 
 const testDir = path.join(__dirname, 'temp_fixtures');
 if (fs.existsSync(testDir)) {
@@ -261,7 +261,7 @@ try {
     process.exit(1);
   }
 
-  console.log('\n🎉 Todas as 23 regras de AppSec/Red Team, CVEs & Pilares v2.6.0 foram detectadas com 100% de precisão!');
+  console.log('\n🎉 Todas as 23 regras de AppSec/Red Team, CVEs & Pilares v2.7.0 foram detectadas com 100% de precisão!');
 } catch (err) {
   console.error('❌ Erro no teste:', err.message);
   if (fs.existsSync(testDir)) fs.rmSync(testDir, { recursive: true, force: true });

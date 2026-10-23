@@ -94,6 +94,13 @@ const targetFiles = targetArg && fs.existsSync(targetArg)
   : findSchemaFiles();
 
 if (targetFiles.length === 0) {
+  if (process.argv.some((a) => a === '--sarif' || a.startsWith('--sarif='))) {
+    // SARIF vazio para manter o passo de CI estável mesmo sem schema
+    const coreEmpty = require('./lib/suite-core');
+    const processedEmpty = coreEmpty.postProcess([], { projectDir: process.cwd(), toolName: 'db-sentinel', version: '2.7.0' });
+    if (processedEmpty.opts.sarif === true) console.log(JSON.stringify(processedEmpty.meta.sarif, null, 2));
+    process.exit(0);
+  }
   if (isJson) {
     console.log(JSON.stringify({ error: 'Nenhum arquivo de schema (Prisma/Drizzle/SQL) encontrado.' }));
   } else {
@@ -345,6 +352,13 @@ targetFiles.forEach((file) => {
   }
 });
 
+// Núcleo comum (v2.7.0): --changed, supressão inline com motivo, --baseline/--update-baseline e --sarif
+const core = require('./lib/suite-core');
+const dbProjectDir = targetArg && fs.existsSync(targetArg) && fs.statSync(targetArg).isDirectory() ? path.resolve(targetArg) : process.cwd();
+const processed = core.postProcess(findings, { projectDir: dbProjectDir, toolName: 'db-sentinel', version: '2.7.0' });
+findings.length = 0;
+findings.push(...processed.findings);
+
 // Cálculo do Score (0 - 100)
 let score = 100;
 findings.forEach(f => {
@@ -355,8 +369,13 @@ findings.forEach(f => {
 });
 if (score < 0) score = 0;
 
+if (processed.opts.sarif) {
+  if (processed.opts.sarif === true) console.log(JSON.stringify(processed.meta.sarif, null, 2));
+  process.exit(findings.some(f => f.severity === 'CRITICAL') ? 1 : 0);
+}
+
 if (isJson) {
-  console.log(JSON.stringify({ score, findings, filesAnalyzed: targetFiles }, null, 2));
+  console.log(JSON.stringify({ score, findings, filesAnalyzed: targetFiles, suppressed: processed.meta.suppressed.length, baselined: processed.meta.baselined }, null, 2));
   process.exit(findings.some(f => f.severity === 'CRITICAL') ? 1 : 0);
 }
 

@@ -1,5 +1,5 @@
 /**
- * test/validate.js - Validador de Integridade da Skill Repo Cartographer (v2.6.0)
+ * test/validate.js - Validador de Integridade da Skill Repo Cartographer (v2.7.0)
  */
 
 const fs = require('fs');
@@ -150,6 +150,56 @@ try {
   console.log('✅ Execução bem-sucedida: scripts/cartographer.js (orphans --json)');
 } catch (e) {
   console.error('❌ Falha ao rodar cartographer.js orphans:', e.message);
+  hasErrors = true;
+}
+
+// v2.7.0: classificação de camadas, mapa parcial visível, caminho real da CLI e cache incremental
+try {
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cart-v27-'));
+  fs.mkdirSync(path.join(tmp, 'src', 'components'), { recursive: true });
+  fs.mkdirSync(path.join(tmp, 'scripts', 'hooks'), { recursive: true });
+  fs.writeFileSync(path.join(tmp, 'install.js'), "require('./src/util');\n");
+  fs.writeFileSync(path.join(tmp, 'scripts', 'hooks', 'post-edit.js'), 'module.exports = {};\n');
+  fs.writeFileSync(path.join(tmp, 'src', 'util.ts'), 'export const x = 1;\n');
+  fs.writeFileSync(path.join(tmp, 'src', 'components', 'Button.tsx'), "import { x } from '../util';\nexport const B = () => x;\n");
+  fs.writeFileSync(path.join(tmp, 'src', 'useCart.ts'), 'export function useCart() { return 1; }\n');
+
+  execSync(`node "${cartographerScript}" init "${tmp}"`, { stdio: 'ignore' });
+  const graph1 = JSON.parse(fs.readFileSync(path.join(tmp, '.code-map', 'graph.json'), 'utf-8'));
+  const byPath = (p) => graph1.nodes.find((n) => n.path === p) || {};
+  const problems = [];
+  if (byPath('install.js').layer !== 6) problems.push(`install.js deveria ser L6, veio L${byPath('install.js').layer}`);
+  if (byPath('scripts/hooks/post-edit.js').layer !== 6) problems.push('scripts/hooks/*.js deveria ser L6 (não Estado)');
+  if (byPath('src/components/Button.tsx').layer !== 1) problems.push('Button.tsx deveria ser L1');
+  if (byPath('src/useCart.ts').layer !== 2) problems.push('useCart.ts deveria ser L2 (hook de estado)');
+  if (graph1.metadata.truncated !== false) problems.push('projeto pequeno não deveria estar truncado');
+
+  const indexMd = fs.readFileSync(path.join(tmp, '.code-map', 'INDEX.md'), 'utf-8');
+  if (indexMd.includes('.agents/plugins/enterprise-ai-suite/skills/repo-cartographer')) problems.push('INDEX.md ainda aponta caminho fixo .agents/plugins');
+  if (!indexMd.includes('cartographer.js') || !indexMd.includes('orphans')) problems.push('INDEX.md sem caminho real da CLI / comando orphans');
+
+  // Cache incremental: 2ª execução reaproveita os nós não modificados
+  execSync(`node "${cartographerScript}" init "${tmp}"`, { stdio: 'ignore' });
+  const graph2 = JSON.parse(fs.readFileSync(path.join(tmp, '.code-map', 'graph.json'), 'utf-8'));
+  if (!(graph2.metadata.reusedFromCache >= 4)) problems.push(`cache incremental não reaproveitou nós (${graph2.metadata.reusedFromCache})`);
+  if (graph2.edges.length !== graph1.edges.length) problems.push('cache incremental perdeu arestas');
+
+  // Mapa parcial
+  execSync(`node "${cartographerScript}" init "${tmp}"`, { stdio: 'ignore', env: { ...process.env, CARTOGRAPHER_MAX_FILES: '2' } });
+  const graph3 = JSON.parse(fs.readFileSync(path.join(tmp, '.code-map', 'graph.json'), 'utf-8'));
+  const indexTrunc = fs.readFileSync(path.join(tmp, '.code-map', 'INDEX.md'), 'utf-8');
+  if (!graph3.metadata.truncated || !indexTrunc.includes('Mapa PARCIAL')) problems.push('truncamento não sinalizado no graph.json/INDEX.md');
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+  if (problems.length > 0) {
+    problems.forEach((p) => console.error(`❌ ${p}`));
+    hasErrors = true;
+  } else {
+    console.log('✅ v2.7.0: camadas corretas, CLI real no INDEX, cache incremental e aviso de mapa parcial validados');
+  }
+} catch (e) {
+  console.error('❌ Falha nos testes v2.7.0 do cartographer:', e.message);
   hasErrors = true;
 }
 

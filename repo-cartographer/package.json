@@ -1,6 +1,6 @@
 {
   "name": "repo-cartographer-skill",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Cartógrafo de repositórios: mapeamento 360° em 6 camadas, detecção de módulos órfãos (dead code), Context IR incremental e handshake estruturado com hybrid-orchestrator",
   "main": "scripts/cartographer.js",
   "scripts": {

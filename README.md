@@ -1,4 +1,4 @@
-# ⚡ Enterprise AI Suite (v2.6.0)
+# ⚡ Enterprise AI Suite (v2.7.0)
 
 > **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
@@ -10,6 +10,23 @@
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](package.json)
 
 ---
+
+## 🆕 Novidades da v2.7.0 — Precisão Antes de Volume
+
+| Recurso | O que resolve | Onde |
+| :--- | :--- | :--- |
+| **Radar de CVE ciente do lockfile** (`npm`/`pnpm`/`yarn`) | Fim do falso positivo que bloqueava o CI quando o lockfile já tinha a versão corrigida | `devsecops-audit` |
+| **`--online` (OSV.dev, opt-in)** | CVEs do OSV.dev para até 1000 pacotes do lockfile, sem tabela desatualizada (severidade detalhada de até 40 vulnerabilidades; as demais como MEDIUM) | `devsecops-audit` |
+| **`--baseline` / `--update-baseline`** | Adoção em projetos legados: só achados **novos** quebram o build | Todos os auditores |
+| **`--changed`** | Mostra só achados de arquivos alterados ou não rastreados no git (a varredura continua completa) | Todos os auditores |
+| **Supressão inline com motivo** (`// audit-ignore-next-line REGRA: motivo`) | Exceções documentadas no código, sem motivo = ignorada | Todos os auditores |
+| **`--sarif` em todos os auditores** | Achados na aba **Security** do GitHub (job `security-sarif` no CI) | Todos os auditores |
+| **Falsifier por função** | Vetores 2 e 4 avaliam cada rota/função isoladamente (arrow com tipo de retorno e assinaturas em várias linhas ainda caem no bloco vizinho) | `hybrid-orchestrator` |
+| **Cartografia incremental + mapa parcial visível** | Reaproveita nós não modificados, limites maiores e aviso quando o mapa está incompleto | `repo-cartographer` |
+| **Núcleo comum `shared/`** | Uma única implementação de varredura, baseline, supressão e SARIF, copiada para cada skill via `scripts/sync-shared.js` | Monorepo |
+| **SKILL.md enxutos** (`references/` sob demanda) | `hybrid-orchestrator` 28→10 KB, `frontend-craftsman` 20→7 KB de contexto por ativação | Skills |
+
+> Ao editar arquivos em `shared/`, rode `node scripts/sync-shared.js`. O `npm test` falha se alguma cópia ou versão divergir.
 
 ## 📌 Referências & Navegação Rápida
 
