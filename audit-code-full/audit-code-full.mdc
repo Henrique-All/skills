@@ -1,0 +1,15 @@
+---
+description: "QA Brute-Force 360° com 4 Agentes Paralelos: varredura total do código, teste bruto coisa por coisa, auditoria de UI e paleta de cores, verificação de funcionalidade de botões e geração final do code-map"
+globs: ["**/*.tsx", "**/*.jsx", "**/*.ts", "**/*.js", "**/*.vue", "**/*.svelte", "**/*.css"]
+---
+
+# 🕵️‍♂️ Regra Audit Code Full: QA Brute-Force 360° + 4 Agentes
+
+Ao auditar ou validar uma aplicação com `audit-code-full`:
+
+1. **Varredura Completa (`qa-crawler`):** Percorra todas as 6 camadas do projeto sem ignorar módulos secundários.
+2. **Teste Bruto (`qa-bruteforce`):** Teste funções, rotas e handlers contra entradas extremas (`null`, `undefined`, `NaN`, strings vazias/gigantes) e proíba `JSON.parse` ou handlers `async` sem `try/catch`.
+3. **UI & Paleta de Cores (`qa-ui-palette`):** Garanta que tanto o UI quanto o código de UI respeitem os tokens da paleta de cores do projeto e possuam contraste válido no Modo Claro e Modo Escuro.
+4. **Funcionalidade de Botões (`qa-button-action`):** Proíba botões mortos (`<button>` sem `onClick`/`type="submit"`, handlers vazios `() => {}`, `href="#"` sem ação ou placeholders `TODO`).
+5. **Code-Map Final:** Sempre finalize rodando `node audit-code-full/scripts/audit-full.js .` para gerar `.code-map/INDEX.md` e `.code-map/graph.json` listando tudo.
+

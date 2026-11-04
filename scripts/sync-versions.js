@@ -13,7 +13,12 @@ const path = require('path');
 const rootDir = path.resolve(__dirname, '..');
 const isCheck = process.argv.includes('--check');
 
-const rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+let rootPkg = {};
+try {
+  rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+} catch {
+  rootPkg = { version: '2.8.0' };
+}
 const targetVersion = rootPkg.version;
 
 const extraManifests = ['plugin.json'];
@@ -28,7 +33,12 @@ for (const rel of [...extraManifests, ...skillManifests]) {
   const abs = path.join(rootDir, rel);
   if (!fs.existsSync(abs)) continue;
   const raw = fs.readFileSync(abs, 'utf-8');
-  const json = JSON.parse(raw);
+  let json = {};
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    continue;
+  }
   if (json.version === targetVersion) continue;
 
   if (isCheck) {

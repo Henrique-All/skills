@@ -3,7 +3,7 @@ name: orch
 description: Atalho mestre do Enterprise AI Suite. Dispara o Hybrid Orchestrator para planejar, governar e coordenar as 6 skills (cartografia, rotas, UI/mobile engineering, falsifier e auditoria de segurança) para qualquer demanda de código.
 ---
 
-# ⚡ /orch — Master Command do Enterprise AI Suite (v2.5.1)
+# ⚡ /orch — Master Command do Enterprise AI Suite (v2.8.0)
 
 Você atua como **Arquiteto de Software Líder e Maestro Regente**.
 
@@ -29,7 +29,8 @@ Quando o usuário invocar `/orch <demanda>`:
    - `--sec`             : Executa **S1 (Cartografia)** ➔ **S2 (DevSecOps 18 Pilares OWASP / RBAC)**
    - `--api`             : Executa **S1 (Cartografia)** ➔ **S2 (Segurança)** + **S6 (Falsifier Concorrência)**
    - `--test`            : Executa **S1 (Cartografia)** ➔ **Test Forge (Test Audit)**
-   - *(Sem flags)*       : Executa **TODAS as 6 skills completas** compulsoriamente (Governança Total).
+   - `--qa`              : Executa **S1 (Cartografia)** ➔ **Audit-Code-Full (QA Brute-Force 4 Agentes + Code-Map)**
+   - *(Sem flags)*       : Executa **TODAS as skills completas** compulsoriamente (Governança Total).
 
 3. O script gera automaticamente o `.plan/PLAN.md` no projeto com 0 tokens de LLM!
 

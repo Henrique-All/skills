@@ -5,6 +5,25 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.8.0] - 2026-11-04 — 🕵️‍♂️ Audit-Code-Full: QA Brute-Force 360° (4 Agentes + Execução Real em VM + IA Paralela + Code-Map Final)
+
+### 🕵️‍♂️ 1. Nova Skill `audit-code-full` & Enxame de 4 Agentes de QA Paralelos
+- **Arquitetura Híbrida de Dupla Camada (Workers Node.js + 4 Subagentes de IA em Paralelo):**
+  1. 🕷️ **`qa-crawler` (`agents/qa-crawler.agent.md`):** Percorre 100% dos arquivos do projeto classificando-os nas 6 camadas arquiteturais (UI, Estado, API, Backend, Banco, Infra) e extraindo símbolos exportados e rotas.
+  2. 💥 **`qa-bruteforce` (`agents/qa-bruteforce.agent.md`):** Executa **Runtime Brute-Force Fuzzing real em sandbox isolada (`node:vm`)**, invocando funções exportadas com 11 payloads extremos (`null`, `undefined`, `NaN`, `""`, `"{bad_json"`, `-1`, `0`, `Number.MAX_SAFE_INTEGER`, `{}`, `[]`, `Object.create(null)`), além de análise estática de resiliência (`JSON.parse` sem `try/catch`, rotas assíncronas sem tratamento, dereference profundo e divisões sem guarda).
+  3. 🎨 **`qa-ui-palette` (`agents/qa-ui-palette.agent.md`):** Audita o código de UI contra a paleta de cores oficial do projeto (`UI_OFF_PALETTE_COLOR`) e valida contraste Dual-Theme Light/Dark (`UI_LIGHT_MODE_WHITE_TEXT`, `UI_GENERIC_AI_GRADIENT`).
+  4. 🔘 **`qa-button-action` (`agents/qa-button-action.agent.md`):** Inspeciona todos os `<button>`, `<Button>`, `<IconButton>` e links interativos, bloqueando botões sem ação (`DEAD_BUTTON_NO_ACTION`), handlers vazios (`onClick={() => {}}` / `console.log` -> `DEAD_BUTTON_EMPTY_HANDLER`) e âncoras mortas (`href="#"` -> `DEAD_ANCHOR_LINK`).
+- **Contexto Estruturado para Agentes de IA (`.code-map/ai-agents-dispatch.json`):** Gera manifesto pronto para despacho simultâneo dos 4 subagentes de IA (`invoke_subagent`) sobre a árvore já estruturada.
+- **Sincronização Final Obrigatória do `code-map`:** Ao concluir os 4 agentes, executa e sincroniza `.code-map/INDEX.md`, `.code-map/graph.json` e `.code-map/audit-full-report.json`.
+
+### ⚡ 2. Integração Nativa no `/orch` (`orch qa` & `--qa`) e Blindagem 100/100 do Monorepo
+- **Novos atalhos no CLI Mestre (`bin/orch.js` & `scripts/orch-pipeline.js`):**
+  - `node bin/orch.js qa [dir]`: Dispara diretamente a suíte `audit-code-full` e sincroniza o `.code-map/`.
+  - `node bin/orch.js run [dir] --qa`: Executa S1 (Cartografia) + S8 (`audit-code-full`) dentro do pipeline unificado.
+- **Blindagem Defensiva do Núcleo Compartilhado (`shared/suite-core.js` & `shared/style-blocks.js`):** Todas as funções exportadas do ecossistema foram blindadas contra entradas nulas, tipos primitivos inesperados e objetos sem protótipo (`Object.create(null)`), atingindo **Score Global 100/100 (0 alertas)** em 1.310 execuções reais em VM.
+
+---
+
 ## [2.7.0] - 2026-10-23 — 🎯 Precisão Antes de Volume: CVE ciente do lockfile, OSV.dev, Baseline, `--changed`, Supressão com Motivo, SARIF Universal & Cartografia Incremental
 
 ### 🐛 1. Correções Confirmadas (bugs da v2.6.0)

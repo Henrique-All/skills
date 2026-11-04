@@ -1,6 +1,6 @@
-# ⚡ Enterprise AI Suite (v2.7.0)
+# ⚡ Enterprise AI Suite (v2.8.0)
 
-> **Plugin Oficial, Enxame de 7 Subagentes Especialistas, 9 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
+> **Plugin Oficial, Enxame de 11 Subagentes Especialistas, 10 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
@@ -11,7 +11,15 @@
 
 ---
 
-## 🆕 Novidades da v2.7.0 — Precisão Antes de Volume
+## 🆕 Novidades da v2.8.0 — Audit-Code-Full (QA Brute-Force 360° com 4 Agentes Paralelos)
+
+| Recurso | O que resolve | Onde |
+| :--- | :--- | :--- |
+| **Nova Skill `audit-code-full` (`orch qa`)** | QA 360° que percorre todo o código, executa fuzzing brute-force real em `node:vm`, valida paleta de cores UI, testa se todos os botões têm ação real e gera o `.code-map/INDEX.md` completo ao final | `audit-code-full` |
+| **Enxame de 4 Subagentes de QA em Paralelo** | `qa-crawler` (6 camadas), `qa-bruteforce` (fuzzing VM + AST), `qa-ui-palette` (tokens de cor & Dual-Theme) e `qa-button-action` (detecção de botões mortos/vazios) | `agents/qa-*.agent.md` |
+| **Despacho Híbrido para Subagentes de IA** | Gera `.code-map/ai-agents-dispatch.json` com o código já estruturado para revisão semântica paralela pelos 4 agentes de IA | `audit-code-full` |
+
+## 🆕 Destaques da v2.7.0 — Precisão Antes de Volume
 
 | Recurso | O que resolve | Onde |
 | :--- | :--- | :--- |

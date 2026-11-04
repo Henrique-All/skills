@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/orch-pipeline.js
- * Pipeline de Execução Unificada do Enterprise AI Suite (v2.7.0)
+ * Pipeline de Execução Unificada do Enterprise AI Suite (v2.8.0)
  * 
  * Executa determinística e compulsoriamente auditorias locais (Node.js na CPU):
  * - S1: Cartografia 360° (AST & Nós) — SEMPRE OBRIGATÓRIA (Fundação)
@@ -12,10 +12,11 @@
  *   --sec / --security   -> Roda S1 + S2 (DevSecOps 18 Pilares OWASP)
  *   --api / --routes     -> Roda S1 + S2 (Segurança) + S6 (Falsifier Concorrência)
  *   --test               -> Roda S1 + Test Forge (Test Audit)
- *   (Sem flags)          -> Roda TODAS as 6 skills completas (Governança Total)
+ *   --qa                 -> Roda S1 + Audit-Code-Full (QA Brute-Force 4 Agentes + Code-Map)
+ *   (Sem flags)          -> Roda TODAS as disciplinas completas (Governança Total)
  * 
  * Uso:
- *   node scripts/orch-pipeline.js [projectDir] "[demanda]" [--front|--db|--sec|--mobile|--test]
+ *   node scripts/orch-pipeline.js [projectDir] "[demanda]" [--front|--db|--sec|--mobile|--test|--qa]
  */
 
 const fs = require('fs');
@@ -32,10 +33,11 @@ const hasDb = args.includes('--db') || args.includes('--database');
 const hasSec = args.includes('--sec') || args.includes('--security');
 const hasApi = args.includes('--api') || args.includes('--routes');
 const hasTest = args.includes('--test');
+const hasQa = args.includes('--qa');
 
-const isTargeted = hasFront || hasMobile || hasDb || hasSec || hasApi || hasTest;
+const isTargeted = hasFront || hasMobile || hasDb || hasSec || hasApi || hasTest || hasQa;
 
-// v2.7.0: flags repassadas a todos os auditores (modo incremental, baseline e consulta OSV online)
+// v2.7.0+: flags repassadas a todos os auditores (modo incremental, baseline e consulta OSV online)
 const passThroughFlags = args
   .filter((a) => a === '--changed' || a === '--online' || a === '--update-baseline' || a === '--baseline' || a.startsWith('--baseline='))
   .map((a) => ' ' + a)
@@ -73,7 +75,7 @@ const projectDir = targetArg ? path.resolve(targetArg) : process.cwd();
 const demand = args.filter((a) => a !== targetArg && !a.startsWith('--')).join(' ') || 'Orquestração e Desenvolvimento do Projeto';
 
 console.log('===============================================================');
-console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA (v2.7.0)');
+console.log('⚡ ENTERPRISE AI SUITE — PIPELINE DE VALIDAÇÃO UNIFICADA (v2.8.0)');
 console.log('===============================================================');
 console.log(`📁 Projeto Alvo: ${projectDir}`);
 console.log(`🎯 Demanda: "${demand}"`);
@@ -84,7 +86,8 @@ if (isTargeted) {
     hasDb && '--db (Banco/Índices)',
     hasSec && '--sec (OWASP/RBAC)',
     hasApi && '--api (Contratos/Concorrência)',
-    hasTest && '--test (Testes Reais)'
+    hasTest && '--test (Testes Reais)',
+    hasQa && '--qa (QA Brute-Force 4 Agentes)'
   ].filter(Boolean).join(', ');
   console.log(`🎯 Modo Filtrado via Flag: ${activeFlags}`);
 } else {
@@ -100,7 +103,8 @@ const results = {
   mobile: { status: isTargeted && !hasMobile && !hasFront ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 },
   database: { status: isTargeted && !hasDb ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, missingIndexes: 0, exitCode: 0 },
   falsifier: { status: isTargeted && !hasDb && !hasApi ? 'IGNORADO' : 'PENDENTE', vectorsFailed: 0, exitCode: 0 },
-  testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 }
+  testForge: { status: isTargeted && !hasTest ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 },
+  qaFull: { status: isTargeted && !hasQa ? 'IGNORADO' : 'PENDENTE', score: 100, issues: 0, exitCode: 0 }
 };
 
 const collectedFindings = [];
@@ -110,7 +114,7 @@ function pushFindings(sourceLabel, items = []) {
     collectedFindings.push({
       source: sourceLabel,
       severity: (item.severity || 'MEDIUM').toUpperCase(),
-      rule: item.rule || item.id || 'RULE',
+      rule: item.rule || item.ruleId || item.id || 'RULE',
       file: item.file || '-',
       line: item.line || 1,
       message: item.message || ''
@@ -119,10 +123,9 @@ function pushFindings(sourceLabel, items = []) {
 }
 
 // 1. CARTOGRAFIA 360° (SEMPRE OBRIGATÓRIA - FUNDAÇÃO ARQUITETURAL)
-process.stdout.write('🗺️  [1/7] Executando Cartografia 360° & AST (Fundação)... ');
+process.stdout.write('🗺️  [1/8] Executando Cartografia 360° & AST (Fundação)... ');
 const cartScript = resolveSkillScript('repo-cartographer', 'scripts', 'cartographer.js');
 if (!cartScript) {
-  // Sem o cartógrafo, um graph.json antigo não é apresentado como resultado desta execução
   markNotRun(results.cartography, 'repo-cartographer', 'cartographer.js');
 } else {
   try {
@@ -153,7 +156,7 @@ function parseSecurityOutput(raw) {
 }
 
 if (!isTargeted || hasSec || hasApi) {
-  process.stdout.write('🔒 [2/7] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
+  process.stdout.write('🔒 [2/8] Executando Auditoria DevSecOps (18 Pilares OWASP)... ');
   const secScript = resolveSkillScript('devsecops-audit', 'scripts', 'audit.js');
   if (!secScript) {
     markNotRun(results.security, 'devsecops-audit', 'audit.js');
@@ -176,12 +179,12 @@ if (!isTargeted || hasSec || hasApi) {
     }
   }
 } else {
-  console.log('🔒 [2/7] Auditoria DevSecOps... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🔒 [2/8] Auditoria DevSecOps... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 3. UI CRAFTSMAN (CRAFT AUDIT)
 if (!isTargeted || hasFront) {
-  process.stdout.write('🎨 [3/7] Executando Auditoria de Design Engineering (Anti-Slop)... ');
+  process.stdout.write('🎨 [3/8] Executando Auditoria de Design Engineering (Anti-Slop)... ');
   const craftScript = resolveSkillScript('frontend-craftsman', 'scripts', 'craft-audit.js');
   if (!craftScript) {
     markNotRun(results.uiCraft, 'frontend-craftsman', 'craft-audit.js');
@@ -213,12 +216,12 @@ if (!isTargeted || hasFront) {
     }
   }
 } else {
-  console.log('🎨 [3/7] Design Engineering... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🎨 [3/8] Design Engineering... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 4. MOBILE CONVERTER (MOBILE AUDIT)
 if (!isTargeted || hasMobile || hasFront) {
-  process.stdout.write('📱 [4/7] Executando Auditoria de Ergonomia Mobile (44px+, dvh)... ');
+  process.stdout.write('📱 [4/8] Executando Auditoria de Ergonomia Mobile (44px+, dvh)... ');
   const mobScript = resolveSkillScript('mobile-converter', 'scripts', 'mobile-audit.js');
   if (!mobScript) {
     markNotRun(results.mobile, 'mobile-converter', 'mobile-audit.js');
@@ -250,7 +253,7 @@ if (!isTargeted || hasMobile || hasFront) {
     }
   }
 } else {
-  console.log('📱 [4/7] Ergonomia Mobile... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('📱 [4/8] Ergonomia Mobile... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 5. BANCO DE DADOS (DB SENTINEL)
@@ -270,7 +273,7 @@ function parseDbOutput(raw) {
 }
 
 if (!isTargeted || hasDb) {
-  process.stdout.write('🗄️  [5/7] Executando Auditoria de Banco de Dados & Índices... ');
+  process.stdout.write('🗄️  [5/8] Executando Auditoria de Banco de Dados & Índices... ');
   const dbScript = resolveSkillScript('db-sentinel', 'scripts', 'db-audit.js');
   if (!dbScript) {
     markNotRun(results.database, 'db-sentinel', 'db-audit.js');
@@ -293,7 +296,7 @@ if (!isTargeted || hasDb) {
     }
   }
 } else {
-  console.log('🗄️  [5/7] Banco de Dados & Índices... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🗄️  [5/8] Banco de Dados & Índices... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 6. ADVERSARY FALSIFIER (8 VETORES)
@@ -312,7 +315,7 @@ function parseFalsifierOutput(out) {
 }
 
 if (!isTargeted || hasDb || hasApi) {
-  process.stdout.write('⚡ [6/7] Executando Falsifier (8 Vetores de Estresse Concorrente)... ');
+  process.stdout.write('⚡ [6/8] Executando Falsifier (8 Vetores de Estresse Concorrente)... ');
   const falsifyScript = resolveSkillScript('hybrid-orchestrator', 'scripts', 'falsify.js');
   if (!falsifyScript) {
     markNotRun(results.falsifier, 'hybrid-orchestrator', 'falsify.js');
@@ -335,12 +338,12 @@ if (!isTargeted || hasDb || hasApi) {
     }
   }
 } else {
-  console.log('⚡ [6/7] Adversary Falsifier... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('⚡ [6/8] Adversary Falsifier... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // 7. TEST FORGE (QUALIDADE DE TESTES & ANTI-MOCK SLOP)
 if (!isTargeted || hasTest) {
-  process.stdout.write('🧪 [7/7] Executando Test Forge (Auditoria Anti-Mock Slop)... ');
+  process.stdout.write('🧪 [7/8] Executando Test Forge (Auditoria Anti-Mock Slop)... ');
   const testScript = resolveSkillScript('test-forge', 'scripts', 'test-audit.js');
   if (!testScript) {
     markNotRun(results.testForge, 'test-forge', 'test-audit.js');
@@ -366,17 +369,49 @@ if (!isTargeted || hasTest) {
     }
   }
 } else {
-  console.log('🧪 [7/7] Test Forge (Anti-Mock Slop)... ⏭️  Ignorada (flag direcionada ativa)');
+  console.log('🧪 [7/8] Test Forge (Anti-Mock Slop)... ⏭️  Ignorada (flag direcionada ativa)');
+}
+
+// 8. AUDIT-CODE-FULL (QA BRUTE-FORCE 4 AGENTES + CODE-MAP)
+if (!isTargeted || hasQa) {
+  process.stdout.write('🕵️‍♂️ [8/8] Executando Audit-Code-Full (QA Brute-Force 4 Agentes)... ');
+  const qaScript = resolveSkillScript('audit-code-full', 'scripts', 'audit-full.js');
+  if (!qaScript) {
+    markNotRun(results.qaFull, 'audit-code-full', 'audit-full.js');
+  } else {
+    try {
+      const raw = execSync(`node "${qaScript}" "${projectDir}" --json`, { cwd: projectDir, stdio: 'pipe' }).toString();
+      const data = JSON.parse(raw);
+      results.qaFull.score = data.summary?.globalScore ?? 100;
+      results.qaFull.issues = data.summary?.totalFindings ?? 0;
+      results.qaFull.status = data.summary?.passed ? 'APROVADO' : 'ATENÇÃO';
+      results.qaFull.exitCode = 0;
+      pushFindings('🕵️‍♂️ QA Brute-Force', data.findings || []);
+      console.log(`✅ Score: ${results.qaFull.score}/100 (${results.qaFull.issues} apontamentos)`);
+    } catch (e) {
+      try {
+        const raw = e.stdout ? e.stdout.toString() : '';
+        const data = JSON.parse(raw);
+        results.qaFull.score = data.summary?.globalScore ?? 0;
+        results.qaFull.issues = data.summary?.totalFindings ?? 0;
+        results.qaFull.status = results.qaFull.score >= 70 ? 'ATENÇÃO' : 'CRÍTICO';
+        results.qaFull.exitCode = hasQa ? (e.status ?? 1) : 0;
+        pushFindings('🕵️‍♂️ QA Brute-Force', data.findings || []);
+        console.log(`⚠️ Score: ${results.qaFull.score}/100 (${results.qaFull.issues} apontamentos)`);
+      } catch {
+        results.qaFull.status = 'FALHA';
+        console.log('❌ Falha na execução do audit-full');
+      }
+    }
+  }
+} else {
+  console.log('🕵️‍♂️ [8/8] Audit-Code-Full (QA 4 Agentes)... ⏭️  Ignorada (flag direcionada ativa)');
 }
 
 // Código de saída do pipeline (política 0/1/2):
-//   2 = alguma etapa não executou (script ausente) ou falhou (saída ilegível)
-//   1 = todas rodaram, mas algum auditor bloqueou pela própria regra (exit > 0)
-//   0 = todas rodaram e nada bloqueou
-// IGNORADO (flag), SEM SCHEMA, SEM TESTES e ALERTA da cartografia não contam como falha.
 const stepResults = [
   results.cartography, results.security, results.uiCraft, results.mobile,
-  results.database, results.falsifier, results.testForge
+  results.database, results.falsifier, results.testForge, results.qaFull
 ];
 const incompleteSteps = stepResults.filter((r) => r.status === NOT_RUN || r.status === 'FALHA' || r.status === 'PENDENTE').length;
 const blockingSteps = stepResults.filter((r) => (r.exitCode || 0) > 0).length;
@@ -408,7 +443,6 @@ if (topFindings.length > 0) {
 const planDir = path.join(projectDir, '.plan');
 if (!fs.existsSync(planDir)) fs.mkdirSync(planDir, { recursive: true });
 
-// Etapa ignorada por flag, não executada ou com falha não exibe os valores padrão (score 100, 0 achados)
 function metricCell(r, text) {
   if (r.status === 'IGNORADO') return 'Bypass via Flag';
   if (r.status === NOT_RUN) return 'Não executado';
@@ -428,7 +462,7 @@ function quadrantValue(r, label, text) {
   return text;
 }
 
-const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2.7.0)
+const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2.8.0)
 
 > **Demanda:** "${demand}"  
 > **Projeto:** \`${path.basename(projectDir)}\`  
@@ -449,6 +483,7 @@ const planMd = `# 🎯 Plano de Engenharia Unificado — Enterprise AI Suite (v2
 | 🗄️ **DB Sentinel** | **${results.database.status}** | ${metricCell(results.database, `Score: ${results.database.score}/100`)} | ${diagnosisCell(results.database, `${results.database.missingIndexes} FKs sem índice (${results.database.issues} alertas totais)`)} |
 | ⚡ **Adversary Falsifier** | **${results.falsifier.status}** | ${metricCell(results.falsifier, `${results.falsifier.vectorsFailed} vetores`)} | ${diagnosisCell(results.falsifier, '8 vetores: concorrência, Lost Update, N+1, memory leaks e transações')} |
 | 🧪 **Test Forge** | **${results.testForge.status}** | ${metricCell(results.testForge, `Score: ${results.testForge.score}/100`)} | ${diagnosisCell(results.testForge, `${results.testForge.issues} alertas de mocks excessivos, .only ou sleeps fixos`)} |
+| 🕵️‍♂️ **Audit-Code-Full (QA)** | **${results.qaFull.status}** | ${metricCell(results.qaFull, `Score: ${results.qaFull.score}/100`)} | ${diagnosisCell(results.qaFull, `${results.qaFull.issues} alertas nos 4 agentes (Crawler, Brute-Force VM, UI Palette, Buttons)`)} |
 ${topFindingsSection}
 ---
 

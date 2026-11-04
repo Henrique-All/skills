@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.7.0)
+ * scripts/test-all.js - Validador Universal do Monorepo (Enterprise AI Suite v2.8.0)
  * Executa testes de integridade das skills, do Plugin oficial, dos Subagentes e dos Hooks.
  */
 
@@ -9,7 +9,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.7.0');
+console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.8.0');
 console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
@@ -127,7 +127,11 @@ const expectedSubagents = [
   'falsifier.agent.md',
   'security-auditor.agent.md',
   'db-sentinel.agent.md',
-  'test-engineer.agent.md'
+  'test-engineer.agent.md',
+  'qa-crawler.agent.md',
+  'qa-bruteforce.agent.md',
+  'qa-ui-palette.agent.md',
+  'qa-button-action.agent.md'
 ];
 
 for (const agentFile of expectedSubagents) {

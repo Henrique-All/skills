@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * bin/orch.js
- * CLI Master do Enterprise AI Suite (v2.7.0)
- * Permite acionar diagnósticos, inicialização de projetos, testes e trocas de versão.
+ * CLI Master do Enterprise AI Suite (v2.8.0)
+ * Permite acionar diagnósticos, inicialização de projetos, testes, QA brute-force e trocas de versão.
  */
 
 const { spawn } = require('child_process');
@@ -19,36 +19,47 @@ const auditCandidates = [
   path.join(rootDir, 'skills', 'devsecops-audit', 'scripts', 'audit.js')
 ];
 
+const qaCandidates = [
+  path.join(rootDir, 'audit-code-full', 'scripts', 'audit-full.js'),
+  path.join(rootDir, 'skills', 'audit-code-full', 'scripts', 'audit-full.js')
+];
+
 const commands = {
   run: path.join(rootDir, 'scripts', 'orch-pipeline.js'),
   doctor: path.join(rootDir, 'scripts', 'doctor.js'),
   init: path.join(rootDir, 'scripts', 'init.js'),
   switch: path.join(rootDir, 'scripts', 'switch-version.js'),
   test: path.join(rootDir, 'scripts', 'test-all.js'),
-  audit: auditCandidates.find((c) => fs.existsSync(c)) || null
+  audit: auditCandidates.find((c) => fs.existsSync(c)) || null,
+  qa: qaCandidates.find((c) => fs.existsSync(c)) || null
 };
-const searchedPaths = { audit: auditCandidates };
+const searchedPaths = {
+  audit: auditCandidates,
+  qa: qaCandidates
+};
 
 function printHelp() {
   console.log(`
-⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.7.0)
+⚡ ENTERPRISE AI SUITE — CLI MASTER (v2.8.0)
 
 Uso:
   orch <comando> [opções]
   node bin/orch.js <comando> [opções]
 
 Comandos Disponíveis:
-  🚀 run [dir] "[meta]" Executa o pipeline unificado de todas as 6 skills (0 tokens)
+  🚀 run [dir] "[meta]" Executa o pipeline unificado de todas as skills (0 tokens)
   🩺 doctor            Executa diagnóstico completo de ambiente e subagentes
   ⚙️  init              Inicializa e calibra o projeto detectando a stack
   🔄 switch [versao]   Troca a versão da suite sem precisar clonar via git
   🧪 test              Roda a bateria de testes automatizados do ecossistema
   🔒 audit             Executa a auditoria DevSecOps dos 18 pilares OWASP
+  🕵️‍♂️ qa [dir]          Executa a auditoria QA Brute-Force (4 Agentes + Code-Map)
 
 Exemplos:
   orch doctor
+  orch qa .
+  orch run . --qa
   orch init --force
-  orch switch v2.2.0-beta.1
 `);
 }
 

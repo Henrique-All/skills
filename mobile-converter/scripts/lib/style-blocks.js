@@ -24,6 +24,7 @@ const MARKUP_EXTS = new Set(['.html', '.vue', '.svelte']);
 // ---------------------------------------------------------------------------
 
 function buildLineIndex(text) {
+  if (typeof text !== 'string') return [0];
   const starts = [0];
   for (let i = 0; i < text.length; i++) {
     if (text.charCodeAt(i) === 10) starts.push(i + 1);
@@ -32,6 +33,7 @@ function buildLineIndex(text) {
 }
 
 function lineOf(lineIndex, offset) {
+  if (!Array.isArray(lineIndex) || lineIndex.length === 0) return 1;
   let lo = 0;
   let hi = lineIndex.length - 1;
   while (lo < hi) {
@@ -120,6 +122,7 @@ function readTemplateBody(src, start) {
 
 // Cabeçalhos de bloco abertos em uma posição do CSS (ex.: ['@media (max-width: 768px)']).
 function headerChainAt(css, pos) {
+  if (typeof css !== 'string') return [];
   const stack = [];
   let buf = '';
   for (let i = 0; i < pos && i < css.length; i++) {
@@ -152,7 +155,8 @@ function componentNameBefore(src, offset) {
 }
 
 function extractStyleSources(content, ext) {
-  const lower = (ext || '').toLowerCase();
+  if (typeof content !== 'string') return [];
+  const lower = (typeof ext === 'string' ? ext : '').toLowerCase();
   const sources = [];
 
   if (STYLE_FILE_EXTS.has(lower)) {
@@ -234,6 +238,9 @@ function newBlock(header, parent, line) {
 }
 
 function parseBlocks(source, lineIndex) {
+  if (!source || typeof source !== 'object' || typeof source.css !== 'string') {
+    return newBlock('', null, 1);
+  }
   const { css, startOffset } = source;
   const baseLine = lineOf(lineIndex, startOffset);
   const localIndex = buildLineIndex(css);
@@ -322,11 +329,15 @@ function parseBlocks(source, lineIndex) {
 // ---------------------------------------------------------------------------
 
 function walk(block, fn, depth = 0) {
+  if (!block || typeof block !== 'object' || typeof fn !== 'function') return;
   fn(block, depth);
-  for (const child of block.children) walk(child, fn, depth + 1);
+  if (Array.isArray(block.children)) {
+    for (const child of block.children) walk(child, fn, depth + 1);
+  }
 }
 
 function getDecls(block, prop) {
+  if (!block || !Array.isArray(block.decls)) return [];
   return block.decls.filter((d) => d.prop === prop);
 }
 
@@ -336,6 +347,7 @@ function getDecl(block, prop) {
 }
 
 function ancestors(block) {
+  if (!block || typeof block !== 'object') return [];
   const list = [];
   let p = block.parent;
   while (p) { list.push(p); p = p.parent; }
@@ -343,14 +355,16 @@ function ancestors(block) {
 }
 
 function isMediaHeader(header) {
-  return /^@media\b/i.test(header || '');
+  if (typeof header !== 'string') return false;
+  return /^@media\b/i.test(header);
 }
 
 // Todos os cabeçalhos que envolvem o bloco, incluindo o contexto herdado de css`` aninhado.
 function headerChain(block) {
+  if (!block || typeof block !== 'object') return [];
   const chain = [block, ...ancestors(block)];
   const root = chain[chain.length - 1];
-  return [...chain.map((b) => b.header), ...(root.contextHeaders || [])];
+  return [...chain.map((b) => b.header || ''), ...(root.contextHeaders || [])];
 }
 
 // Bloco está dentro de um @media max-width (contexto mobile)?
@@ -363,19 +377,21 @@ function inDesktopOnlyMedia(block) {
 }
 
 function containsInterp(block) {
+  if (!block || typeof block !== 'object') return false;
   let found = false;
   walk(block, (b) => {
-    if (b.hasLooseInterp || b.decls.some((d) => d.dynamic)) found = true;
+    if (b.hasLooseInterp || (Array.isArray(b.decls) && b.decls.some((d) => d.dynamic))) found = true;
   });
   return found;
 }
 
 // Diretiva de supressão: /* audit-ignore RULE_ID: motivo */ ou // audit-ignore RULE_ID
 function isIgnored(block, ruleId) {
+  if (!block || typeof block !== 'object' || typeof ruleId !== 'string') return false;
   const chain = [block, ...ancestors(block)];
   return chain.some((b) =>
-    b.comments.some((c) => {
-      const m = c.match(/audit-ignore\s+([A-Z_,\s]+|all)/i);
+    Array.isArray(b.comments) && b.comments.some((c) => {
+      const m = String(c).match(/audit-ignore\s+([A-Z_,\s]+|all)/i);
       if (!m) return false;
       const ids = m[1].split(/[\s,]+/).filter(Boolean).map((s) => s.toUpperCase());
       return ids.includes('ALL') || ids.includes(ruleId);
@@ -384,6 +400,7 @@ function isIgnored(block, ruleId) {
 }
 
 function lineIgnored(lines, index, ruleId) {
+  if (!Array.isArray(lines) || typeof index !== 'number' || typeof ruleId !== 'string') return false;
   const here = lines[index] || '';
   const prev = lines[index - 1] || '';
   const re = new RegExp(`audit-ignore\\s+[A-Z_,\\s]*\\b(${ruleId}|all)\\b`, 'i');
@@ -401,8 +418,8 @@ const NAMED = {
 };
 
 function parseColor(str) {
-  if (!str) return null;
-  const s = String(str).trim().toLowerCase();
+  if (typeof str !== 'string' || !str) return null;
+  const s = str.trim().toLowerCase();
   let m = s.match(/#([0-9a-f]{3,8})\b/);
   if (m) {
     let h = m[1];
@@ -429,10 +446,11 @@ function parseColor(str) {
 }
 
 function allColors(str) {
+  if (typeof str !== 'string' || !str) return [];
   const out = [];
   const re = /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi;
   let m;
-  while ((m = re.exec(str || ''))) {
+  while ((m = re.exec(str))) {
     const c = parseColor(m[0]);
     if (c) out.push(c);
   }
@@ -440,6 +458,7 @@ function allColors(str) {
 }
 
 function luminance(c) {
+  if (!c || typeof c !== 'object' || typeof c.r !== 'number') return 0;
   const f = (v) => {
     const x = v / 255;
     return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
@@ -448,12 +467,14 @@ function luminance(c) {
 }
 
 function contrastRatio(a, b) {
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return 1;
   const la = luminance(a);
   const lb = luminance(b);
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
 function hsl(c) {
+  if (!c || typeof c !== 'object' || typeof c.r !== 'number') return { h: 0, s: 0, l: 0 };
   const r = c.r / 255, g = c.g / 255, b = c.b / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   const l = (max + min) / 2;
@@ -468,16 +489,16 @@ function hsl(c) {
 }
 
 function isWhiteish(c) {
-  return !!c && c.a >= 0.6 && luminance(c) >= 0.8;
+  return !!c && typeof c === 'object' && c.a >= 0.6 && luminance(c) >= 0.8;
 }
 
 // Superfície translúcida branca de baixa opacidade: some no fundo claro.
 function isGhostWhite(c) {
-  return !!c && c.r >= 240 && c.g >= 240 && c.b >= 240 && c.a > 0 && c.a <= 0.15;
+  return !!c && typeof c === 'object' && c.r >= 240 && c.g >= 240 && c.b >= 240 && c.a > 0 && c.a <= 0.15;
 }
 
 function toPx(value) {
-  if (!value) return null;
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
   const m = String(value).trim().match(/^(-?[\d.]+)(px|rem|em)?$/);
   if (!m) return null;
   const n = parseFloat(m[1]);
@@ -488,7 +509,7 @@ function toPx(value) {
 
 // Conta trilhas de grid-template-columns; retorna { count, hasFixed, hasFlexible, equal }
 function analyzeTracks(value) {
-  if (!value) return null;
+  if (typeof value !== 'string' || !value) return null;
   const v = value.trim();
   if (/auto-fill|auto-fit/.test(v)) return { count: 0, hasFixed: false, hasFlexible: true, equal: true, auto: true };
   const rep = v.match(/^repeat\(\s*(\d+)\s*,\s*([^)]+(?:\([^)]*\))?[^)]*)\)$/);
@@ -550,6 +571,7 @@ function literalValue(raw) {
 }
 
 function extractInlineStyles(content, lineIndex) {
+  if (typeof content !== 'string') return [];
   const results = [];
   const re = /style=\{\{/g;
   let m;
@@ -597,6 +619,7 @@ function extractInlineStyles(content, lineIndex) {
 // Extrai valores de className="..." / className={`...`} / className={cn(...)} / class="...".
 // Retorna { value, line, endLine, tag } onde tag é o elemento JSX/HTML dono do atributo.
 function extractClassAttrs(content, lineIndex) {
+  if (typeof content !== 'string') return [];
   const out = [];
   const re = /\b(className|class)\s*=\s*/g;
   let m;
@@ -631,7 +654,8 @@ function extractClassAttrs(content, lineIndex) {
 
 // Tokens de classe (ignora aspas, chaves e crases; preserva colchetes do Tailwind arbitrário).
 function classTokens(value) {
-  return (String(value || '').match(/[^\s'"`{}]+/g) || [])
+  if (typeof value !== 'string') return [];
+  return (value.match(/[^\s'"`{}]+/g) || [])
     .map((t) => t.replace(/^[(,]+|[),]+$/g, ''))
     .filter(Boolean);
 }

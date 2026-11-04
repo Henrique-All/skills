@@ -107,7 +107,11 @@ const expectedAgents = [
   'falsifier.agent.md',
   'security-auditor.agent.md',
   'db-sentinel.agent.md',
-  'test-engineer.agent.md'
+  'test-engineer.agent.md',
+  'qa-crawler.agent.md',
+  'qa-bruteforce.agent.md',
+  'qa-ui-palette.agent.md',
+  'qa-button-action.agent.md'
 ];
 
 const agentsDir = path.join(rootDir, 'agents');
@@ -120,7 +124,7 @@ if (fs.existsSync(agentsDir)) {
   });
 
   if (missingAgents.length === 0) {
-    report('Subagentes', `Enxame de 7 Subagentes (agents/)`, 'PASS', 'Todos os 7 subagentes especialistas presentes com isolamento');
+    report('Subagentes', `Enxame de ${expectedAgents.length} Subagentes (agents/)`, 'PASS', `Todos os ${expectedAgents.length} subagentes especialistas presentes com isolamento`);
   } else {
     report('Subagentes', 'Enxame de Subagentes', 'FAIL', `Ausentes: ${missingAgents.join(', ')}`);
   }
@@ -128,8 +132,9 @@ if (fs.existsSync(agentsDir)) {
   report('Subagentes', 'Diretório agents/', 'FAIL', 'Pasta agents/ não encontrada');
 }
 
-// 5. As 9 Skills do Ecossistema
+// 5. As 10 Skills do Ecossistema
 const expectedSkills = [
+  'audit-code-full',
   'frontend-craftsman',
   'mobile-converter',
   'hybrid-orchestrator',
@@ -148,9 +153,9 @@ expectedSkills.forEach(sk => {
 });
 
 if (skillsOk === expectedSkills.length) {
-  report('Skills', `9 Skills Registradas (${skillsOk}/9)`, 'PASS', 'Todas as 8 skills individuais + comando mestre /orch presentes');
+  report('Skills', `${expectedSkills.length} Skills Registradas (${skillsOk}/${expectedSkills.length})`, 'PASS', `Todas as ${expectedSkills.length - 1} skills individuais + comando mestre /orch presentes`);
 } else {
-  report('Skills', `Skills Registradas (${skillsOk}/9)`, 'WARN', 'Alguma skill pode estar ausente ou com SKILL.md faltante');
+  report('Skills', `Skills Registradas (${skillsOk}/${expectedSkills.length})`, 'WARN', 'Alguma skill pode estar ausente ou com SKILL.md faltante');
 }
 
 // 6. Configurações dos Agentes de IA
