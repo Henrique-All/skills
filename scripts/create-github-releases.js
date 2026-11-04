@@ -217,7 +217,7 @@ function createRelease(rel) {
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         if (res.statusCode === 201) {
-          const json = JSON.parse(data);
+          let json = {}; try { json = JSON.parse(data); } catch { json = {}; }
           console.log(`✅ Release [${rel.tag_name}] criada com sucesso! URL: ${json.html_url}`);
           resolve(json);
         } else if (res.statusCode === 422) {

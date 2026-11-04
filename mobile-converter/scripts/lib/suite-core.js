@@ -105,11 +105,13 @@ function walkFiles(projectDir, { extensions = null, extraIgnores = [], limit = I
 // 3. Contexto de arquivo
 // ---------------------------------------------------------------------------
 function isCliOrTest(filePath, content = '') {
-  const normalized = String(filePath || '').replace(/\\/g, '/');
+  if (typeof filePath !== 'string' || !filePath) return false;
+  const safeContent = typeof content === 'string' ? content : '';
+  const normalized = filePath.replace(/\\/g, '/');
   return (
     /(?:^|\/)(?:scripts|bin|test|tests|__tests__|migrations|prisma|drizzle|fixtures)\//i.test(normalized) ||
     /\.(?:test|spec)\.[cm]?[jt]sx?$/i.test(normalized) ||
-    String(content).startsWith('#!/usr/bin/env node')
+    safeContent.startsWith('#!/usr/bin/env node')
   );
 }
 
@@ -128,7 +130,8 @@ const NON_HANDLER_KEYWORDS = /^\s*(?:if|for|while|switch|catch|return|else)\b/;
  * O bloco 0 (preâmbulo: imports, constantes) recebe startLine 1.
  */
 function splitHandlers(content) {
-  const lines = String(content).split('\n');
+  if (typeof content !== 'string') return [{ startLine: 1, endLine: 1, text: '', isPreamble: false }];
+  const lines = content.split('\n');
   const starts = [];
   lines.forEach((line, idx) => {
     if (NON_HANDLER_KEYWORDS.test(line)) return;
@@ -151,6 +154,7 @@ function splitHandlers(content) {
 // 4. Modo --changed (git)
 // ---------------------------------------------------------------------------
 function getChangedFiles(projectDir) {
+  if (typeof projectDir !== 'string' || !projectDir) return null;
   const root = path.resolve(projectDir);
   try {
     const run = (cmd) => execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString();
@@ -184,17 +188,21 @@ function readLines(absFile) {
 }
 
 function ruleIdOf(f) {
+  if (!f || typeof f !== 'object') return 'UNKNOWN_RULE';
   return f.id || f.rule || f.ruleId || 'UNKNOWN_RULE';
 }
 
 function absFileOf(f, projectDir) {
-  if (!f.file) return null;
-  return path.isAbsolute(f.file) ? f.file : path.resolve(projectDir, f.file);
+  if (!f || typeof f !== 'object' || typeof f.file !== 'string' || !f.file) return null;
+  const safeProj = typeof projectDir === 'string' && projectDir ? projectDir : '.';
+  return path.isAbsolute(f.file) ? f.file : path.resolve(safeProj, f.file);
 }
 
 function fingerprint(f, projectDir) {
-  const abs = absFileOf(f, projectDir);
-  const relFile = abs ? path.relative(projectDir, abs).replace(/\\/g, '/') : String(f.file || '');
+  if (!f || typeof f !== 'object') return '00000000000000000000';
+  const safeProj = typeof projectDir === 'string' && projectDir ? projectDir : '.';
+  const abs = absFileOf(f, safeProj);
+  const relFile = abs ? path.relative(safeProj, abs).replace(/\\/g, '/') : (typeof f.file === 'string' ? f.file : '');
   // Achados sem linha própria (lockfile, tsconfig) informam uma chave estável em fingerprintKey;
   // sem ela, o texto da linha (ou a mensagem) identifica o achado.
   let identity;
@@ -203,7 +211,7 @@ function fingerprint(f, projectDir) {
   } else {
     const lines = abs ? readLines(abs) : null;
     const lineText = lines && f.line ? String(lines[f.line - 1] || '').replace(/\s+/g, ' ').trim() : '';
-    identity = lineText || f.message || '';
+    identity = lineText || (typeof f.message === 'string' ? f.message : '');
   }
   const basis = `${ruleIdOf(f)}|${relFile}|${identity}`;
   return crypto.createHash('sha1').update(basis).digest('hex').slice(0, 20);
@@ -216,6 +224,7 @@ function fingerprint(f, projectDir) {
  * Também aceita `#` como comentário (Python / YAML) e `ALL` como coringa.
  */
 function findInlineSuppression(f, projectDir) {
+  if (!f || typeof f !== 'object') return null;
   const abs = absFileOf(f, projectDir);
   const lines = abs ? readLines(abs) : null;
   if (!lines || !f.line) return null;
@@ -236,6 +245,7 @@ function findInlineSuppression(f, projectDir) {
 }
 
 function loadBaseline(baselinePath) {
+  if (typeof baselinePath !== 'string' || !baselinePath) return null;
   try {
     const data = JSON.parse(fs.readFileSync(baselinePath, 'utf-8'));
     return new Set(Array.isArray(data.fingerprints) ? data.fingerprints : []);
@@ -245,10 +255,12 @@ function loadBaseline(baselinePath) {
 }
 
 function writeBaseline(baselinePath, findings, projectDir, toolName) {
+  if (typeof baselinePath !== 'string' || !baselinePath || !Array.isArray(findings)) return;
   let existing = {};
   try { existing = JSON.parse(fs.readFileSync(baselinePath, 'utf-8')); } catch { existing = {}; }
   const tools = existing.tools || {};
-  tools[toolName] = findings.map((f) => fingerprint(f, projectDir));
+  const safeTool = typeof toolName === 'string' && toolName ? toolName : 'suite-tool';
+  tools[safeTool] = findings.map((f) => fingerprint(f, projectDir));
   const all = Array.from(new Set(Object.values(tools).flat())).sort();
   const payload = {
     generator: 'enterprise-ai-suite',
@@ -264,13 +276,19 @@ function writeBaseline(baselinePath, findings, projectDir, toolName) {
 // 6. SARIF 2.1.0
 // ---------------------------------------------------------------------------
 function severityToLevel(sev) {
-  const s = String(sev || '').toUpperCase();
+  const s = typeof sev === 'string' ? sev.toUpperCase() : '';
   if (s === 'CRITICAL' || s === 'HIGH' || s === 'ERROR') return 'error';
   if (s === 'MEDIUM' || s === 'WARNING' || s === 'WARN') return 'warning';
   return 'note';
 }
 
-function toSarif(findings, { toolName, version, projectDir, informationUri = 'https://github.com/Henrique-All/skills' }) {
+function toSarif(findings, opts) {
+  if (!Array.isArray(findings)) return { version: '2.1.0', runs: [] };
+  const safeOpts = opts && typeof opts === 'object' ? opts : {};
+  const toolName = typeof safeOpts.toolName === 'string' ? safeOpts.toolName : 'enterprise-ai-suite';
+  const version = typeof safeOpts.version === 'string' ? safeOpts.version : SUITE_CORE_VERSION;
+  const projectDir = typeof safeOpts.projectDir === 'string' && safeOpts.projectDir ? safeOpts.projectDir : '.';
+  const informationUri = typeof safeOpts.informationUri === 'string' ? safeOpts.informationUri : 'https://github.com/Henrique-All/skills';
   const ruleIds = Array.from(new Set(findings.map(ruleIdOf)));
   return {
     $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
@@ -285,9 +303,9 @@ function toSarif(findings, { toolName, version, projectDir, informationUri = 'ht
             rules: ruleIds.map((id) => ({ id, shortDescription: { text: id } }))
           }
         },
-        results: findings.map((f) => {
+        results: findings.filter((f) => f && typeof f === 'object').map((f) => {
           const abs = absFileOf(f, projectDir);
-          const uri = abs ? path.relative(projectDir, abs).replace(/\\/g, '/') : String(f.file || '');
+          const uri = abs ? path.relative(projectDir, abs).replace(/\\/g, '/') : (typeof f.file === 'string' ? f.file : '');
           return {
             ruleId: ruleIdOf(f),
             level: severityToLevel(f.severity),
@@ -302,7 +320,7 @@ function toSarif(findings, { toolName, version, projectDir, informationUri = 'ht
 }
 
 function writeSarifIfRequested(findings, opts, ctx) {
-  if (!opts.sarif) return null;
+  if (!opts || !opts.sarif) return null;
   const sarif = toSarif(findings, ctx);
   if (typeof opts.sarif === 'string') {
     const out = path.resolve(ctx.projectDir, opts.sarif);
@@ -321,8 +339,15 @@ function writeSarifIfRequested(findings, opts, ctx) {
  * @returns {{ findings, meta }}
  */
 function postProcess(findings, ctx) {
-  const projectDir = path.resolve(ctx.projectDir || process.cwd());
-  const opts = parseCommonArgs(ctx.argv || process.argv.slice(2));
+  if (!ctx || typeof ctx !== 'object') {
+    return {
+      findings: Array.isArray(findings) ? findings : [],
+      meta: { changedOnly: false, suppressed: [], baselined: 0, baselineUpdated: false, sarif: null },
+      opts: {}
+    };
+  }
+  const projectDir = path.resolve(typeof ctx.projectDir === 'string' && ctx.projectDir ? ctx.projectDir : process.cwd());
+  const opts = parseCommonArgs(Array.isArray(ctx.argv) ? ctx.argv : process.argv.slice(2));
   const neverSuppress = typeof ctx.neverSuppress === 'function' ? ctx.neverSuppress : () => false;
   const meta = { changedOnly: false, suppressed: [], baselined: 0, baselineUpdated: false, sarif: null };
 

@@ -1,6 +1,6 @@
 {
   "name": "mobile-converter-skill",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "Engenharia de Adaptação e Responsividade Mobile de Alta Fidelidade (Anti-Mobile Slop)",
   "main": "scripts/mobile-audit.js",
   "scripts": {

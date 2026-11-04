@@ -1,6 +1,6 @@
 {
   "name": "test-forge-skill",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "Engenharia de Testes Automatizados de Alta Fidelidade (Anti-Mock Slop), Testes de Integração e E2E Playwright",
   "main": "scripts/test-audit.js",
   "scripts": {
