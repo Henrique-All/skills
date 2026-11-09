@@ -117,8 +117,31 @@ try {
       '  const parsed = JSON.parse(req.body.rawPayload);',
       '  const customerName = req.body.customer.profile.fullName;',
       '  return res.json({ parsed, customerName });',
+      '}',
+      'export function attemptVmEscape(x) {',
+      '  return Object.constructor("return process")();',
+      '}',
+      'export function hangSync(x) {',
+      '  while (true) {}',
+      '}',
+      'export function hangMicrotask(x) {',
+      '  function spin() { Promise.resolve().then(spin); }',
+      '  spin();',
       '}'
     ].join('\n'),
+    'utf8'
+  );
+
+  // 4. Código de terceiros (vendor/ e .min.js) que NÃO deve ser executado pelo VM fuzzer
+  fs.mkdirSync(path.join(tmpSandbox, 'vendor'), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmpSandbox, 'vendor', 'lib.js'),
+    'export function vendorCrash(x) { throw new Error("VENDOR_SHOULD_NOT_RUN"); }\n',
+    'utf8'
+  );
+  fs.writeFileSync(
+    path.join(tmpSandbox, 'src', 'bundle.min.js'),
+    'export function minCrash(x) { throw new Error("MINIFIED_SHOULD_NOT_RUN"); }\n',
     'utf8'
   );
 
@@ -138,6 +161,16 @@ try {
   const hasNullDeref = report.findings.some((f) => f.ruleId === 'BRUTEFORCE_NULL_DEREFERENCE_RISK');
   if (!hasUnsafeJson || !hasNullDeref) {
     throw new Error('Agente 2 (qa-bruteforce) falhou em detectar JSON.parse sem try/catch ou dereference profundo!');
+  }
+
+  // Verifica que vendor/ e *.min.js NÃO foram executados no fuzzing e que tentativa de escape VM foi bloqueada
+  const executedVendorOrMin = report.findings.some((f) => /VENDOR_SHOULD_NOT_RUN|MINIFIED_SHOULD_NOT_RUN/.test(f.message || ''));
+  if (executedVendorOrMin) {
+    throw new Error('Agente 2 (qa-bruteforce) executou indevidamente código de terceiros (vendor/ ou .min.js)!');
+  }
+  const escapeBlocked = report.findings.some((f) => f.message && f.message.includes('attemptVmEscape') && /Code generation from strings disallowed/i.test(f.message));
+  if (!escapeBlocked) {
+    throw new Error('Agente 2 (qa-bruteforce) não bloqueou codeGeneration (Object.constructor) no contexto VM!');
   }
 
   // Verifica Agente 3: qa-ui-palette
