@@ -288,6 +288,46 @@ try {
       (linkLines[0].match(/rel="noopener noreferrer"/g) || []).length === 1,
     linkLines[0]);
   check('--fix não mexe em linha que não foi acusada', linkLines[1] === linkLine2, linkLines[1]);
+
+  // F. Auto-correções defensivas expandidas (JWT algorithms, CORS wildcard, Stack Leak, Unpinned Dep e Relatório Markdown)
+  const shieldDir = path.join(fixRoot, 'shield');
+  fs.mkdirSync(shieldDir);
+  fs.writeFileSync(path.join(shieldDir, 'package.json'), JSON.stringify({
+    name: 'shield-fixture', version: '1.0.0', dependencies: { express: '*' }
+  }, null, 2));
+  fs.writeFileSync(path.join(shieldDir, 'package-lock.json'), JSON.stringify({
+    name: 'shield-fixture', lockfileVersion: 3,
+    packages: { '': {}, 'node_modules/express': { version: '4.21.2' } }
+  }, null, 2));
+  fs.writeFileSync(path.join(shieldDir, 'server.js'), [
+    'const jwt = require("jsonwebtoken");',
+    'export function setup(app, req, res, token, secret, err) {',
+    '  const corsOpts = { origin: \'*\', credentials: true };',
+    '  const decoded = jwt.verify(token, secret);',
+    '  res.send(err.stack);',
+    '  return { corsOpts, decoded };',
+    '}'
+  ].join('\n'));
+
+  const shieldFix = runAudit(shieldDir, '--fix');
+  const serverAfter = fs.readFileSync(path.join(shieldDir, 'server.js'), 'utf-8');
+  const pkgShieldAfter = JSON.parse(fs.readFileSync(path.join(shieldDir, 'package.json'), 'utf-8'));
+  const remReportPath = path.join(shieldDir, '.code-map', 'security-remediation-report.md');
+
+  check('--fix injeta algorithms: [\'HS256\'] em jwt.verify() e remove achado',
+    !shieldFix.findings.some((f) => f.id === 'RULE_JWT_MISSING_ALGORITHM_OPTION') &&
+      /algorithms:\s*\['HS256'\]/.test(serverAfter));
+  check('--fix corrige origin: "*" com credentials: true e remove achado',
+    !shieldFix.findings.some((f) => f.id === 'CORS_WILDCARD_CREDENTIALS') &&
+      /process\.env\.CORS_ORIGIN/.test(serverAfter));
+  check('--fix substitui res.send(err.stack) por resposta genérica e remove achado',
+    !shieldFix.findings.some((f) => f.id === 'ERROR_STACK_LEAK_IN_RESPONSE') &&
+      /Internal Server Error/.test(serverAfter));
+  check('--fix fixa dependência "*" no package.json usando versão do lockfile',
+    !shieldFix.findings.some((f) => f.id === 'SUPPLY_CHAIN_UNPINNED_DEPENDENCY') &&
+      pkgShieldAfter.dependencies.express === '^4.21.2');
+  check('--fix gera relatório consolidado .code-map/security-remediation-report.md',
+    fs.existsSync(remReportPath) && shieldFix.summary.autoFixedCount >= 4);
 } catch (e) {
   check('Cenários de --fix executados sem exceções', false, e.message);
 } finally {

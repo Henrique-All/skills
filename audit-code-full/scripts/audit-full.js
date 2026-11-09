@@ -135,11 +135,15 @@ function runFinalCodeMap(dir, crawlerReport, bruteReport, uiReport, buttonReport
   }
 
   const graphPath = path.join(codeMapDir, 'graph.json');
+  let graphNodes = [];
+  let graphEdges = [];
   if (fs.existsSync(graphPath)) {
     try {
       const g = JSON.parse(fs.readFileSync(graphPath, 'utf8'));
-      graphNodesCount = (g.nodes || []).length || crawlerReport.filesWalked;
-      graphEdgesCount = (g.edges || []).length;
+      graphNodes = g.nodes || [];
+      graphEdges = g.edges || [];
+      graphNodesCount = graphNodes.length || crawlerReport.filesWalked;
+      graphEdgesCount = graphEdges.length;
       graphCyclesCount = g.metadata?.cyclesFound || 0;
     } catch {}
   } else {
@@ -160,8 +164,36 @@ function runFinalCodeMap(dir, crawlerReport, bruteReport, uiReport, buttonReport
     fs.writeFileSync(graphPath, JSON.stringify(fallbackGraph, null, 2), 'utf8');
   }
 
-  const formatList = (items = []) =>
-    items.length === 0 ? '_Nenhum arquivo nesta camada_' : items.map((i) => `- \`${i}\``).join('\n');
+  const nodeByPath = new Map();
+  graphNodes.forEach((n) => {
+    if (n && n.path) nodeByPath.set(n.path, n);
+  });
+
+  const formatList = (items = []) => {
+    if (items.length === 0) return '_Nenhum arquivo nesta camada_';
+    return items
+      .map((relPath) => {
+        const n = nodeByPath.get(relPath);
+        if (!n) return `- \`${relPath}\``;
+        const lineBadge = n.linesCount ? ` *(${n.linesCount}L)*` : '';
+        const symStr =
+          Array.isArray(n.symbols) && n.symbols.length > 0
+            ? ` — 🎯 ${n.symbols
+                .slice(0, 6)
+                .map((s) => `\`${s.name}:L${s.line}${s.endLine > s.line ? '-' + s.endLine : ''}\``)
+                .join(', ')}`
+            : '';
+        const rtStr =
+          Array.isArray(n.routes) && n.routes.length > 0
+            ? ` — 🛣️ ${n.routes
+                .slice(0, 4)
+                .map((r) => `\`${r.method} ${r.path}:L${r.line}\``)
+                .join(', ')}`
+            : '';
+        return `- \`${relPath}\`${lineBadge}${symStr}${rtStr}`;
+      })
+      .join('\n');
+  };
 
   const routesMd =
     (crawlerReport.routesDiscovered || []).length === 0

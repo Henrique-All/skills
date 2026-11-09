@@ -1,6 +1,6 @@
 {
   "name": "audit-code-full-skill",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "QA Brute-Force 360° com 4 Agentes Paralelos: varredura total do código, teste bruto coisa por coisa, verificação de UI e paleta de cores, auditoria de funcionalidade de botões e execução final do code-map.",
   "main": "scripts/audit-full.js",
   "scripts": {

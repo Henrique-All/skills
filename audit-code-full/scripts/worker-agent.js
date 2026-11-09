@@ -232,7 +232,7 @@ function executeRuntimeFuzzOnFile(content, relPath, fuzzVectors) {
 
     try {
       const context = vm.createContext(sandbox);
-      vm.runInContext(fullFnCode, context, { timeout: 25 });
+      vm.runInContext(fullFnCode, context, { timeout: 100 });
       if (typeof sandbox[fnName] !== 'function') continue;
 
       runtimeResults.functionsExecutedInVm++;
@@ -242,13 +242,17 @@ function executeRuntimeFuzzOnFile(content, relPath, fuzzVectors) {
         runtimeResults.realRuntimeCalls++;
         try {
           sandbox.__arg0 = vec.value;
-          const res = vm.runInContext(`${fnName}(__arg0, __arg0, __arg0)`, context, { timeout: 20 });
+          const res = vm.runInContext(`${fnName}(__arg0, __arg0, __arg0)`, context, { timeout: 80 });
           if (res && typeof res.catch === 'function') {
             res.catch(() => {});
           }
         } catch (err) {
           if (err && err.name === 'ReferenceError') {
             break;
+          }
+          // Funções validadoras (validate*, assert*, ensure*) devem lançar Error de domínio ao rejeitar entradas inválidas
+          if (err && err.name === 'Error' && /^(?:validate|assert|ensure)/i.test(fnName)) {
+            continue;
           }
           if (!crashedForFn) {
             crashedForFn = true;

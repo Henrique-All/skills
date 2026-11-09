@@ -1,337 +1,224 @@
-# ⚡ Enterprise AI Suite (v2.8.0)
+# ⚡ Enterprise AI Suite (v2.8.1)
 
-> **Plugin Oficial, Enxame de 11 Subagentes Especialistas, 10 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
-> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, quebras em produção e vícios de IA com isolamento de contexto e travas de ciclo de vida.
+> 🇧🇷 **[Português](#-português-pt-br)** | 🇺🇸 **[English](#-english-en)**
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
-[![CI Status](https://github.com/Henrique-All/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Henrique-All/skills/actions)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/Henrique-All/skills/ci.yml?label=CI)](https://github.com/Henrique-All/skills/actions)
 [![Branch Protection](https://img.shields.io/badge/master%20branch-protected-success)](https://github.com/Henrique-All/skills/settings/branches)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](package.json)
 
 ---
 
-## 🆕 Novidades da v2.8.0 — Audit-Code-Full (QA Brute-Force 360° com 4 Agentes Paralelos)
+# 🇧🇷 Português (PT-BR)
+
+> **Plugin Oficial, Enxame de 11 Subagentes Especialistas, 10 Skills de Alta Engenharia e Firewall de Segurança no SO.**  
+> Desenvolvido para transformar agentes (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) em engenheiros de software seniores, eliminando alucinações, desperdício de tokens, leituras cegas em cascata e quebras em produção.
+
+---
+
+## 🆕 Novidades da v2.8.0 — QA Brute-Force 360°, Cartografia Cirúrgica por Linha & Auto-Blindagem (`--fix`)
 
 | Recurso | O que resolve | Onde |
 | :--- | :--- | :--- |
-| **Nova Skill `audit-code-full` (`orch qa`)** | QA 360° que percorre todo o código, executa fuzzing brute-force real em `node:vm`, valida paleta de cores UI, testa se todos os botões têm ação real e gera o `.code-map/INDEX.md` completo ao final | `audit-code-full` |
+| **Nova Skill `audit-code-full` (`orch qa`)** | QA 360° movido por **4 Agentes em Paralelo**: percorre todo o código, executa fuzzing brute-force real em `node:vm`, audita a UI e a paleta Dual-Theme, valida se todos os botões têm ação real e gera o `.code-map/INDEX.md` completo ao final | `audit-code-full` |
 | **Enxame de 4 Subagentes de QA em Paralelo** | `qa-crawler` (6 camadas), `qa-bruteforce` (fuzzing VM + AST), `qa-ui-palette` (tokens de cor & Dual-Theme) e `qa-button-action` (detecção de botões mortos/vazios) | `agents/qa-*.agent.md` |
-| **Despacho Híbrido para Subagentes de IA** | Gera `.code-map/ai-agents-dispatch.json` com o código já estruturado para revisão semântica paralela pelos 4 agentes de IA | `audit-code-full` |
+| **Cartografia Cirúrgica com Intervalo de Linhas (`LInício-LFim`)** | O `.code-map/INDEX.md`, `graph.json` e `cartographer.js query <termo>` agora indexam o **total de linhas do arquivo (`242L`)**, o **intervalo exato de cada função/classe (`verifyToken:L42-242`)** e a **linha exata de cada rota HTTP (`GET /download/:filename:L11`)** — acabando com leituras fatiadas às cegas | `repo-cartographer` & `audit-code-full` |
+| **Motor de Auto-Blindagem Defensiva (`audit --fix`)** | Corrige automaticamente em projetos locais: `jwt.verify()` sem `{ algorithms: ['HS256'] }` (inclusive com chamadas aninhadas), CORS wildcard com `credentials: true`, cookies sem `httpOnly/sameSite/secure`, fallback estático de `JWT_SECRET`, vazamento de `err.stack`, Reverse Tabnabbing (`rel="noopener noreferrer"`), CVEs e dependências `*` no `package.json`, além de blindagem do `.gitignore` | `devsecops-audit` |
+| **Relatório Consolidado com Recortes Prontos (`Zero Read-File Hops`)** | Gera `.code-map/security-remediation-report.md` com tabela Antes vs. Depois e **recortes de código (`±6 linhas`, `Lstart-Lend`) prontos para edição direta**, permitindo que a IA aplique `edit_file` sem precisar abrir os arquivos antes | `devsecops-audit` |
 
-## 🆕 Destaques da v2.7.0 — Precisão Antes de Volume
+## 📌 Destaques da v2.7.0 — Precisão Antes de Volume
 
 | Recurso | O que resolve | Onde |
 | :--- | :--- | :--- |
 | **Radar de CVE ciente do lockfile** (`npm`/`pnpm`/`yarn`) | Fim do falso positivo que bloqueava o CI quando o lockfile já tinha a versão corrigida | `devsecops-audit` |
-| **`--online` (OSV.dev, opt-in)** | CVEs do OSV.dev para até 1000 pacotes do lockfile, sem tabela desatualizada (severidade detalhada de até 40 vulnerabilidades; as demais como MEDIUM) | `devsecops-audit` |
-| **`--baseline` / `--update-baseline`** | Adoção em projetos legados: só achados **novos** quebram o build | Todos os auditores |
-| **`--changed`** | Mostra só achados de arquivos alterados ou não rastreados no git (a varredura continua completa) | Todos os auditores |
-| **Supressão inline com motivo** (`// audit-ignore-next-line REGRA: motivo`) | Exceções documentadas no código, sem motivo = ignorada | Todos os auditores |
-| **`--sarif` em todos os auditores** | Achados na aba **Security** do GitHub (job `security-sarif` no CI) | Todos os auditores |
-| **Falsifier por função** | Vetores 2 e 4 avaliam cada rota/função isoladamente (arrow com tipo de retorno e assinaturas em várias linhas ainda caem no bloco vizinho) | `hybrid-orchestrator` |
-| **Cartografia incremental + mapa parcial visível** | Reaproveita nós não modificados, limites maiores e aviso quando o mapa está incompleto | `repo-cartographer` |
-| **Núcleo comum `shared/`** | Uma única implementação de varredura, baseline, supressão e SARIF, copiada para cada skill via `scripts/sync-shared.js` | Monorepo |
-| **SKILL.md enxutos** (`references/` sob demanda) | `hybrid-orchestrator` 28→10 KB, `frontend-craftsman` 20→7 KB de contexto por ativação | Skills |
-
-> Ao editar arquivos em `shared/`, rode `node scripts/sync-shared.js`. O `npm test` falha se alguma cópia ou versão divergir.
-
-## 📌 Referências & Navegação Rápida
-
-- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Antigravity, Claude Code, Cursor e Monorepo
-- 🎛️ [**Ferramental CLI (Doctor & Init)**](#%EF%B8%8F-ferramental-cli-master) — `orch doctor`, `orch init`, `orch switch`
-- 💰 [**Economia Brutal de Tokens (78% a 85%)**](#-efici%C3%AAncia-extrema--economia-de-tokens-78-a-85-de-redu%C3%A7%C3%A3o) — Simulação matemática de 9 turnos
-- 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
-- ⚖️ [**Execução Individual vs. /orch**](#%EF%B8%8F-execu%C3%A7%C3%A3o-individual-vs-comando-mestre-orch-qual-a-diferen%C3%A7a) — Matriz comparativa de decisão
-- 📊 [**Scorecard das 9 Skills (Ecosistema 10.0)**](#-scorecard--notas-t%C3%A9cnicas-das-skills-ecosistema-100) — Tabela geral de notas
-- 🐝 [**Enxame de 7 Subagentes Especialistas**](#-enxame-de-7-subagentes-especialistas-agents) — Isolamento de contexto
-- 🛑 [**Firewall de Segurança Reativo (Hooks)**](#-firewall-de-seguran%C3%A7a-reativo-no-so-hooksjson) — Proteção no nível do SO
-- 🔍 [**Detalhamento Completo das 9 Skills**](#-detalhamento-das-9-skills-e-comandos-cli)
-- 🤝 [**Contribuições & Governança**](#-contribui%C3%A7%C3%B5es--governan%C3%A7a) — CI multi-versão e proteção de branch
-- 🏗️ [**Estrutura do Repositório**](#%EF%B8%8F-estrutura-do-reposit%C3%B3rio)
+| **`--online` (OSV.dev, opt-in)** | CVEs em tempo real via OSV.dev para até 1000 pacotes do lockfile | `devsecops-audit` |
+| **`--baseline` / `--update-baseline` / `--changed`** | Adoção gradual em projetos legados: só achados **novos** ou em arquivos alterados quebram o build | Todos os auditores |
+| **Supressão inline com motivo** (`// audit-ignore-next-line REGRA: motivo`) | Exceções documentadas no código; sem motivo explícito a supressão é ignorada (Pilar 16 nunca é suprimível) | Todos os auditores |
+| **`--sarif` em todos os auditores** | Exportação SARIF v2.1.0 nativa para a aba **Security** do GitHub | Todos os auditores |
+| **Núcleo comum `shared/`** | Implementação unificada de varredura, baseline, supressão e SARIF sincronizada via `node scripts/sync-shared.js` | Monorepo |
 
 ---
 
-## 🎛️ Ferramental CLI Master
-
-O Enterprise AI Suite conta com utilitários CLI determinísticos para máxima produtividade:
+## 🎛️ Ferramental CLI Master (`bin/orch.js`)
 
 ```bash
-# 🩺 Diagnóstico determinístico de saúde do ecossistema e subagentes:
+# 🕵️‍♂️ Executar o QA Brute-Force 360° (4 Agentes em Paralelo + Code-Map Final):
+node bin/orch.js qa .
+# ou dentro do pipeline completo: node bin/orch.js run "Auditoria completa" --qa
+
+# 🛡️ Executar Auditoria de Segurança DevSecOps + Auto-Blindagem Defensiva (--fix):
+node bin/orch.js audit . --fix
+
+# 🗺️ Consultar função, rota ou arquivo com intervalo exato de linhas (Lstart-Lend):
+node repo-cartographer/scripts/cartographer.js query verifyToken .
+
+# 🩺 Diagnóstico determinístico de saúde do ecossistema e dos 11 subagentes:
 npm run doctor
-# ou via CLI: node bin/orch.js doctor
 
-# ⚙️ Autoconfigurar qualquer projeto detectando a stack técnica (Next, Vite, Prisma, Express):
-npm run init:suite
-# ou via CLI: node bin/orch.js init
-
-# 🔄 Trocar de versão ou release do GitHub sem precisar clonar via git:
-npm run switch
-# ou via CLI: node bin/orch.js switch v2.2.0-beta.1
-
-# 🧪 Executar a bateria de testes automatizados do ecossistema:
+# 🧪 Executar a bateria de testes automatizados (Plugin + 11 Subagentes + 10 Skills):
 npm test
-# ou via CLI: node bin/orch.js test
 ```
 
 ---
 
-## 💰 Eficiência Extrema & Economia de Tokens (78% a 85% de Redução)
+## 💰 Eficiência Extrema & Leitura Cirúrgica (78% a 90% de Economia de Tokens)
 
-> **Engenharia de Contexto Efêmero:** Como a v2.5.1 reduz drasticamente o consumo de tokens faturados na API da LLM enquanto eleva a precisão analítica e a velocidade de entrega.
-
-### 📊 Simulação Real: Uma Demanda Fullstack Completa (9 Turnos)
-Ao implementar uma funcionalidade completa (*ex: criação de nova tela com banco de dados Prisma, rotas de API, mobile, testes e segurança*), veja a diferença matemática real:
-
-| Etapa do Desenvolvimento | ❌ Modelo Antigo (Mono-thread)<br/>*Histórico Acumulado Reenviado na API* | ✅ Enterprise AI Suite Completa<br/>*Subagentes Descartáveis + Scripts Locais* |
-| :--- | :---: | :---: |
-| **Turno 1: Cartografia do Repo** | 40.000 tokens lidos no chat principal | **500 tokens** *(cartógrafo rodou em thread limpa)* |
-| **Turno 2: Banco & Migrations (`db-sentinel`)** | 45.000 tokens *(acumulou 40k + 5k)* | **1.500 tokens** *(banco validado em thread isolada)* |
-| **Turno 3: Contratos de Rota (`route-guard`)** | 50.000 tokens *(acumulando)* | **2.800 tokens** *(recebeu só o Zod/DTO de 300t)* |
-| **Turno 4: UI & Molas (`frontend-craftsman`)** | 60.000 tokens *(acumulando)* | **4.500 tokens** *(UI feita em subagente)* |
-| **Turno 5: Mobile & Ergonomia (`mobile-converter`)** | 70.000 tokens *(acumulando)* | **6.500 tokens** *(cards/bottom sheet isolados)* |
-| **Turno 6: Implementação de Código (Builder)** | 85.000 tokens *(acumulando)* | **9.000 tokens** *(diffs atômicos focados)* |
-| **Turno 7: Criação de Testes (`test-forge`)** | 100.000 tokens *(acumulando)* | **11.500 tokens** *(testes gerados em subagente)* |
-| **Turno 8: Auditoria DevSecOps (`devsecops-audit`)** | 115.000 tokens *(acumulando)* | **13.500 tokens** *(auditoria rodou em subagente)* |
-| **Turno 9: Validação e Entrega** | 125.000 tokens *(acumulando)* | **15.000 tokens** |
-| ➕ **Subagentes descartáveis** *(leitura pesada)* | *Não possui (tudo roda no chat)* | **+ 85.000 tokens** *(rodaram 1x e foram deletados)* |
-| **🔥 TOTAL FATURADO PELA API** | **~690.000 tokens** 💸 | **~149.000 tokens** 🟢 |
-
-> 📉 **Resultado:** **~78.4% a 85% de economia direta de tokens** (redução de mais de **540.000 tokens** em uma única feature!).
-> ⚡ **Zero Perda de Atenção ("Context Bloat"):** Enquanto o modelo antigo acumula 125k tokens e começa a alucinar, a suite termina a tarefa com apenas **15k tokens de contexto ativo** no chat principal.
-
-### 🛡️ Os 4 Pilares da Redução:
-1. **Fim do Efeito "Bola de Neve" (Janelas Efêmeras):** Arquivos brutos lidos morrem na thread descartável do subagente; o chat principal recebe apenas resumos JSON estruturados de 300 a 500 tokens.
-2. **Scripts Locais em Node.js (Custo Zero na LLM):** Cartografia AST (`cartographer.js`), auditoria de banco (`db-audit.js`), Blast Radius (`analyze-route.js`) e 18 pilares OWASP (`audit.js`) rodam na CPU da sua máquina local.
-3. **Handoffs Tipados Ultracompactos (JSON Puro):** Comunicação inter-agentes em schemas condensados eliminando conversas prolixas.
-4. **Escape Cirúrgico com `/orch --fast`:** Rota A direta sem subagentes para tarefas pontuais (< 3.000 tokens do início ao fim).
+1. **Cartografia com Endereçamento Exato (`função:LInício-LFim`):** Ao ler `.code-map/INDEX.md`, o agente já sabe que `verifyToken` está em `gid-api/src/middleware/verifyToken.ts` nas linhas `L42-242` e que o arquivo possui `242L`, indo direto ao alvo em **1 única leitura**.
+2. **Recortes Prontos no Relatório (`Zero Read-File Hops`):** O `.code-map/security-remediation-report.md` já traz as `±6` linhas ao redor de cada vulnerabilidade pendente para aplicação direta via `edit_file`.
+3. **Janelas de Contexto Efêmeras (11 Subagentes):** Leitura pesada morre na thread descartável do subagente; o chat principal recebe apenas handoffs JSON/Markdown enxutos.
+4. **Motores Locais em Node.js (Custo Zero na LLM):** Cartografia AST, fuzzing em `node:vm`, auditoria de banco, Blast Radius e 18 pilares OWASP rodam localmente na CPU.
 
 ---
 
-## 🤖 Como Acionar no Chat com seu Agente de IA
+## 📊 As 10 Skills & Os 11 Subagentes Especialistas
 
-Você pode acionar as ferramentas tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no Antigravity e Claude Code, ou via **Regras Contextuais (`@`)** no Cursor e Windsurf:
+### 🛠️ As 10 Skills (`10.0 / 10`)
+1. **`audit-code-full`** 🆕: QA Brute-Force 360° com 4 agentes paralelos (`qa-crawler`, `qa-bruteforce`, `qa-ui-palette`, `qa-button-action`), execução real em `node:vm`, despacho IA (`.code-map/ai-agents-dispatch.json`) e sincronização final do `.code-map/INDEX.md`.
+2. **`devsecops-audit`**: 18 pilares OWASP + 23 regras determinísticas de AppSec, radar de CVEs em `package.json`/lockfiles/OSV.dev, motor de **Auto-Blindagem Defensiva (`--fix`)** e relatório `.code-map/security-remediation-report.md`.
+3. **`repo-cartographer`**: Cartografia 360° em 6 camadas (`UI -> Estado -> API -> Backend -> Banco -> Infra`) com indexação de símbolos por linha (`Lstart-Lend`), rotas HTTP (`:Lline`), detecção de ciclos e módulos órfãos.
+4. **`hybrid-orchestrator`**: Governança fullstack com Sabatina 4Q, snapshot/rollback via `git stash`, e Falsifier adversário por função (`falsify.js`).
+5. **`frontend-craftsman`**: Design Engineering anti-AI slop, física de molas (Framer Motion / GSAP), psicologia de UX (5 estados) e coerência obrigatória Dual-Theme (Light/Dark).
+6. **`mobile-converter`**: Conversão mobile nativa com fluxo Master-Detail, Bottom Sheets táteis, Safe Areas, `100dvh` e touch targets `>= 44px`.
+7. **`db-sentinel`**: Migrations Zero-Downtime em 3 passos, detecção de Foreign Keys sem índice, prevenção de queries N+1 e precisão monetária.
+8. **`route-guard`**: Cálculo de Blast Radius reverso entre frontend e backend, prevenção de breaking changes e validação Zod/DTO.
+9. **`test-forge`**: Geração e auditoria de testes de integração reais (Supertest/Vitest — 200, 400, 401, 409) e E2E mobile (Playwright).
+10. **`orch`**: Maestro regente centralizado (`/orch`, `/orch --fast`, `orch qa`, `orch audit --fix`).
 
-| Slash Command / Atalho | Especialidade | Exemplo de Uso no Chat |
-| :--- | :--- | :--- |
-| **`/orch`** ⭐ | **Comando Geral Mestre:** Orquestração completa das 9 skills | `/orch Implemente o checkout com Pix, Prisma e adaptação mobile` |
-| **`/orch --fast`** ⚡ | **Execução Cirúrgica Direta:** Rota A sem travas e com diffs atômicos | `/orch --fast Corrija a tipagem de retorno do controller de tickets` |
-| **`/frontend-craftsman`** | Design Engineering sem cara de IA (Framer Motion / Tailwind v4) | `/frontend-craftsman Crie a tela de faturamento com paleta Linear` |
-| **`/mobile-converter`** | Converter tela desktop para mobile nativo (Bottom Sheets / 44px+) | `/mobile-converter Adapte a tabela de pedidos para cards no mobile` |
-| **`/db-sentinel`** 🆕 | Banco de Dados, Migrations Seguras e Índices Faltantes | `/db-sentinel Valide a migration e gere o seed tipado do Prisma` |
-| **`/test-forge`** 🆕 | Testes de Integração de API Reais e E2E Playwright | `/test-forge Crie os testes de integração para POST /api/orders` |
-| **`/repo-cartographer`** | Mapear arquitetura e fluxo 360° em 6 camadas | `/repo-cartographer Mapeie o fluxo da tela de Checkout até o banco` |
-| **`/route-guard`** | Prevenir quebras de contrato de API e Blast Radius | `/route-guard Analise o impacto de alterar a rota em api/routes` |
-| **`/devsecops-audit`** | Auditoria DevSecOps completa dos 18 pilares OWASP | `/devsecops-audit Execute a auditoria de segurança pré-deploy` |
-| **`/hybrid-orchestrator`** | Desenvolver feature com governança rígida e Falsifier | `/hybrid-orchestrator Implemente a regra de frete com rollback seguro` |
-
----
-
-## ⚖️ Execução Individual vs. Comando Mestre `/orch`: Qual a Diferença?
-
-O **Enterprise AI Suite** possui arquitetura de **dupla camada de acionamento**:
-
-| Critério de Comparação | 🎯 Execução Individual (Skills Isoladas)<br/>*(ex: `/frontend-craftsman`, `/db-sentinel`)* | 🚀 Comando Mestre `/orch` (Teamwork & Swarm)<br/>*(Governança Total do Ecossistema)* |
-| :--- | :--- | :--- |
-| **Comando / Gatilho** | `/frontend-craftsman`, `/mobile-converter`, `/db-sentinel`, `/test-forge`, etc. | `/orch <demanda>` ou `/orch --fast <demanda>` |
-| **Escopo de Ação** | **Laser-Focused:** Atua estritamente no domínio de conhecimento daquela skill. | **Holístico & Multi-Camadas:** Orquestra compulsoriamente as disciplinas de ponta a ponta. |
-| **Quem Conecta as Etapas?** | **O Desenvolvedor:** Você decide manualmente quando mapear, desenhar, testar e auditar. | **O Orchestrator (Lead):** Conecta as etapas e repassa artefatos automaticamente. |
-| **Consumo de Contexto** | Ultrabaixo (< 2.000 tokens na sessão principal). Ideal para tarefas atômicas. | Otimizado via subagentes efêmeros (redução de 78% a 85% de tokens na API). |
-| **Troca de Informações** | Manual (o usuário copia saídas de um comando para o outro). | **Automática via Handshakes:** `.code-map/handshake.json`, `DESIGN_SPEC.md` e SARIF. |
-| **Trava & Sabatina (4Q)** | Não possui (vai direto ao ponto daquela skill). | **Ativa no Turno 1 (Rota B):** Sabatina 4Q e Trava rígida anti-drift antes de editar arquivos. |
-| **Ciclo Adversário (Falsifier)** | Não roda (a menos que no hybrid). | **Obrigatório:** O subagente Falsifier ataca a solução com estresse de 5 vetores. |
-| **Verificação Pós-Código** | Apenas as ferramentas daquela skill. | **Pipeline Quádruplo:** `craft-audit`, `mobile-audit`, `db-audit` e `devsecops-audit`. |
-| **Opção de Bypass Cirúrgico** | Já é naturalmente direto. | Possui a flag **`/orch --fast`** (aplica Rota A sem travas e com velocidade máxima). |
+### 🐝 Os 11 Subagentes (`agents/`)
+- **Engenharia & Arquitetura (7):** `cartographer`, `route-guard`, `ui-craftsman`, `db-sentinel`, `test-engineer`, `falsifier`, `security-auditor`.
+- **Enxame Paralelo do `audit-code-full` (4):** `qa-crawler`, `qa-bruteforce`, `qa-ui-palette`, `qa-button-action`.
 
 ---
 
-## 📊 Scorecard & Notas Técnicas das Skills (Ecosistema 10.0)
-
-| Skill | Nota | Foco Principal | Maior Diferencial Prático |
-| :--- | :---: | :--- | :--- |
-| **[`hybrid-orchestrator`](#1--hybrid-orchestrator--nota-10010)** | **`10.0` / 10** | **Governança & Execução Cirúrgica** | Trava de Permissão em 2 Turnos anti-drift + Snapshot git stash + Falsifier adversário com estresse (`falsify.js`). |
-| **[`frontend-craftsman`](#2--frontend-craftsman--nota-10010)** | **`10.0` / 10** | **Design Engineering & Anti-AI Slop** | Elimina 'cara de IA', molas Framer Motion, preview visual instantâneo HTML, Tailwind v4 (@theme) e `craft-audit.js`. |
-| **[`mobile-converter`](#3--mobile-converter--nota-10010)** | **`10.0` / 10** | **Adaptação Mobile de Alta Fidelidade** | Metamorfose Tabela ➔ Cards, Bottom Sheets com swipe `drag="y"`, Bottom Nav, simulador interativo e `mobile-audit.js --fix`. |
-| **[`db-sentinel`](#4--db-sentinel--nota-10010)** 🆕 | **`10.0` / 10** | **Banco de Dados & Migrations Seguras** | Zero-Downtime em 3 passos, detecção de Foreign Keys sem índice, anti-N+1, gerador de seeds tipados e `db-audit.js`. |
-| **[`test-forge`](#5--test-forge--nota-10010)** 🆕 | **`10.0` / 10** | **QA & Testes Reais (Anti-Mock Slop)** | Testes de integração de API em 4 cenários (Supertest/Vitest), Playwright E2E em viewport mobile e `test-audit.js`. |
-| **[`devsecops-audit`](#6--devsecops-audit--nota-10010)** | **`10.0` / 10** | **DevSecOps & Red Team Engine (13 Regras)** | 13 regras de análise ofensiva determinística (BOLA, MFA bypass, mass assignment, webhooks HMAC, SSRF, SVG XSS), 18 pilares OWASP, modo somente-leitura, SARIF v2.1.0 e anti-colisão Cloudflare. |
-| **[`repo-cartographer`](#7--repo-cartographer--nota-10010)** | **`10.0` / 10** | **Cartografia 360° & Context IR** | Varredura de UI até Banco em 6 camadas, resolução de aliases (`@/`), diagramas Mermaid dinâmicos e canvas web. |
-| **[`route-guard`](#8--route-guard--nota-10010)** | **`10.0` / 10** | **Contratos de Rotas & Zero-Trust** | Blast Radius reverso no front, trava de retrocompatibilidade, gerador Zod/DTO e Mock Server HTTP com CORS. |
-| **[`orch`](#9--orch-comando-mestre--nota-10010)** | **`10.0` / 10** | **Maestro Regente do Ecossistema** | Acionamento centralizado de todas as skills, Rota A rápida (`--fast`) e Rota B com governança soberana. |
-
----
-
-## 🐝 Enxame de 7 Subagentes Especialistas (`agents/`)
-
-Os subagentes operam em **janelas de contexto limpas e descartáveis**, permitindo análises profundas sem sobrecarregar o chat principal:
-
-1. **`cartographer.agent.md`**: Exploração arquitetural 360° em modo *Read-Only*, economizando até 90% dos tokens de leitura inicial.
-2. **`route-guard.agent.md`**: Análise de contratos de rotas, cálculo de Blast Radius e geração de schemas Zod/DTO.
-3. **`ui-craftsman.agent.md`**: Design Engineering anti-slop, molas do Framer Motion e ergonomia mobile (Bottom Sheets, 44px+).
-4. **`db-sentinel.agent.md`**: Arquiteto relacional que valida schemas Prisma/Drizzle e impede migrations destrutivas.
-5. **`test-engineer.agent.md`**: Engenheiro de QA que cria testes de integração de API e E2E Playwright reais.
-6. **`falsifier.agent.md`**: Red Teamer adversário que ataca o plano na fase pré-código com 5 vetores de estresse.
-7. **`security-auditor.agent.md`**: Portão DevSecOps dos 18 pilares OWASP e Red Team Engine (13 regras determinísticas de lógica de negócio) com exportação SARIF.
-
----
-
-## 🛑 Firewall de Segurança no SO (`hooks.json`)
-
-O monorepo conta com firewall determinístico de comandos no SO (`pre-command-guard.js`) que intercepta comandos de terminal antes de executar (`PreToolUse`) e bloqueia operações destrutivas (`DROP TABLE`, `rm -rf /`, `Remove-Item -Recurse -Force`, `git push --force`, `prisma migrate reset`). A suite opera em modo desburocratizado com zero intromissão ou ruído no chat.
-
----
-
-## 🔍 Detalhamento das 9 Skills e Comandos CLI
-
-### 1. ⚡ `hybrid-orchestrator` — Nota: 10.0/10
-- Snapshot atômico com `git stash create` e rollback instantâneo (`node scripts/snapshot.js rollback`);
-- Falsifier adversário com estresse automatizado em 5 vetores (`node scripts/falsify.js`);
-- Painel dos 4 Quadrantes no terminal e navegador (`preview-plan.js`).
-
-### 2. 🎨 `frontend-craftsman` — Nota: 10.0/10
-- Erradicação de AI Slop (proibição de gradientes roxos genéricos e blur desregulado);
-- Molas táteis Framer Motion (`stiffness: 450, damping: 30`) e abas com `layoutId`;
-- Preview visual instantâneo em 1s (`node scripts/preview-spec.js`);
-- Auditoria determinística de interface (`node scripts/craft-audit.js`).
-
-### 3. 📱 `mobile-converter` — Nota: 10.0/10
-- Metamorfose de tabelas largas em cards verticais (`ResponsiveTableToCards.tsx`);
-- Modais transformados em gavetas deslizantes com gesto de arrasto (`BottomSheet.tsx`);
-- Touch targets obrigatórios de 44x44px e viewport dinâmico `100dvh`;
-- Simulador de iPhone 15 Pro no navegador (`node scripts/preview-mobile.js`) e auditoria com Autofix (`mobile-audit.js --fix`).
-
-### 4. 🗄️ `db-sentinel` — Nota: 10.0/10 🆕
-- Zero-Downtime migrations em 3 passos para adições de colunas e renomeações;
-- Auditoria de schemas Prisma, Drizzle e SQL (`node scripts/db-audit.js`);
-- Detecção automática de chaves estrangeiras (`@relation`) sem índice (`@@index`);
-- Gerador de seeds sintéticos e tipados com coerência relacional (`node scripts/generate-seed.js`).
-
-### 5. 🧪 `test-forge` — Nota: 10.0/10 🆕
-- Erradicação do "Mock Fantasma" e testes com asserções cosméticas;
-- Gerador de testes de integração de rota em 4 cenários (`node scripts/forge-api-test.js POST /api/orders`);
-- Gerador E2E Playwright cobrindo Desktop e Mobile iPhone 15 Pro (`node scripts/forge-e2e.js /checkout`);
-- Auditor de robustez de testes e cálculo do Test Quality Score (`node scripts/test-audit.js test/`).
-
-### 6. 🔒 `devsecops-audit` — Nota: 10.0/10
-- Motor de Segurança Ofensiva & Red Team com 13 regras determinísticas de lógica de negócio:
-  - 🔑 `RULE_AUTH_HARDCODED_MASTER_PASSWORDS` (CRITICAL): Senhas mestres, plain-text e partial auth (`LIKE '%...%'`);
-  - 🛡️ `RULE_AUTH_MFA_UNIVERSAL_BYPASS` (CRITICAL): Bypasses de segundo fator estáticos;
-  - 🎯 `RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK` (HIGH): Endpoints `:id` sem filtro de posse do usuário (`req.user.id`);
-  - 📦 `RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY` (HIGH): Mutações diretas com `req.body` sem whitelist Zod;
-  - 🚨 `RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS` (MEDIUM): Dicas de senha e enumeração de e-mails corporativos;
-  - 🔗 `RULE_WEBHOOK_MISSING_HMAC_SIGNATURE` (HIGH): Webhooks sem validação HMAC (`crypto.createHmac`);
-  - 🔌 `RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS` (HIGH): Inscrição em salas Socket.IO e presença com `userId` de cliente;
-  - 🌐 `RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD` (HIGH): Fetches externos sem bloqueio de redes privadas/locais;
-  - ⏱️ `RULE_TIMING_ATTACK_STRING_COMPARE` (MEDIUM): Operador `===` em segredos em vez de `crypto.timingSafeEqual()`;
-  - 🖼️ `RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD` (HIGH): Uploads SVG sem sanitização de `<script>` nem header attachment;
-  - 📁 `RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE` (HIGH): Download de arquivos sem middleware de autenticação;
-  - 🗝️ `RULE_JWT_MISSING_ALGORITHM_OPTION` (MEDIUM): `jwt.verify()` sem opção explícita `{ algorithms: ['HS256'] }`;
-  - 🖥️ `RULE_TAURI_IPC_UNRESTRICTED_CSP` (HIGH): Tauri desktop combinando CSP nula com comandos de shell ativos;
-- Auditoria estritamente somente-leitura dos 18 pilares OWASP e DevSecOps (`node devsecops-audit/scripts/audit.js`);
-- Autofix seguro de links vulneráveis e cookies (`node devsecops-audit/scripts/audit.js --fix`);
-- Exportação SARIF v2.1.0 para GitHub Code Scanning (`--sarif`) e JSON estruturado (`--json`);
-- Git hook pre-commit bloqueante (`node devsecops-audit/scripts/install-hook.js`);
-- Coexistência limpa com ferramentas terceiras (resolvido conflito de rota com Cloudflare).
-
-### 7. 🗺️ `repo-cartographer` — Nota: 10.0/10
-- Rastreamento determinístico em 6 camadas economizando até 90% dos tokens (`node scripts/cartographer.js trace`);
-- Diagramas Mermaid dinâmicos prontos para PRs (`node scripts/cartographer.js mermaid`);
-- Análise de Blast Radius reverso (`node scripts/cartographer.js callers`);
-- Canvas web interativo com nós arrastáveis (`node scripts/preview-graph.js`).
-
-### 8. 🛡️ `route-guard` — Nota: 10.0/10
-- Identificação de consumidores HTTP no frontend antes de tocar em rotas (`node scripts/analyze-route.js`);
-- Gerador automático de contratos Zod e DTOs TypeScript (`node scripts/generate-contract.js`);
-- Servidor de Mock HTTP Zero-Dependency com CORS total na porta 3333 (`node scripts/mock-route.js`).
-
-### 9. ⭐ `orch` — Nota: 10.0/10
-- Comando geral mestre do ecossistema para governança unificada;
-- Modo completo com Sabatina 4Q (`/orch <demanda>`) e modo rápido cirúrgico (`/orch --fast <demanda>`).
-
----
-
-## 🚀 Como Instalar e Usar
-
-### 1. Instalação Unificada (Todos os Agentes e Todas as 9 Skills)
-Instala simultaneamente no **Google Antigravity**, **Claude Code** e **Cursor Rules**:
+## 🚀 Instalação Rápida (PT-BR)
 
 ```bash
-# Na raiz do monorepo:
+# Instalar em todos os agentes (Antigravity, Claude Code e Cursor Rules):
 npm run install:all
 
-# Ou instalando tanto local quanto globalmente:
-npm run install:both
+# Instalar ou atualizar o Plugin Global do Antigravity (~/.gemini/config/plugins/enterprise-ai-suite):
+node install.js --plugin-only --global
+
+# Rodar validação completa (10 Skills + 11 Subagentes + QA 100/100):
+npm test
 ```
 
-### 2. Instalação como Plugin Oficial do Antigravity:
-```bash
-# Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite):
-npm run install:plugin:global
+---
+---
 
-# Ou no Workspace Local (.agents/plugins/enterprise-ai-suite):
-npm run install:plugin
-```
+# 🇺🇸 English (EN)
 
-### 3. Troca de Versões sem Git Clone (`scripts/switch-version.js`):
-```bash
-# Baixa e instala qualquer versão diretamente do GitHub:
-node scripts/switch-version.js v2.2.0-beta.1
-node scripts/switch-version.js v2.1.0
-```
+> **Official Plugin, Swarm of 11 Specialist Subagents, 10 High-Engineering Skills, and OS-Level Command Firewall.**  
+> Built to turn AI coding agents (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) into senior software engineers — eliminating hallucinations, token waste, blind file-reading loops, and production regressions.
 
-### 4. Rodar Testes de Integridade (Plugin + 7 Subagentes + 9 Skills):
+---
+
+## 🆕 What's New in v2.8.0 — 360° Brute-Force QA, Surgical Line-Range Cartography & Auto-Remediation (`--fix`)
+
+| Feature | Problem Solved | Module |
+| :--- | :--- | :--- |
+| **New Skill `audit-code-full` (`orch qa`)** | 360° QA powered by **4 Parallel Agents**: walks the entire codebase, runs real brute-force fuzzing inside `node:vm`, audits UI code & Dual-Theme color palettes, verifies every button has a real action, and syncs `.code-map/INDEX.md` | `audit-code-full` |
+| **4 Parallel QA Subagents** | `qa-crawler` (6 layers), `qa-bruteforce` (VM fuzzing + AST), `qa-ui-palette` (color tokens & Light/Dark coherence), and `qa-button-action` (dead/noop button detection) | `agents/qa-*.agent.md` |
+| **Surgical Line-Range Cartography (`LStart-LEnd`)** | `.code-map/INDEX.md`, `graph.json`, and `cartographer.js query <term>` now index **total file lines (`242L`)**, **exact function/class line ranges (`verifyToken:L42-242`)**, and **exact HTTP route lines (`GET /download/:filename:L11`)** — eliminating blind multi-hop file slicing | `repo-cartographer` & `audit-code-full` |
+| **Defensive Auto-Remediation Engine (`audit --fix`)** | Automatically patches local projects: adds `{ algorithms: ['HS256'] }` to `jwt.verify()` (including nested call arguments), fixes wildcard CORS with `credentials: true`, adds `httpOnly/sameSite/secure` cookie flags, removes static `JWT_SECRET` fallbacks, replaces `err.stack` leaks, adds `rel="noopener noreferrer"`, pins `*` dependencies, upgrades vulnerable `package.json` ranges, and hardens `.gitignore` | `devsecops-audit` |
+| **Zero Read-File Hop Remediation Report** | Generates `.code-map/security-remediation-report.md` with Before/After tables plus **ready-to-edit code context snippets (`±6 lines`, `Lstart-Lend`)** so the AI can call `edit_file` directly without extra `read_file` round-trips | `devsecops-audit` |
+
+## 📌 Highlights from v2.7.0 — Precision Before Volume
+
+| Feature | Problem Solved | Module |
+| :--- | :--- | :--- |
+| **Lockfile-Aware CVE Radar** (`npm`/`pnpm`/`yarn`) | Eliminates false positives when `package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` already resolves a patched version | `devsecops-audit` |
+| **`--online` (OSV.dev, opt-in)** | Real-time CVE lookup via OSV.dev for up to 1,000 lockfile packages | `devsecops-audit` |
+| **`--baseline` / `--update-baseline` / `--changed`** | Seamless adoption in legacy repositories: only **new** findings or modified files fail CI | All auditors |
+| **Documented Inline Suppression** (`// audit-ignore-next-line RULE: reason`) | Auditable exceptions in code; suppressions without a reason are ignored (Pillar 16 secrets can never be suppressed) | All auditors |
+| **`--sarif` Across All Auditors** | Native SARIF v2.1.0 export for GitHub **Security / Code Scanning** | All auditors |
+| **Unified `shared/` Core** | Single source of truth for scanning, baselines, inline suppressions, and SARIF synced via `node scripts/sync-shared.js` | Monorepo |
+
+---
+
+## 🎛️ Master CLI Toolkit (`bin/orch.js`)
+
 ```bash
+# 🕵️‍♂️ Run 360° Brute-Force QA (4 Parallel Agents + Final Code-Map):
+node bin/orch.js qa .
+# or inside the orchestrator pipeline: node bin/orch.js run "Full audit" --qa
+
+# 🛡️ Run DevSecOps Security Audit + Automated Defensive Remediation (--fix):
+node bin/orch.js audit . --fix
+
+# 🗺️ Query any function, route, or file with exact line ranges (Lstart-Lend):
+node repo-cartographer/scripts/cartographer.js query verifyToken .
+
+# 🩺 Run deterministic health diagnostics across the suite and 11 subagents:
+npm run doctor
+
+# 🧪 Run the full automated test suite (Plugin + 11 Subagents + 10 Skills):
 npm test
 ```
 
 ---
 
-## 🤝 Contribuições & Governança
+## 📊 The 10 Skills & 11 Specialist Subagents
 
-- 📖 **Guia Completo de Contribuição:** Consulte o [**`CONTRIBUTING.md`**](CONTRIBUTING.md).
-- 📋 **Template de Pull Request:** Todos os PRs devem preencher o [**`PULL_REQUEST_TEMPLATE.md`**](.github/PULL_REQUEST_TEMPLATE.md).
-- 🛡️ **Branch Protection na `master`:** Requer PR obrigatório, code review humano, CI Actions (Node 18, 20, 22) 100% verde e anti-force-push.
+### 🛠️ The 10 Skills (`10.0 / 10`)
+1. **`audit-code-full`** 🆕: 360° Brute-Force QA with 4 parallel agents (`qa-crawler`, `qa-bruteforce`, `qa-ui-palette`, `qa-button-action`), real `node:vm` execution, AI subagent dispatch manifest (`.code-map/ai-agents-dispatch.json`), and `.code-map/INDEX.md` generation.
+2. **`devsecops-audit`**: 18 OWASP pillars + 23 deterministic AppSec rules, Supply Chain CVE radar (`package.json` + lockfiles + OSV.dev), **Defensive Auto-Remediation (`--fix`)**, and `.code-map/security-remediation-report.md`.
+3. **`repo-cartographer`**: 6-layer architectural cartography (`UI -> State -> API -> Backend -> Database -> Infra`) with symbol line-range indexing (`Lstart-Lend`), HTTP route line indexing (`:Lline`), cycle detection, and dead-code orphan analysis.
+4. **`hybrid-orchestrator`**: Fullstack governance with 4-Quadrant interview, atomic `git stash` snapshots/rollbacks, and per-function adversarial Falsifier (`falsify.js`).
+5. **`frontend-craftsman`**: Anti-AI-slop Design Engineering, 120fps spring physics (Framer Motion / GSAP), 5-state UX psychology, and strict Dual-Theme (Light/Dark) contrast coherence.
+6. **`mobile-converter`**: Native-grade mobile adaptation with Master-Detail flows, swipeable Bottom Sheets, Safe Areas, `100dvh`, and `>= 44px` touch targets.
+7. **`db-sentinel`**: 3-step Zero-Downtime migrations, unindexed Foreign Key detection, N+1 query prevention, and monetary precision checks.
+8. **`route-guard`**: Reverse Blast Radius analysis across frontend and backend, breaking-change prevention, and Zod/DTO contract generation.
+9. **`test-forge`**: Anti-Mock-Slop real API integration tests (Supertest/Vitest — 200, 400, 401, 409) and mobile E2E Playwright suites.
+10. **`orch`**: Master ecosystem conductor (`/orch`, `/orch --fast`, `orch qa`, `orch audit --fix`).
+
+### 🐝 The 11 Specialist Subagents (`agents/`)
+- **Core Architecture & Engineering (7):** `cartographer`, `route-guard`, `ui-craftsman`, `db-sentinel`, `test-engineer`, `falsifier`, `security-auditor`.
+- **Parallel `audit-code-full` QA Swarm (4):** `qa-crawler`, `qa-bruteforce`, `qa-ui-palette`, `qa-button-action`.
 
 ---
 
-## 🏗️ Estrutura do Repositório
+## 🚀 Quick Installation (EN)
+
+```bash
+# Install across all supported agents (Antigravity, Claude Code, and Cursor Rules):
+npm run install:all
+
+# Install or update the Global Antigravity Plugin (~/.gemini/config/plugins/enterprise-ai-suite):
+node install.js --plugin-only --global
+
+# Run full integrity & regression test suite (10 Skills + 11 Subagents + QA 100/100):
+npm test
+```
+
+---
+
+## 🏗️ Repository Structure / Estrutura do Repositório
 
 ```
 enterprise-ai-suite/
-├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.5.1)
-├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
+├── plugin.json               # Official Antigravity Plugin Manifest (v2.8.0)
+├── hooks.json                # OS-level PreToolUse & PostToolUse lifecycle hooks
 ├── bin/
-│   └── orch.js            # CLI Master da Suite (run, doctor, init, switch, test, audit)
-├── agents/                # 🤖 Enxame de 7 Subagentes Especialistas (Contextos Limpos)
-│   ├── cartographer.agent.md   # Mapeamento 360° em modo estrito Read-Only
-│   ├── route-guard.agent.md    # Blast Radius e contratos Zod/DTO
-│   ├── ui-craftsman.agent.md   # Design Engineering anti-slop e física de molas
-│   ├── db-sentinel.agent.md    # Modelagem relacional e migrations seguras
-│   ├── test-engineer.agent.md  # Testes de integração de API e E2E Playwright
-│   ├── falsifier.agent.md      # Subagente adversário para estresse pré-código
-│   └── security-auditor.agent.md # DevSecOps & Red Team Engine (13 regras, SARIF)
-├── rules/                 # 📜 Regras Globais (Zero-Trust, Anti-AI Slop)
-├── frontend-craftsman/    # Design Engineering, molas Framer Motion e Anti-AI Slop
-├── mobile-converter/      # Adaptação mobile tátil, Bottom Sheets, Tab Bar e dvh
-├── db-sentinel/           # Banco de dados, migrations zero-downtime e seeds tipados
-├── test-forge/            # Engenharia de testes reais, integração e Playwright mobile
-├── hybrid-orchestrator/   # Orquestrador de decisão, execução e Falsifier
-├── repo-cartographer/     # Cartógrafo de arquitetura 360° e Context IR
-├── route-guard/           # Guardião de contratos de API e Zero-Trust
-├── devsecops-audit/        # Motor DevSecOps Red Team (13 regras de lógica de negócio)
-├── orch/                  # Atalho mestre do ecossistema (/orch e /orch --fast)
-├── scripts/
-│   ├── doctor.js          # Diagnóstico determinístico de saúde do ecossistema
-│   ├── init.js            # Autoconfiguração inteligente por detecção de stack
-│   ├── test-all.js        # Test runner universal (Plugin + 7 Subagentes + 9 Skills)
-│   ├── switch-version.js  # Seletor e trocador de versões remotas sem git clone
-│   └── hooks/             # Firewall de segurança no SO (PreToolUse)
-│       └── pre-command-guard.js  # Intercepta e bloqueia comandos perigosos no SO
-├── package.json           # Scripts globais e binário orch
-└── README.md              # Este manual completo
+│   └── orch.js               # Master CLI (run, qa, audit, doctor, init, switch, test)
+├── agents/                   # 🤖 11 Specialist Subagents (7 Core + 4 Parallel QA Agents)
+├── shared/                   # Unified scanner, baseline, suppression, SARIF & UI style blocks
+├── audit-code-full/          # 🕵️‍♂️ 360° Brute-Force QA (4 Parallel Agents + VM Fuzzing + Code-Map)
+├── devsecops-audit/          # 🔒 18 OWASP Pillars + 23 AppSec Rules + Auto-Fix (--fix)
+├── repo-cartographer/        # 🗺️ 6-Layer AST Cartography with Symbol Line Ranges (Lstart-Lend)
+├── hybrid-orchestrator/      # ⚡ Fullstack Governance, Snapshots & Adversarial Falsifier
+├── frontend-craftsman/       # 🎨 Anti-AI-Slop Design Engineering & Dual-Theme Coherence
+├── mobile-converter/         # 📱 Native Mobile Ergonomics, Bottom Sheets & 44px+ Targets
+├── db-sentinel/              # 🗄️ Zero-Downtime Migrations, FK Indexes & Anti-N+1
+├── route-guard/              # 🛡️ API Contract Guard, Reverse Blast Radius & Mock Server
+├── test-forge/               # 🧪 Real API Integration & Mobile Playwright E2E Tests
+├── orch/                     # ⭐ Master Shortcut Skill (/orch, /orch --fast, orch qa)
+├── scripts/                  # doctor.js, init.js, sync-shared.js, test-all.js, hooks/
+└── README.md                 # Bilingual Documentation (PT-BR & EN)
 ```
 
 ---
 
-## 📜 Licença
-Distribuído sob a licença MIT. Criado por **[Henrique Alves](https://github.com/Henrique-All)**.
+## 📜 License / Licença
+MIT License — Created by **[Henrique Alves](https://github.com/Henrique-All)**.

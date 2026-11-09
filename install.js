@@ -23,7 +23,10 @@ const hasVersionFlag = rawArgs.some(a => a.startsWith('--version') || a === '--s
 
 if (hasVersionFlag) {
   // Delega diretamente para o seletor de versão remota
-  require('./scripts/switch-version.js');
+  require('./scripts/switch-version.js').run().catch((err) => {
+    console.error(`\n❌ Falha durante a troca de versão: ${err.message}`);
+    process.exit(1);
+  });
   return;
 }
 

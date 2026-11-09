@@ -1,6 +1,6 @@
 {
   "name": "db-sentinel-skill",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "Engenharia de Banco de Dados, Migrations Seguras e Prevenção de Locks e Índices Faltantes",
   "main": "scripts/db-audit.js",
   "scripts": {
