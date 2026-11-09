@@ -275,14 +275,27 @@ try {
     !cookieFiles.includes('cookie-opts.js') && /httpOnly: true/.test(fs.readFileSync(path.join(cookieDir, 'cookie-opts.js'), 'utf-8')),
     fs.readFileSync(path.join(cookieDir, 'cookie-opts.js'), 'utf-8'));
 
-  // D/E. Tabnabbing: corrige só a linha acusada, sem duplicar rel em outras linhas
+  // D/E. Tabnabbing: --dry-run simula sem tocar no disco e --fix cria backup .bak e corrige só a linha acusada
   const linkDir = path.join(fixRoot, 'link');
   fs.mkdirSync(linkDir);
   const linkLine2 = '<a rel="noreferrer" target="_blank" href="https://b">b</a>';
-  fs.writeFileSync(path.join(linkDir, 'link.jsx'), ['<a href="https://a" target="_blank">a</a>', linkLine2, ''].join('\n'));
+  const originalLinkFile = ['<a href="https://a" target="_blank">a</a>', linkLine2, ''].join('\n');
+  fs.writeFileSync(path.join(linkDir, 'link.jsx'), originalLinkFile);
+
+  const linkDryRun = runAudit(linkDir, '--fix --dry-run');
+  check('--fix --dry-run não altera o arquivo no disco e lista plannedFixes',
+    fs.readFileSync(path.join(linkDir, 'link.jsx'), 'utf-8') === originalLinkFile &&
+      linkDryRun.summary.dryRun === true &&
+      Array.isArray(linkDryRun.summary.plannedFixes) &&
+      linkDryRun.summary.plannedFixes.length === 1,
+    JSON.stringify(linkDryRun.summary));
 
   const linkFix = runAudit(linkDir, '--fix');
   const linkLines = fs.readFileSync(path.join(linkDir, 'link.jsx'), 'utf-8').split('\n');
+  check('--fix cria arquivo de backup .bak com o conteúdo original antes de modificar',
+    fs.existsSync(path.join(linkDir, 'link.jsx.bak')) &&
+      fs.readFileSync(path.join(linkDir, 'link.jsx.bak'), 'utf-8') === originalLinkFile,
+    'link.jsx.bak');
   check('--fix corrige o link acusado (rel uma única vez) e remove o achado',
     !linkFix.findings.some((f) => f.id === 'FRONTEND_REVERSE_TABNABBING') &&
       (linkLines[0].match(/rel="noopener noreferrer"/g) || []).length === 1,
