@@ -51,39 +51,8 @@ try {
   if (testPostCart.trim() !== '{}') throw new Error('post-edit-cartography.js deve retornar {} silencioso!');
   console.log('   ✅ Scripts de hooks (pre-command-guard.js & post-edit-cartography.js) verificados');
 
-  // Testar funcionalidade do firewall pre-command-guard.js
-  const testDeny = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'DROP TABLE users;' } } }), encoding: 'utf-8' }
-  );
-  const testDenyJson = JSON.parse(testDeny);
-  if (testDenyJson.decision !== 'deny') throw new Error('Firewall falhou ao bloquear "DROP TABLE"!');
-
-  const testDenyForce = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin main --force' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testDenyForce).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "git push --force"!');
-
-  const testAllowForceWithLease = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin feat/branch --force-with-lease' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testAllowForceWithLease).decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "git push --force-with-lease"!');
-
-  const testDenyRmDot = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'rm -rf .' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testDenyRmDot).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "rm -rf ."!');
-
-  const testAllow = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'npm test' } } }), encoding: 'utf-8' }
-  );
-  const testAllowJson = JSON.parse(testAllow);
-  if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
-  console.log('   ✅ Firewall de segurança testado: Bloqueio de DROP TABLE, git push --force, rm -rf . & aprovação de --force-with-lease e npm test');
+  // Testar funcionalidade do firewall pre-command-guard.js (suíte completa)
+  execSync(`node "${path.join(rootDir, 'scripts', 'test-firewall.js')}"`, { stdio: 'inherit' });
 
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
