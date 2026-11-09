@@ -8,12 +8,14 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const rootDir = path.resolve(__dirname, '..');
+const rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.8.0');
-console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
+console.log(`🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v${rootPkg.version}`);
+console.log('   (10 Skills + Plugin Oficial + 11 Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
-const rootDir = path.resolve(__dirname, '..');
 let hasFailures = false;
 
 // 1. VALIDAR COMPONENTES DO PLUGIN NATIVO
@@ -119,7 +121,7 @@ try {
 }
 
 // 2. VALIDAR SUBAGENTES DEDICADOS
-console.log('\n🤖 [2/3] Validando Subagentes Especialistas (agents/)...');
+console.log('\n🤖 [2/3] Validando 11 Subagentes Especialistas (agents/)...');
 const expectedSubagents = [
   'cartographer.agent.md',
   'route-guard.agent.md',
@@ -133,6 +135,12 @@ const expectedSubagents = [
   'qa-ui-palette.agent.md',
   'qa-button-action.agent.md'
 ];
+
+const actualAgentFiles = fs.readdirSync(path.join(rootDir, 'agents')).filter(f => f.endsWith('.agent.md'));
+if (actualAgentFiles.length !== expectedSubagents.length) {
+  console.error(`   ❌ Contagem de subagentes divergente em agents/: ${actualAgentFiles.length} (esperado ${expectedSubagents.length})`);
+  hasFailures = true;
+}
 
 for (const agentFile of expectedSubagents) {
   const agentPath = path.join(rootDir, 'agents', agentFile);
@@ -151,12 +159,23 @@ for (const agentFile of expectedSubagents) {
 }
 
 // 3. VALIDAR SKILLS INDIVIDUAIS
-console.log('\n📚 [3/3] Validando Testes Unitários de Cada Skill...');
+console.log('\n📚 [3/3] Validando Testes Unitários de Cada uma das 10 Skills...');
 const entries = fs.readdirSync(rootDir, { withFileTypes: true });
 const skillDirs = entries
   .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && e.name !== 'scripts' && e.name !== 'agents' && e.name !== 'rules')
   .filter((e) => fs.existsSync(path.join(rootDir, e.name, 'SKILL.md')))
   .map((e) => e.name);
+
+if (skillDirs.length !== 10) {
+  console.error(`   ❌ Contagem de skills divergente: ${skillDirs.length} (esperado 10)`);
+  hasFailures = true;
+}
+
+const readmeContent = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf-8');
+if (/7\s+subagentes/i.test(readmeContent) || /9\s+skills/i.test(readmeContent)) {
+  console.error('   ❌ README.md ainda contém contagens desatualizadas ("7 subagentes" ou "9 skills")!');
+  hasFailures = true;
+}
 
 console.log(`🔍 Skills detectadas (${skillDirs.length}): ${skillDirs.join(', ')}\n`);
 
