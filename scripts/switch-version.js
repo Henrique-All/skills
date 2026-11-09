@@ -2,74 +2,270 @@
 /**
  * scripts/switch-version.js
  * Seletor e Instalador de Versões Remotas via GitHub Releases (Zero-Git-Clone).
- * 
+ *
  * Uso:
- *   node scripts/switch-version.js                        -> Menu interativo de versões
- *   node scripts/switch-version.js --version=v2.2.0-beta.1 -> Instala direto a Beta
- *   node scripts/switch-version.js --version=v2.1.0        -> Instala direto a Estável
- *   node scripts/switch-version.js --global                -> Aplica instalação globalmente
+ *   node scripts/switch-version.js                                   -> Menu interativo de versões
+ *   node scripts/switch-version.js --version=v2.8.0                  -> Instala direto a versão informada
+ *   node scripts/switch-version.js --version=v2.8.0 --sha256=<hash>  -> Verifica o SHA-256 do pacote tar.gz
+ *   node scripts/switch-version.js --version=v2.8.0 --dry-run        -> Valida parâmetros e URLs sem baixar
+ *   node scripts/switch-version.js --global                          -> Aplica instalação globalmente
  */
 
 const https = require('https');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const readline = require('readline');
 
-console.log('===============================================================');
-console.log('🔄 SELETOR DE VERSÃO REMOTA — ENTERPRISE AI SUITE');
-console.log('   (Instalação e troca de versão sem precisar clonar o Git)');
-console.log('===============================================================\n');
+const ALLOWED_HOSTS = new Set([
+  'api.github.com',
+  'github.com',
+  'codeload.github.com',
+  'objects.githubusercontent.com',
+  'release-assets.githubusercontent.com'
+]);
 
-const rawArgs = process.argv.slice(2);
-const versionArg = rawArgs.find(a => a.startsWith('--version='));
-const isGlobal = rawArgs.includes('--global') || rawArgs.includes('-g');
-const isBoth = rawArgs.includes('--both') || rawArgs.includes('-b');
+const MAX_REDIRECTS = 5;
+const REQUEST_TIMEOUT_MS = 30000;
+const MAX_JSON_BYTES = 5 * 1024 * 1024;      // 5 MB
+const MAX_ARCHIVE_BYTES = 50 * 1024 * 1024;  // 50 MB
 
-// Argumentos que serão repassados para o instalador da versão baixada
-const forwardedArgs = rawArgs.filter(a => !a.startsWith('--version=') && a !== '--version').join(' ');
+function validateUrl(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    throw new Error('URL inválida: valor vazio ou tipo inválido.');
+  }
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`URL inválida: ${rawUrl}`);
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error(`Protocolo inválido (${parsed.protocol}). Apenas HTTPS é aceito.`);
+  }
+  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
+    throw new Error(`Host inválido ou não autorizado para download/consulta: ${parsed.hostname}`);
+  }
+  return parsed.toString();
+}
 
-function fetchJson(url) {
+function validateTagFormat(tag) {
+  const clean = typeof tag === 'string' ? tag.trim() : '';
+  if (!/^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(clean)) {
+    throw new Error(`Formato de tag inválido: "${clean}". Use ex: v2.8.0 ou v2.2.0-beta.1`);
+  }
+  return clean;
+}
+
+function validateSha256Arg(sha256Flag) {
+  if (sha256Flag === undefined || sha256Flag === null || sha256Flag === false) return null;
+  if (typeof sha256Flag !== 'string') {
+    throw new Error('Argumento --sha256 inválido: deve conter exatamente 64 caracteres hexadecimais.');
+  }
+  if (!sha256Flag.startsWith('--sha256')) return null;
+  const idx = sha256Flag.indexOf('=');
+  const val = idx >= 0 ? sha256Flag.slice(idx + 1).trim().toLowerCase() : '';
+  if (!/^[0-9a-f]{64}$/.test(val)) {
+    throw new Error('Argumento --sha256 inválido: deve conter exatamente 64 caracteres hexadecimais.');
+  }
+  return val;
+}
+
+function buildSafeEnv(callerDir) {
+  const allowKeys = [
+    'PATH',
+    'Path',
+    'HOME',
+    'USERPROFILE',
+    'APPDATA',
+    'LOCALAPPDATA',
+    'TEMP',
+    'TMP',
+    'TMPDIR',
+    'SYSTEMROOT',
+    'SystemRoot',
+    'ComSpec',
+    'WINDIR',
+    'NODE_ENV',
+    'LANG',
+    'LC_ALL'
+  ];
+  const env = { TARGET_WORKSPACE: callerDir };
+  for (const k of allowKeys) {
+    if (process.env[k] !== undefined) {
+      env[k] = process.env[k];
+    }
+  }
+  return env;
+}
+
+function verifyNoSymlinksOrTraversal(rootDir) {
+  if (typeof rootDir !== 'string' || !rootDir.trim() || !fs.existsSync(rootDir)) return;
+  const resolvedRoot = path.resolve(rootDir);
+  function walk(currentDir) {
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    for (const ent of entries) {
+      const fullPath = path.join(currentDir, ent.name);
+      const resolvedFull = path.resolve(fullPath);
+      if (resolvedFull !== resolvedRoot && !resolvedFull.startsWith(resolvedRoot + path.sep)) {
+        throw new Error(`Entrada fora do diretório de extração detectada: ${ent.name}`);
+      }
+      const st = fs.lstatSync(fullPath);
+      if (st.isSymbolicLink()) {
+        throw new Error(`Symlink não permitido no pacote extraído: ${fullPath}`);
+      }
+      if (st.isDirectory()) {
+        walk(fullPath);
+      }
+    }
+  }
+  walk(resolvedRoot);
+}
+
+function fetchJson(rawUrl, redirects = 0) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'NodeJS-Version-Switcher' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchJson(res.headers.location).then(resolve).catch(reject);
-      }
-      if (res.statusCode !== 200) {
-        return reject(new Error(`HTTP ${res.statusCode}: Falha ao consultar GitHub`));
-      }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error('Resposta inválida do GitHub'));
+    let safeUrl;
+    try {
+      safeUrl = validateUrl(rawUrl);
+    } catch (e) {
+      return reject(e);
+    }
+    if (redirects > MAX_REDIRECTS) {
+      return reject(new Error('Limite máximo de redirecionamentos excedido.'));
+    }
+
+    const req = https.get(
+      safeUrl,
+      { headers: { 'User-Agent': 'NodeJS-Version-Switcher' }, timeout: REQUEST_TIMEOUT_MS },
+      (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          try {
+            const nextUrl = new URL(res.headers.location, safeUrl).toString();
+            return fetchJson(nextUrl, redirects + 1).then(resolve, reject);
+          } catch (e) {
+            return reject(e);
+          }
         }
-      });
-    }).on('error', reject);
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error(`HTTP ${res.statusCode}: Falha ao consultar GitHub`));
+        }
+
+        let size = 0;
+        const chunks = [];
+        res.on('data', (chunk) => {
+          size += chunk.length;
+          if (size > MAX_JSON_BYTES) {
+            req.destroy(new Error('Resposta JSON excede o limite de tamanho permitido.'));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on('error', reject);
+        res.on('end', () => {
+          try {
+            const text = Buffer.concat(chunks).toString('utf-8');
+            resolve(JSON.parse(text));
+          } catch {
+            reject(new Error('Resposta JSON inválida recebida do GitHub.'));
+          }
+        });
+      }
+    );
+
+    req.on('timeout', () => req.destroy(new Error('Timeout ao consultar API do GitHub.')));
+    req.on('error', reject);
   });
 }
 
-function downloadFile(url, dest) {
+function downloadFileWithHash(rawUrl, dest, redirects = 0) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'NodeJS-Version-Switcher' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return downloadFile(res.headers.location, dest).then(resolve).catch(reject);
+    let safeUrl;
+    try {
+      safeUrl = validateUrl(rawUrl);
+    } catch (e) {
+      return reject(e);
+    }
+    if (redirects > MAX_REDIRECTS) {
+      return reject(new Error('Limite máximo de redirecionamentos excedido no download.'));
+    }
+
+    const req = https.get(
+      safeUrl,
+      { headers: { 'User-Agent': 'NodeJS-Version-Switcher' }, timeout: REQUEST_TIMEOUT_MS },
+      (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          try {
+            const nextUrl = new URL(res.headers.location, safeUrl).toString();
+            return downloadFileWithHash(nextUrl, dest, redirects + 1).then(resolve, reject);
+          } catch (e) {
+            return reject(e);
+          }
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error(`HTTP ${res.statusCode} ao baixar arquivo`));
+        }
+
+        const hash = crypto.createHash('sha256');
+        const out = fs.createWriteStream(dest);
+        let size = 0;
+
+        res.on('data', (chunk) => {
+          size += chunk.length;
+          if (size > MAX_ARCHIVE_BYTES) {
+            req.destroy(new Error('Pacote excede o limite máximo de 50 MB.'));
+            return;
+          }
+          hash.update(chunk);
+        });
+
+        res.on('error', reject);
+        out.on('error', reject);
+        out.on('finish', () => {
+          out.close(() => resolve({ sha256: hash.digest('hex'), bytes: size }));
+        });
+        res.pipe(out);
       }
-      if (res.statusCode !== 200) {
-        return reject(new Error(`HTTP ${res.statusCode} ao baixar arquivo`));
-      }
-      const fileStream = fs.createWriteStream(dest);
-      res.pipe(fileStream);
-      fileStream.on('finish', () => fileStream.close(() => resolve()));
-    }).on('error', reject);
+    );
+
+    req.on('timeout', () => req.destroy(new Error('Timeout no download do pacote.')));
+    req.on('error', reject);
   });
 }
 
 async function run() {
-  let targetTag = versionArg ? versionArg.split('=')[1] : null;
+  console.log('===============================================================');
+  console.log('🔄 SELETOR DE VERSÃO REMOTA — ENTERPRISE AI SUITE');
+  console.log('   (Instalação e troca de versão sem precisar clonar o Git)');
+  console.log('===============================================================\n');
+
+  const rawArgs = process.argv.slice(2);
+  const versionArg = rawArgs.find((a) => a.startsWith('--version='));
+  const sha256Arg = rawArgs.find((a) => a === '--sha256' || a.startsWith('--sha256='));
+  const isDryRun = rawArgs.includes('--dry-run');
+  const isGlobal = rawArgs.includes('--global') || rawArgs.includes('-g');
+  const isBoth = rawArgs.includes('--both') || rawArgs.includes('-b');
+
+  let expectedSha256 = null;
+  try {
+    expectedSha256 = validateSha256Arg(sha256Arg);
+  } catch (err) {
+    console.error(`❌ ${err.message}`);
+    process.exit(1);
+  }
+
+  // Filtra apenas flags conhecidas do instalador para encaminhamento seguro
+  const allowedForwardFlags = new Set(['--global', '-g', '--local', '-l', '--both', '-b', '--plugin-only', '--force']);
+  const forwardedArgs = rawArgs.filter((a) => allowedForwardFlags.has(a));
+
+  // Suporta tanto --version=v2.8.0 quanto argumento posicional v2.8.0
+  const positionalTag = rawArgs.find((a) => !a.startsWith('-'));
+  let targetTag = versionArg ? versionArg.slice('--version='.length) : positionalTag || null;
 
   if (!targetTag) {
     console.log('📡 Buscando releases disponíveis no GitHub (Henrique-All/skills)...\n');
@@ -81,15 +277,19 @@ async function run() {
       process.exit(1);
     }
 
-    if (!releases || releases.length === 0) {
+    if (!Array.isArray(releases) || releases.length === 0) {
       console.error('❌ Nenhuma release encontrada no repositório.');
       process.exit(1);
     }
 
     console.log('📦 Versões disponíveis para instalação:');
     releases.forEach((rel, index) => {
-      const badge = rel.prerelease ? '🚀 [PREVIEW / BETA]' : (index === 1 || !releases[0].prerelease ? '⭐ [ESTÁVEL]' : '📦 [RELEASE]');
-      console.log(`  ${index + 1}) ${rel.tag_name.padEnd(16)} ${badge} - ${rel.name}`);
+      const badge = rel.prerelease
+        ? '🚀 [PREVIEW / BETA]'
+        : index === 1 || !releases[0].prerelease
+        ? '⭐ [ESTÁVEL]'
+        : '📦 [RELEASE]';
+      console.log(`  ${index + 1}) ${String(rel.tag_name || '').padEnd(16)} ${badge} - ${rel.name || ''}`);
     });
 
     console.log('\n  0) Cancelar e sair\n');
@@ -100,14 +300,14 @@ async function run() {
     });
 
     const answer = await new Promise((resolve) => {
-      rl.question('👉 Digite o número da versão que deseja instalar (1-' + releases.length + '): ', (ans) => {
+      rl.question(`👉 Digite o número da versão que deseja instalar (1-${releases.length}): `, (ans) => {
         rl.close();
         resolve(ans.trim());
       });
     });
 
     const chosenIndex = parseInt(answer, 10);
-    if (isNaN(chosenIndex) || chosenIndex === 0) {
+    if (Number.isNaN(chosenIndex) || chosenIndex === 0) {
       console.log('Operação cancelada.');
       process.exit(0);
     }
@@ -120,56 +320,108 @@ async function run() {
     targetTag = releases[chosenIndex - 1].tag_name;
   }
 
+  try {
+    targetTag = validateTagFormat(targetTag);
+  } catch (err) {
+    console.error(`❌ ${err.message}`);
+    process.exit(1);
+  }
+
+  const downloadUrl = validateUrl(`https://github.com/Henrique-All/skills/archive/refs/tags/${targetTag}.tar.gz`);
+
+  if (isDryRun) {
+    console.log('🧪 [DRY-RUN] Validação concluída (nenhum arquivo foi baixado):');
+    console.log(`   - Tag validada:   ${targetTag}`);
+    console.log(`   - URL de pacote:  ${downloadUrl}`);
+    console.log(`   - SHA-256 exigido: ${expectedSha256 || '(não especificado)'}`);
+    process.exit(0);
+  }
+
   console.log(`\n===============================================================`);
   console.log(`⬇️  Baixando e instalando a versão: [${targetTag}]...`);
   console.log(`===============================================================\n`);
 
-  const tmpDir = path.join(os.tmpdir(), `skills-release-${Date.now()}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
-
-  const zipPath = path.join(tmpDir, `${targetTag}.zip`);
-  const downloadUrl = `https://github.com/Henrique-All/skills/archive/refs/tags/${targetTag}.zip`;
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-release-'));
+  const tarPath = path.join(tmpDir, `${targetTag}.tar.gz`);
 
   try {
-    console.log(`📡 Baixando release de: ${downloadUrl}`);
-    await downloadFile(downloadUrl, zipPath);
-    console.log(`   ✅ Download concluído com sucesso (${fs.statSync(zipPath).size} bytes)`);
+    console.log(`📡 Baixando pacote (.tar.gz) de: ${downloadUrl}`);
+    const { sha256, bytes } = await downloadFileWithHash(downloadUrl, tarPath);
+    console.log(`   ✅ Download concluído (${bytes} bytes)`);
+    console.log(`   🔒 SHA-256 calculado: ${sha256}`);
 
-    console.log('📦 Extraindo pacote...');
-    execSync(`tar -xf "${zipPath}" -C "${tmpDir}"`, { stdio: 'ignore' });
+    if (expectedSha256 && sha256.toLowerCase() !== expectedSha256.toLowerCase()) {
+      throw new Error(
+        `Verificação de integridade SHA-256 falhou!\n   Esperado: ${expectedSha256}\n   Obtido:   ${sha256}`
+      );
+    }
+    if (expectedSha256) {
+      console.log('   ✅ Checksum SHA-256 verificado com sucesso!');
+    }
 
-    // O GitHub extrai para uma pasta nomeada como: skills-<tag-sem-v> ou skills-<tag>
+    console.log('📦 Extraindo pacote (.tar.gz)...');
+    execFileSync('tar', ['-xzf', tarPath, '-C', tmpDir], { stdio: 'pipe' });
+
+    // Verifica que nenhum arquivo extraído contém symlinks ou escapa de tmpDir
+    verifyNoSymlinksOrTraversal(tmpDir);
+
     const subEntries = fs.readdirSync(tmpDir, { withFileTypes: true });
-    const extractedFolder = subEntries.find(e => e.isDirectory());
+    const extractedFolder = subEntries.find((e) => e.isDirectory());
     if (!extractedFolder) {
       throw new Error('Falha ao localizar pasta descompactada.');
     }
 
     const packageDir = path.join(tmpDir, extractedFolder.name);
-    console.log(`📁 Pacote extraído em: ${packageDir}`);
+    const installScript = path.join(packageDir, 'install.js');
+    if (!fs.existsSync(installScript)) {
+      throw new Error('install.js não encontrado no pacote extraído.');
+    }
 
-    console.log('\n⚙️  Executando instalador da versão...');
-    const installFlags = forwardedArgs || (isGlobal ? '--global' : isBoth ? '--both' : '');
+    console.log(`📁 Pacote extraído em: ${packageDir}`);
+    console.log('\n⚙️  Executando instalador da versão em ambiente restrito...');
+
+    const installArgs = ['install.js'];
+    if (forwardedArgs.length > 0) {
+      installArgs.push(...forwardedArgs);
+    } else if (isGlobal) {
+      installArgs.push('--global');
+    } else if (isBoth) {
+      installArgs.push('--both');
+    }
+
     const callerDir = process.cwd();
-    execSync(`node install.js ${installFlags}`, {
+    execFileSync(process.execPath, installArgs, {
       cwd: packageDir,
-      env: { ...process.env, TARGET_WORKSPACE: callerDir },
+      env: buildSafeEnv(callerDir),
       stdio: 'inherit'
     });
 
     console.log(`\n===============================================================`);
     console.log(`🎉 VERSÃO [${targetTag}] INSTALADA COM SUCESSO!`);
     console.log(`===============================================================\n`);
-  } catch (err) {
-    console.error(`\n❌ Falha durante a troca de versão: ${err.message}`);
   } finally {
-    // Limpeza da pasta temporária
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch (e) {
-      // Ignorar erros de limpeza
+    } catch {
+      // Ignora erros de limpeza temporária
     }
   }
 }
 
-run();
+if (require.main === module) {
+  run().catch((err) => {
+    console.error(`\n❌ Falha durante a troca de versão: ${err.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  run,
+  validateUrl,
+  validateTagFormat,
+  validateSha256Arg,
+  buildSafeEnv,
+  verifyNoSymlinksOrTraversal,
+  fetchJson,
+  downloadFileWithHash
+};

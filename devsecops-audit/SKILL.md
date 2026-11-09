@@ -84,7 +84,21 @@ node scripts/audit.js --pilares=2,3,5
 
 # Exportar em formato JSON para pipelines ou ferramentas externas
 node scripts/audit.js --json
+
+# Executar Auditoria + Auto-Correção Defensiva determinística + Relatório Consolidado Antes vs. Depois:
+node scripts/audit.js --fix
 ```
+
+### 🔧 Motor de Auto-Correção Defensiva (`--fix` / `--autofix`) & Relatório Consolidado
+Quando acionado com `--fix`, o motor aplica correções determinísticas seguras em código e configurações do projeto local e grava o relatório consolidado em `.code-map/security-remediation-report.md`:
+- **`RULE_JWT_MISSING_ALGORITHM_OPTION`**: Injeta `{ algorithms: ['HS256'] }` em chamadas `jwt.verify()`.
+- **`CORS_WILDCARD_CREDENTIALS`**: Substitui `origin: '*'` com `credentials: true` por `origin: process.env.CORS_ORIGIN || false`.
+- **`COOKIE_INSECURE_FLAGS`**: Adiciona `httpOnly: true`, `sameSite: 'strict'` e `secure: true` nas opções de `res.cookie()`.
+- **`JWT_SECRET_FALLBACK`**: Remove fallbacks estáticos inseguros de `process.env.JWT_SECRET || '...'`.
+- **`ERROR_STACK_LEAK_IN_RESPONSE`**: Substitui envio bruto de `err.stack` / `err.message` por resposta genérica segura.
+- **`FRONTEND_REVERSE_TABNABBING`**: Adiciona `rel="noopener noreferrer"` em links com `target="_blank"`.
+- **`SUPPLY_CHAIN_KNOWN_CVE` & `SUPPLY_CHAIN_UNPINNED_DEPENDENCY`**: Atualiza ranges vulneráveis para versões seguras e fixa dependências `"*"` / `"latest"` no `package.json` usando a versão resolvida do lockfile.
+- **`ENV_COMMITTED_IN_GIT`**: Blindagem automática do `.gitignore` adicionando `.env` e `.env.*`.
 
 ### 🎯 Precisão, Adoção em Projetos Legados & CVEs (v2.7.0)
 

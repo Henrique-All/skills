@@ -11,3 +11,9 @@ Thumbs.db
 .kito
 .kiro/
 .swarm
+.env
+.env.*
+!.env.example
+scripts/publish-*.js
+scripts/create-github-releases.js
+scripts/protect-master.js

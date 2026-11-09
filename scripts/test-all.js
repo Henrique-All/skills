@@ -83,6 +83,9 @@ try {
   if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
   console.log('   ✅ Firewall de segurança testado: Bloqueio de DROP TABLE, git push --force, rm -rf . & aprovação de --force-with-lease e npm test');
 
+  // Executar bateria completa de regressão do Firewall (11 categorias de bypass + switch-version.js)
+  execSync(`node "${path.join(rootDir, 'scripts', 'test-firewall.js')}"`, { stdio: 'inherit' });
+
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
   const mobileBlocks = fs.readFileSync(path.join(rootDir, 'mobile-converter', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');

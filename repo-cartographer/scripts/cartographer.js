@@ -195,9 +195,57 @@ function getNodeId(relPath) {
 
 // Limites de varredura (ajustáveis via CARTOGRAPHER_MAX_FILES). Com a indexação incremental,
 // arquivos não modificados não são relidos, então os limites podem ser bem maiores que na v2.6.
-const CARTOGRAPHER_VERSION = '2.7.0';
+const CARTOGRAPHER_VERSION = '2.8.0';
 const MAX_SEED_FILES = Number(process.env.CARTOGRAPHER_MAX_FILES) || 800;
 const MAX_GRAPH_NODES = Math.max(MAX_SEED_FILES, Number(process.env.CARTOGRAPHER_MAX_FILES) || 2000);
+
+/**
+ * Extrai contagem de linhas, símbolos (funções, classes, constantes/componentes exportados) com
+ * faixa exata de linhas (Lstart-Lend) e rotas HTTP com linha exata (:Lline) para leitura cirúrgica sem voltas.
+ */
+function extractFileSymbolsAndLines(content) {
+  const lines = String(content || '').split('\n');
+  const linesCount = lines.length;
+  const rawSymbols = [];
+  const routes = [];
+  const seenSymbols = new Set();
+
+  const declRegexes = [
+    /^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+    /^\s*(?:export\s+)?(?:default\s+)?class\s+([A-Za-z_$][\w$]*)\b/,
+    /^\s*export\s+(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/,
+    /^\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/,
+    /^\s*(?:export\s+)?(?:interface|type)\s+([A-Za-z_$][\w$]*)\b/
+  ];
+  const routeLineRx = /\b(?:app|router|route|routes|server)\.(get|post|put|patch|delete)\s*\(\s*['"`]([^'"`]+)['"`]/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineNum = i + 1;
+
+    for (const rx of declRegexes) {
+      const m = line.match(rx);
+      if (m && m[1] && !seenSymbols.has(m[1])) {
+        seenSymbols.add(m[1]);
+        rawSymbols.push({ name: m[1], line: lineNum });
+        break;
+      }
+    }
+
+    const rm = line.match(routeLineRx);
+    if (rm) {
+      routes.push({ method: rm[1].toUpperCase(), path: rm[2], line: lineNum });
+    }
+  }
+
+  const symbols = rawSymbols.slice(0, 25).map((s, idx) => {
+    const nextStart = rawSymbols[idx + 1] ? rawSymbols[idx + 1].line - 1 : linesCount;
+    const endLine = Math.max(s.line, Math.min(linesCount, nextStart));
+    return { name: s.name, line: s.line, endLine };
+  });
+
+  return { linesCount, symbols, routes: routes.slice(0, 30) };
+}
 
 /** Índice do graph.json anterior para reaproveitamento incremental (descartado se a versão mudou). */
 function loadPreviousGraphIndex(projectDir) {
@@ -300,6 +348,7 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
 
     const hash = calculateFileHash(current);
     const classification = classifyLayer(relPath, content);
+    const { linesCount, symbols, routes } = extractFileSymbolsAndLines(content);
 
     const nodeId = getNodeId(relPath);
     const deps = [];
@@ -310,6 +359,9 @@ function traceDependencies(entrypointRelative, projectDir, extraEntryFiles = [])
       layer: classification.layer,
       hash,
       mtime,
+      linesCount,
+      symbols,
+      routes,
       lastIndexed: new Date().toISOString(),
       metadata: { deps }
     };
@@ -456,20 +508,28 @@ function generateIndexMarkdown(projectDir, graphData) {
     md += `\n`;
   }
 
-  // Agrupamento por Camada
-  md += `## 📚 Arquivos Mapeados por Camada (6 Layers)\n\n`;
+  // Agrupamento por Camada (com contagem de linhas e intervalos exatos de símbolos Lstart-Lend)
+  md += `## 📚 Arquivos & Símbolos Mapeados por Camada (6 Layers — Leitura Cirúrgica)\n\n`;
   for (let layerNum = 1; layerNum <= 6; layerNum++) {
-    const layerNodes = nodes.filter((n) => (n.layer || 3) === layerNum);
+    const layerNodes = nodes.filter((n) => (n.layer || 3) === layerNum && n.hash !== 'virtual');
     if (layerNodes.length === 0) continue;
     md += `### ${layerLabels[layerNum]} (${layerNodes.length})\n`;
-    layerNodes.slice(0, 40).forEach((n) => {
+    layerNodes.slice(0, 250).forEach((n) => {
       const callers = inDegree.get(n.id) || 0;
       const deps = outDegree.get(n.id) || 0;
-      const meta = callers + deps > 0 ? ` *(usado por ${callers}, chama ${deps})*` : '';
-      md += `- \`${n.path}\`${meta}\n`;
+      const lineBadge = n.linesCount ? `${n.linesCount}L` : '';
+      const edgeBadge = callers + deps > 0 ? `in:${callers} out:${deps}` : '';
+      const badgeStr = [lineBadge, edgeBadge].filter(Boolean).join(' | ');
+      const symPreview = Array.isArray(n.symbols) && n.symbols.length > 0
+        ? ` — 🎯 ${n.symbols.slice(0, 6).map((s) => `\`${s.name}:L${s.line}${s.endLine > s.line ? '-' + s.endLine : ''}\``).join(', ')}`
+        : '';
+      const routePreview = Array.isArray(n.routes) && n.routes.length > 0
+        ? ` — 🛣️ ${n.routes.slice(0, 4).map((r) => `\`${r.method} ${r.path}:L${r.line}\``).join(', ')}`
+        : '';
+      md += `- \`${n.path}\`${badgeStr ? ` *(${badgeStr})*` : ''}${symPreview}${routePreview}\n`;
     });
-    if (layerNodes.length > 40) {
-      md += `- *...e mais ${layerNodes.length - 40} nós (consulte \`.code-map/graph.json\` ou use \`cartographer.js query <termo>\`)*\n`;
+    if (layerNodes.length > 250) {
+      md += `- *...e mais ${layerNodes.length - 250} nós (consulte \`.code-map/graph.json\` ou use \`cartographer.js query <termo>\`)*\n`;
     }
     md += `\n`;
   }
@@ -823,7 +883,9 @@ function queryGraph(keyword, projectDir) {
     (n) =>
       (n.id && n.id.toLowerCase().includes(q)) ||
       (n.path && n.path.toLowerCase().includes(q)) ||
-      (n.type && n.type.toLowerCase().includes(q))
+      (n.type && n.type.toLowerCase().includes(q)) ||
+      (Array.isArray(n.symbols) && n.symbols.some((s) => s.name && s.name.toLowerCase().includes(q))) ||
+      (Array.isArray(n.routes) && n.routes.some((r) => r.path && r.path.toLowerCase().includes(q)))
   );
 
   console.log(`🗺️  CARTOGRAPHER QUERY: "${keyword}" (${matched.length} nó(s) encontrado(s))\n`);
@@ -835,7 +897,16 @@ function queryGraph(keyword, projectDir) {
   matched.slice(0, 15).forEach((n, idx) => {
     const incoming = edges.filter((e) => e.target === n.id).map((e) => e.source);
     const outgoing = edges.filter((e) => e.source === n.id).map((e) => e.target);
-    console.log(`${idx + 1}. [Layer ${n.layer} | ${n.type}] ${n.path}`);
+    const lineInfo = n.linesCount ? ` (${n.linesCount} linhas)` : '';
+    console.log(`${idx + 1}. [Layer ${n.layer} | ${n.type}] ${n.path}${lineInfo}`);
+    if (Array.isArray(n.symbols) && n.symbols.length > 0) {
+      const symStr = n.symbols.map((s) => `${s.name}:L${s.line}-${s.endLine}`).join(', ');
+      console.log(`   🎯 Símbolos (Linhas Exatas): ${symStr}`);
+    }
+    if (Array.isArray(n.routes) && n.routes.length > 0) {
+      const rtStr = n.routes.map((r) => `${r.method} ${r.path}:L${r.line}`).join(', ');
+      console.log(`   🛣️  Rotas HTTP: ${rtStr}`);
+    }
     if (incoming.length > 0) console.log(`   ⬅️  Chamado por (In): ${incoming.join(', ')}`);
     if (outgoing.length > 0) console.log(`   ➡️  Chama/Importa (Out): ${outgoing.join(', ')}`);
   });

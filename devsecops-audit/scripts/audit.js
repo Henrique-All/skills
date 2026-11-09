@@ -17,7 +17,7 @@ const crypto = require('crypto');
 const { execSync, execFileSync } = require('child_process');
 const core = require('./lib/suite-core');
 
-const AUDIT_VERSION = '2.7.0';
+const AUDIT_VERSION = '2.8.1';
 
 // Regras cujas evidências podem conter segredos: somente elas são mascaradas no relatório.
 const SECRET_RULE_IDS = new Set([
@@ -515,8 +515,8 @@ for (const file of codeFiles) {
       }
 
       // 3D. RULE_JWT_MISSING_ALGORITHM_OPTION (MEDIUM)
-      const jwtVerifySimple = /(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,)]+,\s*[^,)]+\s*\)/i;
-      const jwtVerifyNoAlgo = /(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,]+,\s*[^,]+,\s*\{(?!.*algorithms)[^}]*\}\s*\)/i;
+      const jwtVerifySimple = /(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,)]+,\s*(?:[^,()]|\([^()]*\))+\s*\)/i;
+      const jwtVerifyNoAlgo = /(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,]+,\s*(?:[^,()]|\([^()]*\))+,\s*\{(?!.*algorithms)[^}]*\}\s*\)/i;
       if ((jwtVerifySimple.test(line) || jwtVerifyNoAlgo.test(line)) && !line.includes('algorithms')) {
         addFinding({
           id: 'RULE_JWT_MISSING_ALGORITHM_OPTION',
@@ -617,7 +617,7 @@ for (const file of codeFiles) {
       }
 
       // Pilar 3: Ausência de Rate Limiting em rotas críticas de autenticação
-      if (/(?:\.post|\.put)\s*\(\s*['"]\/(?:api\/)?(?:auth|login|signin|register|reset-password)['"]/i.test(line)) {
+      if (/(?:\.post|\.put)\s*\(\s*['"]\/(?:api\/)?(?:auth|login|signin|register|reset-password)['"]/i.test(line) && !/(?:\bawait\s+|\b(?:axios|api|http|client|request|supertest|agent)\s*\.(?:post|put))/i.test(line)) {
         if (!content.includes('rateLimit') && !content.includes('limiter') && !content.includes('throttle')) {
           addFinding({
             id: 'MISSING_RATE_LIMIT_ON_AUTH',
@@ -969,7 +969,8 @@ if (!selectedPilares || selectedPilares.includes(13)) {
             line: lineNum,
             message: `Dependência "${depName}" declarada com versão irrestrita ("${depVer}"), expondo o build a ataques de Supply Chain.`,
             evidence: `"${depName}": "${depVer}"`,
-            remediation: 'Fixe versões semânticas explícitas no package.json e mantenha o lockfile versionado.'
+            remediation: 'Fixe versões semânticas explícitas no package.json e mantenha o lockfile versionado.',
+            pkg: depName
           });
         }
 
@@ -1199,8 +1200,21 @@ if (!selectedPilares || selectedPilares.includes(12)) {
 // Cada regra corrige só a linha (ou o pacote) do próprio achado. O achado só sai do relatório
 // quando foi corrigido de fato, e o arquivo só é gravado quando o conteúdo mudou.
 const fixedFiles = new Set();
+const appliedFixes = [];
+const initialFindingsCount = findings.length;
+
 if (shouldFix && findings.length > 0) {
-  const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS', 'SUPPLY_CHAIN_KNOWN_CVE']);
+  const fixableRuleIds = new Set([
+    'FRONTEND_REVERSE_TABNABBING',
+    'COOKIE_INSECURE_FLAGS',
+    'SUPPLY_CHAIN_KNOWN_CVE',
+    'SUPPLY_CHAIN_UNPINNED_DEPENDENCY',
+    'RULE_JWT_MISSING_ALGORITHM_OPTION',
+    'CORS_WILDCARD_CREDENTIALS',
+    'JWT_SECRET_FALLBACK',
+    'ERROR_STACK_LEAK_IN_RESPONSE',
+    'ENV_COMMITTED_IN_GIT'
+  ]);
   const installCommandByLockfile = { 'package-lock.json': 'npm install', 'pnpm-lock.yaml': 'pnpm install', 'yarn.lock': 'yarn install' };
 
   // Agrupa por arquivo os índices dos achados corrigíveis
@@ -1213,6 +1227,27 @@ if (shouldFix && findings.length > 0) {
 
   const fixedIndexes = new Set();
   for (const [relFile, indexes] of fixableByFile.entries()) {
+    // Blindagem de .gitignore quando .env foi detectado no git
+    if (relFile === '.env' && indexes.some((i) => findings[i].id === 'ENV_COMMITTED_IN_GIT')) {
+      try {
+        const gitignorePath = path.join(projectDir, '.gitignore');
+        const currentGi = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, 'utf-8') : '';
+        const giLines = currentGi.split(/\r?\n/).map((l) => l.trim());
+        if (!giLines.includes('.env')) {
+          const suffix = (currentGi && !currentGi.endsWith('\n') ? '\n' : '') + '.env\n.env.*\n!.env.example\n';
+          fs.writeFileSync(gitignorePath, currentGi + suffix, 'utf-8');
+          fixedFiles.add('.gitignore');
+          appliedFixes.push({
+            id: 'ENV_COMMITTED_IN_GIT',
+            file: '.gitignore',
+            line: 1,
+            action: 'Adicionado .env e .env.* ao .gitignore para bloquear novos commits de credenciais.'
+          });
+        }
+      } catch {}
+      continue;
+    }
+
     const absFile = path.resolve(projectDir, relFile);
     if (!fs.existsSync(absFile)) continue;
     try {
@@ -1222,41 +1257,69 @@ if (shouldFix && findings.length > 0) {
       const remediationUpdates = [];
 
       if (path.basename(absFile) === 'package.json') {
-        // Fix 3: CVE conhecido -> atualiza só o range do pacote do achado para a versão mínima segura
         const pkgObj = JSON.parse(original);
         let pkgChanged = false;
         for (const idx of indexes) {
           const f = findings[idx];
-          if (f.id !== 'SUPPLY_CHAIN_KNOWN_CVE' || !f.pkg) continue;
-          const adv = KNOWN_CVE_ADVISORIES.find((a) => a.pkg === f.pkg);
-          if (!adv || !adv.patched) continue; // ex.: vm2 não tem versão corrigida e continua no relatório
-          let rangeChanged = false;
-          let rangeIsPatched = false;
-          for (const section of ['dependencies', 'devDependencies']) {
-            if (!pkgObj[section] || !pkgObj[section][f.pkg]) continue;
-            if (pkgObj[section][f.pkg] !== adv.patched) {
-              pkgObj[section][f.pkg] = adv.patched;
-              rangeChanged = true;
+          if (f.id === 'SUPPLY_CHAIN_KNOWN_CVE' && f.pkg) {
+            const adv = KNOWN_CVE_ADVISORIES.find((a) => a.pkg === f.pkg);
+            if (!adv || !adv.patched) continue; // ex.: vm2 não tem versão corrigida e continua no relatório
+            let rangeChanged = false;
+            let rangeIsPatched = false;
+            for (const section of ['dependencies', 'devDependencies']) {
+              if (!pkgObj[section] || !pkgObj[section][f.pkg]) continue;
+              if (pkgObj[section][f.pkg] !== adv.patched) {
+                pkgObj[section][f.pkg] = adv.patched;
+                rangeChanged = true;
+              }
+              rangeIsPatched = true;
             }
-            rangeIsPatched = true;
-          }
-          if (!rangeIsPatched) continue;
-          if (rangeChanged) pkgChanged = true;
-          if (resolveInstalledVersion(projectDir, f.pkg)) {
-            // O lockfile define a versão instalada: o alerta continua até ela ser segura
-            const installCmd = installCommandByLockfile[loadLockfileIndex(projectDir).source] || 'npm install';
-            remediationUpdates.push({
-              idx,
-              text: `Range atualizado para ${adv.patched} no package.json. Rode \`${installCmd}\` para atualizar o lockfile; o alerta continua até a versão instalada ser segura.`
-            });
-          } else if (rangeChanged) {
-            fixedHere.push(idx); // sem lockfile, o range do package.json é a única fonte da versão
+            if (!rangeIsPatched) continue;
+            if (rangeChanged) {
+              pkgChanged = true;
+              appliedFixes.push({
+                id: f.id,
+                file: relFile,
+                line: f.line,
+                action: `Range de "${f.pkg}" atualizado para "${adv.patched}" no package.json.`
+              });
+            }
+            if (resolveInstalledVersion(projectDir, f.pkg)) {
+              const installCmd = installCommandByLockfile[loadLockfileIndex(projectDir).source] || 'npm install';
+              remediationUpdates.push({
+                idx,
+                text: `Range atualizado para ${adv.patched} no package.json. Rode \`${installCmd}\` para atualizar o lockfile; o alerta continua até a versão instalada ser segura.`
+              });
+            } else if (rangeChanged) {
+              fixedHere.push(idx);
+            }
+          } else if (f.id === 'SUPPLY_CHAIN_UNPINNED_DEPENDENCY' && f.pkg) {
+            const installedVer = resolveInstalledVersion(projectDir, f.pkg);
+            if (!installedVer) continue;
+            const pinnedRange = `^${installedVer}`;
+            let pinnedChanged = false;
+            for (const section of ['dependencies', 'devDependencies']) {
+              if (!pkgObj[section] || !pkgObj[section][f.pkg]) continue;
+              if (pkgObj[section][f.pkg] === '*' || pkgObj[section][f.pkg] === 'latest') {
+                pkgObj[section][f.pkg] = pinnedRange;
+                pinnedChanged = true;
+              }
+            }
+            if (pinnedChanged) {
+              pkgChanged = true;
+              fixedHere.push(idx);
+              appliedFixes.push({
+                id: f.id,
+                file: relFile,
+                line: f.line,
+                action: `Dependência "${f.pkg}" fixada para "${pinnedRange}" com base no lockfile.`
+              });
+            }
           }
         }
         if (pkgChanged) updated = JSON.stringify(pkgObj, null, 2) + '\n';
       } else {
-        // Fix 1 (tabnabbing) e Fix 2 (cookie): só na linha do achado, e só se a linha passa na
-        // mesma checagem que gerou o achado (o \r de arquivos CRLF fica preservado em cada linha)
+        // Correções determinísticas por linha (preservando \r de arquivos CRLF)
         const lines = original.split('\n');
         for (const idx of indexes) {
           const f = findings[idx];
@@ -1265,11 +1328,14 @@ if (shouldFix && findings.length > 0) {
           const before = lines[lineIdx];
           let after = before;
           let resolved = false;
+          let actionDesc = '';
+
           if (f.id === 'FRONTEND_REVERSE_TABNABBING') {
             if (!/\brel\s*=/i.test(before)) {
               after = before.replace(/target=(["'])_blank\1/i, (m) => `${m} rel="noopener noreferrer"`);
             }
             resolved = /rel=["'][^"']*(?:noopener|noreferrer)/i.test(after);
+            actionDesc = 'Adicionado rel="noopener noreferrer" em target="_blank".';
           } else if (f.id === 'COOKIE_INSECURE_FLAGS') {
             after = before.replace(/(res\.cookie\([^,]+,[^,]+,\s*\{)([^}]*)(\})/g, (match, p1, p2, p3) => {
               let opts = p2.trim();
@@ -1279,10 +1345,51 @@ if (shouldFix && findings.length > 0) {
               return `${p1} ${opts} ${p3}`;
             });
             resolved = /httpOnly\s*:\s*true/i.test(after) && /sameSite\s*:/i.test(after);
+            actionDesc = 'Adicionadas flags httpOnly: true, sameSite: "strict" e secure: true em res.cookie().';
+          } else if (f.id === 'RULE_JWT_MISSING_ALGORITHM_OPTION') {
+            if (/(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,)]+,\s*(?:[^,()]|\([^()]*\))+\s*\)/i.test(before)) {
+              after = before.replace(
+                /((?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,)]+,\s*(?:[^,()]|\([^()]*\))+)(\s*\))/i,
+                "$1, { algorithms: ['HS256'] }$2"
+              );
+            } else if (/(?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,]+,\s*(?:[^,()]|\([^()]*\))+,\s*\{(?!.*algorithms)[^}]*\}\s*\)/i.test(before)) {
+              after = before.replace(
+                /((?:jwt|jsonwebtoken)\.verify\s*\(\s*[^,]+,\s*(?:[^,()]|\([^()]*\))+,\s*\{)([^}]*)(\}\s*\))/i,
+                (match, p1, p2, p3) => {
+                  const opts = p2.trim();
+                  return `${p1} ${opts ? opts + ', ' : ''}algorithms: ['HS256'] ${p3}`;
+                }
+              );
+            }
+            resolved = /\balgorithms\s*:/.test(after);
+            actionDesc = "Adicionada opção explícita { algorithms: ['HS256'] } em jwt.verify().";
+          } else if (f.id === 'CORS_WILDCARD_CREDENTIALS') {
+            after = before.replace(/origin\s*:\s*(['"])\*\1/, 'origin: process.env.CORS_ORIGIN || false');
+            resolved = !/origin\s*:\s*(['"])\*\1/.test(after) && after !== before;
+            actionDesc = 'Substituído origin: "*" por origin: process.env.CORS_ORIGIN || false.';
+          } else if (f.id === 'JWT_SECRET_FALLBACK') {
+            const jwtReplacement = /\.tsx?$/i.test(relFile) ? '($1 as string)' : '$1';
+            after = before.replace(/(process\.env\.JWT_SECRET)\s*\|\|\s*(['"`][^'"`]*['"`])/g, jwtReplacement);
+            resolved = !/process\.env\.JWT_SECRET\s*\|\|/.test(after) && after !== before;
+            actionDesc = 'Removido fallback estático inseguro de process.env.JWT_SECRET.';
+          } else if (f.id === 'ERROR_STACK_LEAK_IN_RESPONSE') {
+            after = before.replace(
+              /res\.(?:send|json)\s*\(\s*(?:err|error)\.(?:stack|message)\s*\)/g,
+              "res.json({ error: 'Internal Server Error' })"
+            );
+            resolved = !/res\.(?:send|json)\s*\(\s*(?:err|error)\.(?:stack|message)\s*\)/.test(after) && after !== before;
+            actionDesc = 'Substituído envio de err.stack/message por resposta genérica segura.';
           }
+
           if (resolved && after !== before) {
             lines[lineIdx] = after;
             fixedHere.push(idx);
+            appliedFixes.push({
+              id: f.id,
+              file: relFile,
+              line: f.line,
+              action: actionDesc
+            });
           }
         }
         updated = lines.join('\n');
@@ -1303,7 +1410,7 @@ if (shouldFix && findings.length > 0) {
   Array.from(fixedIndexes).sort((a, b) => b - a).forEach((idx) => findings.splice(idx, 1));
 
   if (fixedFiles.size > 0 && !isJsonOutput && !isSarifOutput) {
-    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
+    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) e ${appliedFixes.length} vulnerabilidade(s) corrigidos automaticamente de forma segura.\n`);
   }
 }
 
@@ -1327,15 +1434,75 @@ const lowCount = findings.filter((f) => f.severity === 'LOW').length;
 const isBlocked = criticalCount > 0 || highCount > 0;
 const status = isBlocked ? 'BLOQUEADO' : (mediumCount > 0 ? 'AVISOS' : 'APROVADO');
 
+// Geração do Relatório Consolidado Antes vs. Depois em .code-map/ quando --fix ou --report é utilizado
+if (shouldFix || args.includes('--report')) {
+  try {
+    const codeMapDir = path.join(projectDir, '.code-map');
+    if (!fs.existsSync(codeMapDir)) fs.mkdirSync(codeMapDir, { recursive: true });
+    const mdLines = [
+      `# 🛡️ Relatório de Blindagem & Auto-Correção Defensiva (v${AUDIT_VERSION})`,
+      '',
+      `- **Projeto:** \`${path.basename(projectDir)}\``,
+      `- **Data:** ${new Date().toISOString()}`,
+      `- **Achados Iniciais:** ${initialFindingsCount}`,
+      `- **Correções Automáticas Aplicadas:** ${appliedFixes.length} (em ${fixedFiles.size} arquivo(s))`,
+      `- **Achados Restantes:** ${findings.length} (${criticalCount} críticos, ${highCount} altos, ${mediumCount} médios, ${lowCount} baixos)`,
+      `- **Status Final:** **${status}**`,
+      '',
+      '## 🔧 1. Correções Aplicadas Automaticamente (`--fix`)',
+      ''
+    ];
+    if (appliedFixes.length === 0) {
+      mdLines.push('> Nenhuma correção automática precisou ser aplicada nesta execução.');
+    } else {
+      mdLines.push('| Regra | Arquivo:Linha | Ação Defensiva Aplicada |');
+      mdLines.push('| :--- | :--- | :--- |');
+      for (const fx of appliedFixes) {
+        mdLines.push(`| \`${fx.id}\` | \`${fx.file}:${fx.line}\` | ${fx.action} |`);
+      }
+    }
+    mdLines.push('', '## 📋 2. Apontamentos Restantes (Ação Manual / Arquitetural)', '');
+    if (findings.length === 0) {
+      mdLines.push('> ✅ Zero apontamentos restantes! O projeto está em conformidade.');
+    } else {
+      mdLines.push('| Severidade | Pilar | Regra | Local | Remediação Recomendada |');
+      mdLines.push('| :---: | :---: | :--- | :--- | :--- |');
+      for (const f of findings) {
+        mdLines.push(`| **${f.severity}** | P${f.pilar} | \`${f.id}\` | \`${f.file}:${f.line}\` | ${String(f.remediation || '').replace(/\|/g, '/')} |`);
+      }
+      mdLines.push('', '### 🎯 Recortes de Código Prontos para Edição Direta (Zero Read-File Hops)', '');
+      for (const f of findings.slice(0, 25)) {
+        try {
+          const absTarget = path.join(projectDir, f.file);
+          if (fs.existsSync(absTarget) && fs.statSync(absTarget).isFile()) {
+            const srcLines = fs.readFileSync(absTarget, 'utf-8').split(/\r?\n/);
+            const targetLine = Math.max(1, Number(f.line) || 1);
+            const startL = Math.max(1, targetLine - 6);
+            const endL = Math.min(srcLines.length, targetLine + 6);
+            const snippet = srcLines.slice(startL - 1, endL).join('\n');
+            mdLines.push(`#### \`${f.file}:L${startL}-L${endL}\` — \`${f.id}\` (linha ${targetLine})`);
+            mdLines.push('```ts');
+            mdLines.push(snippet);
+            mdLines.push('```', '');
+          }
+        } catch {}
+      }
+    }
+    fs.writeFileSync(path.join(codeMapDir, 'security-remediation-report.md'), mdLines.join('\n') + '\n', 'utf-8');
+  } catch {}
+}
+
 const report = {
   version: AUDIT_VERSION,
   timestamp: new Date().toISOString(),
   summary: {
+    initialFindings: initialFindingsCount,
     totalFindings: findings.length,
     critical: criticalCount,
     high: highCount,
     medium: mediumCount,
     low: lowCount,
+    autoFixedCount: appliedFixes.length,
     autoFixedFiles: Array.from(fixedFiles),
     suppressedInline: processed.meta.suppressed.length,
     baselined: processed.meta.baselined,
@@ -1343,6 +1510,7 @@ const report = {
     changedOnly: processed.meta.changedOnly,
     status
   },
+  appliedFixes,
   suppressions: processed.meta.suppressed,
   findings
 };
