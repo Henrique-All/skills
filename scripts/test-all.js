@@ -54,6 +54,9 @@ try {
   // Testar funcionalidade do firewall pre-command-guard.js (suíte completa)
   execSync(`node "${path.join(rootDir, 'scripts', 'test-firewall.js')}"`, { stdio: 'inherit' });
 
+  // Testar segurança do instalador e seletor de versão (install.js & switch-version.js)
+  execSync(`node "${path.join(rootDir, 'scripts', 'test-install-security.js')}"`, { stdio: 'inherit' });
+
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
   const mobileBlocks = fs.readFileSync(path.join(rootDir, 'mobile-converter', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
