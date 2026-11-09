@@ -78,17 +78,17 @@ No celular, o usuário navega com uma das mãos.
 ### a) Metamorfose 1: Tabela Desktop ➔ Feed de Cards Táteis
 Tabelas largas com 5+ colunas estragam a experiência mobile. 
 - **Estratégia Obrigatória:** No desktop renderize a tabela clássica (`hidden md:table`). No mobile, renderize uma pilha vertical de cards táteis (`md:hidden flex flex-col gap-3`) com labels claros e ações rápidas.
-- Use o template oficial [templates/ResponsiveTableToCards.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/ResponsiveTableToCards.tsx).
+- Use o template oficial [templates/ResponsiveTableToCards.tsx](templates/ResponsiveTableToCards.tsx).
 
 ### b) Metamorfose 2: Topbar / Sidebar Desktop ➔ Bottom Nav Bar
 Sidebars ocupam espaço horizontal precioso e cabeçalhos superiores exigem esticar o polegar.
 - No mobile, oculte menus laterais extensos e coloque as 4–5 abas principais em uma **Bottom Navigation Bar** estilo iOS.
-- Use o template oficial [templates/MobileBottomNav.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/MobileBottomNav.tsx).
+- Use o template oficial [templates/MobileBottomNav.tsx](templates/MobileBottomNav.tsx).
 
 ### c) Metamorfose 3: Modais Centrados ➔ Swipeable Bottom Sheet
 Modais centralizados no meio da tela no celular parecem desktop mal dimensionado e impedem a rolagem do fundo.
 - Converta modais mobile em **Bottom Sheets** com puxador superior (pill handle), fundo translúcido e gesto de arrastar para baixo para fechar (`drag="y"` do Framer Motion).
-- Use o template oficial [templates/BottomSheet.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/BottomSheet.tsx).
+- Use o template oficial [templates/BottomSheet.tsx](templates/BottomSheet.tsx).
 
 ### d) Metamorfose 4: Desktop Hover ➔ Touch Feedback
 No mobile, `:hover` causa o vício do **"sticky hover"** (o botão fica com a cor de foco mesmo após soltar o dedo).
@@ -97,12 +97,12 @@ No mobile, `:hover` causa o vício do **"sticky hover"** (o botão fica com a co
 ### e) Metamorfose 5: Ações em Lista ➔ Swipeable Rows (Gesto Lateral)
 Em listas de dados móveis, expor múltiplos botões consome espaço vertical.
 - Adicione ações reveladas por arrasto horizontal para a esquerda (ex: Arquivar e Excluir estilo iOS/WhatsApp).
-- Use o template oficial [templates/SwipeableRow.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/SwipeableRow.tsx).
+- Use o template oficial [templates/SwipeableRow.tsx](templates/SwipeableRow.tsx).
 
 ### f) Metamorfose 6: Multi-Colunas (Chat/Inboxes) ➔ Fluxo Master-Detail (`MasterDetailShell.tsx`)
 NUNCA empilhe colunas de chat/atendimento verticalmente no celular (`flex-direction: column` cego).
 - **Estratégia Obrigatória:** No mobile, exiba apenas a lista de conversas quando nenhum chat estiver selecionado. Ao clicar em uma conversa, oculte a lista e exiba a área de chat em tela cheia (`100dvh`) com botão tátil de retorno (`← Voltar`) chamando `onCloseChat()` ou limpando o `selectedId`.
-- Use o template oficial [templates/MasterDetailShell.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/MasterDetailShell.tsx) e, para atualização por gesto vertical, [templates/PullToRefresh.tsx](file:///c:/Users/chalves/Documents/Projetos/skill%27s/mobile-converter/templates/PullToRefresh.tsx).
+- Use o template oficial [templates/MasterDetailShell.tsx](templates/MasterDetailShell.tsx) e, para atualização por gesto vertical, [templates/PullToRefresh.tsx](templates/PullToRefresh.tsx).
 - **Eliminação de Cards Vazios:** Oculte placeholders de tela vazia secundários no mobile (`display: none`).
 
 ### g) Clearance de Elementos Fixos (Menu Hambúrguer / Toggles)

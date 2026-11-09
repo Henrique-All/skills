@@ -1,13 +1,31 @@
+# Dependências e ambiente
 node_modules/
-.mobile-preview/
-.craft/
-.plan/
-.code-map/
+.env
+.env.*
+!.env.example
+
+# Cache e artefatos de agentes locais
 .agents/
 .claude/
 .cursor/
+.gemini/
+.kiro/
+.code-map/
+.craft/
+.mobile/
+.plan/
+.swarm/
+.hybrid/
+
+# Relatórios gerados, SARIF, snapshots e backups de autofix
+reports/
+*.sarif
+snapshots.json
+*.bak
+.audit-baseline.json
+
+# Arquivos de sistema e logs
 .DS_Store
 Thumbs.db
-.kito
-.kiro/
-.swarm
+*.log
+npm-debug.log*

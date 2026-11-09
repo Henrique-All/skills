@@ -10,8 +10,9 @@ Apenas a versão mais recente recebe atualizações ativas de segurança:
 
 | Versão | Suportada? |
 | :---: | :---: |
-| **`2.0.x`** |  **Sim** |
-| `< 2.0.0` |  Não (Recomendamos atualização imediata) |
+| **`2.8.x`** | **Sim (Versão Atual)** |
+| **`2.7.x`** | **Sim (Manutenção)** |
+| `< 2.7.0` | Não (Recomendamos atualização imediata) |
 
 ---
 

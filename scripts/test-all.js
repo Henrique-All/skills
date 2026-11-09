@@ -154,6 +154,21 @@ console.log(`🔍 Skills detectadas (${skillDirs.length}): ${skillDirs.join(', '
 for (const skillName of skillDirs) {
   const skillPath = path.join(rootDir, skillName);
   console.log(`▶️  Testando skill: [${skillName}]...`);
+
+  // Validar frontmatter YAML (name, description) e arquivos referenciados em references/ no SKILL.md
+  const skillMdContent = fs.readFileSync(path.join(skillPath, 'SKILL.md'), 'utf-8');
+  const fmMatch = skillMdContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fmMatch || !/^name:\s*\S+/m.test(fmMatch[1]) || !/^description:\s*\S+/m.test(fmMatch[1])) {
+    console.error(`❌ [${skillName}/SKILL.md] Frontmatter YAML inválido (name e description obrigatórios)!`);
+    hasFailures = true;
+  }
+  const refMatches = [...skillMdContent.matchAll(/references\/[A-Za-z0-9_./-]+\.md/g)].map(m => m[0]);
+  for (const refRel of refMatches) {
+    if (!fs.existsSync(path.join(skillPath, refRel))) {
+      console.error(`❌ [${skillName}/SKILL.md] Referência quebrada: ${refRel} não existe!`);
+      hasFailures = true;
+    }
+  }
   
   try {
     execSync('npm test', { cwd: skillPath, stdio: 'inherit' });
@@ -162,6 +177,33 @@ for (const skillName of skillDirs) {
     console.error(`❌ [${skillName}] falhou nos testes!\n`);
     hasFailures = true;
   }
+}
+
+// 4. VALIDAR HIGIENE DE LINKS, ÂNCORAS E AUSÊNCIA DE CAMINHOS LOCAIS HARDCODED
+try {
+  const headings = [...readmeContent.matchAll(/^#{1,6}\s+(.+)$/gm)].map(m =>
+    m[1].trim().toLowerCase().replace(/[`*~]/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s/g, '-')
+  );
+  for (const m of readmeContent.matchAll(/\[([^\]]+)\]\(#([^)]+)\)/g)) {
+    const anchor = decodeURIComponent(m[2]).toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '');
+    if (!headings.includes(anchor)) {
+      throw new Error(`Âncora quebrada no README.md: #${m[2]}`);
+    }
+  }
+  const tracked = execSync('git ls-files', { cwd: rootDir, encoding: 'utf-8' }).split('\n').filter(Boolean);
+  for (const rel of tracked) {
+    if (rel === 'AUDIT_REPORT.md' || rel === 'scripts/test-all.js') continue;
+    const abs = path.join(rootDir, rel);
+    if (!fs.existsSync(abs) || fs.statSync(abs).isDirectory()) continue;
+    const txt = fs.readFileSync(abs, 'utf-8');
+    if (/file:\/\/\/[a-zA-Z]:\/Users\//i.test(txt)) {
+      throw new Error(`Caminho local hardcoded detectado em ${rel}`);
+    }
+  }
+  console.log('✅ Higiene geral validada: âncoras do README, frontmatters SKILL.md, references/ e ausência de caminhos pessoais.');
+} catch (err) {
+  console.error(`❌ Falha de higiene geral: ${err.message}`);
+  hasFailures = true;
 }
 
 if (hasFailures) {

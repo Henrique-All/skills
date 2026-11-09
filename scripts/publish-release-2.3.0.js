@@ -44,7 +44,7 @@ const releaseData = {
   - \`LIGHT_MODE_WHITE_TEXT\`: Bloqueia \`color: #fff\` ou \`color: white\` estático sem condicional de tema, impedindo texto invisível (branco sobre fundo claro).
   - \`LIGHT_MODE_GHOST_SURFACE\`: Bloqueia cartões translúcidos \`rgba(255, 255, 255, 0.0x)\` que somem no fundo claro (\`#F8FAFC\`).
   - \`HARDCODED_DARK_SURFACE\`: Bloqueia fundos pretos estáticos que não respondem à alternância de tema.
-- **Pilar 3 no Anti-AI Slop:** Documentado no [rules/02-anti-ai-slop.md](file:///c:/Users/chalves/Documents/Projetos/skill's/rules/02-anti-ai-slop.md) a obrigatoriedade de contraste WCAG AA em ambos os temas.
+- **Pilar 3 no Anti-AI Slop:** Documentado no [rules/02-anti-ai-slop.md](rules/02-anti-ai-slop.md) a obrigatoriedade de contraste WCAG AA em ambos os temas.
 
 ---
 
