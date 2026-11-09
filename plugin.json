@@ -1,7 +1,7 @@
 {
   "name": "enterprise-ai-suite",
   "displayName": "Enterprise AI Engineering Suite",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "Ecossistema de Governança, Cartografia Arquitetural, Design Engineering, QA 360° e DevSecOps com 11 Subagentes Especialistas e 10 Skills para Google Antigravity, Claude Code e Cursor.",
   "author": {
     "name": "Henrique Alves"

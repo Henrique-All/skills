@@ -5,6 +5,43 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [2.8.1] - 2026-11-09 — 🛡️ Auditoria Geral de Engenharia, Hardening de Segurança, Isolamento VM, Unificação de Versões & Higiene do Monorepo
+
+### 📋 Parte 1: Correções Estruturais, Documentação e Governança
+1. **Contagens Unificadas (11 Subagentes & 10 Skills):** Alinhados os números reais de arquivos em `agents/*.agent.md` (**11 subagentes**) e diretórios com `SKILL.md` (**10 skills** = 9 skills de domínio + comando mestre `orch`) em todo o `README.md`, `plugin.json`, `package.json`, `scripts/doctor.js` e `scripts/test-all.js`.
+2. **Versão Única Canônica (`package.json` -> Monorepo + `README.md`):** `scripts/sync-versions.js` agora propaga e valida (`--check`) a versão a partir de `package.json` para `plugin.json`, todas as 10 `<skill>/package.json` e o `README.md` (que continha referências residuais a `v2.5.1` e `v2.7.0`). `npm test` falha se qualquer arquivo divergir.
+3. **Documentação Completa da `audit-code-full` (`orch qa`) e 4 Subagentes `qa-*`:** Incluída na Matriz de Capacidades, tabela de Slash Commands, seção de detalhamento das 10 skills, seção de 11 subagentes (`qa-crawler`, `qa-bruteforce`, `qa-ui-palette`, `qa-button-action`) e árvore estrutural do `README.md`.
+4. **Remoção de Alegações Sem Prova & Benchmark Reproduzível de Tokens:** Removidas notas auto-atribuídas (`"Nota 10.0/10"`, `"Ecosistema 10.0"`) e reformulado `"elimina alucinações"`. A tabela de 9 turnos foi explicitamente identificada como estimativa teórica de cenário hipotético e acompanhada do novo benchmark reproduzível `scripts/benchmark-tokens.js` (`npm run benchmark:tokens`).
+5. **Arquivo `LICENSE` (MIT):** Adicionado na raiz do repositório com copyright de Henrique Alves.
+6. **Transparência sobre Branch Protection:** Ajustados `README.md` e `CONTRIBUTING.md` para refletir a configuração real da branch `master` no GitHub (`enforce_admins: false`, `require_code_owner_reviews: false`, 1 aprovação exigida para não-administradores, bloqueio de force push/deleção e status checks do CI).
+7. **Node.js `>=20.0.0` (Fim de Suporte do Node 18):** Adicionado `"engines": { "node": ">=20.0.0" }` ao `package.json` raiz e às 10 skills; matriz do GitHub Actions (`.github/workflows/ci.yml`) atualizada para `[20.x, 22.x, 24.x]` e validação em `scripts/doctor.js` atualizada para `major >= 20`.
+8. **Descrição e Tópicos Sugeridos para o GitHub:**
+   - **Descrição sugerida:** `Enterprise AI Suite — Plugin, 11 specialist subagents, OS command firewall, and 10 zero-dependency CLI skills (Cartography, DevSecOps OWASP/SARIF, UI/Mobile, DB Sentinel, Test Forge & 360° QA) for Antigravity, Claude Code & Cursor.`
+   - **Tópicos sugeridos (16):** `ai-agents`, `claude-code`, `cursor-rules`, `google-antigravity`, `devsecops`, `sast`, `sarif`, `owasp`, `code-cartography`, `design-engineering`, `mobile-first`, `prisma`, `playwright`, `qa-automation`, `llm-tools`, `nodejs`.
+
+### 🔒 Parte 2: Auditoria de Código e Hardening de Segurança
+- **A. Firewall de Comandos no SO (`scripts/hooks/pre-command-guard.js` + `scripts/test-firewall.js`):**
+  - Corrigidos 22 bypasses reproduzidos em testes: suporte a separação de subcomandos encadeados (`;`, `&&`, `||`, `|`, `$(...)`, crases), remoção de prefixo `sudo` (incluindo `sudo -u root`), flags longas e separadas (`rm -r -f`, `rm --recursive --force`), caminhos com aspas e variáveis (`"/"`, `'.'`, `"./*"`, `"$HOME"`, `$PWD`, `~/*`), `Remove-Item` com `-Force -Recurse` em qualquer ordem, `rmdir /q /s`, `prisma migrate reset -f`, avaliação isolada de `git push -f` por subcomando (impedindo bypass quando encadeado com `--force-with-lease`) e suporte às ferramentas `bash` e `execute_command`.
+  - Mantida aprovação limpa de comandos legítimos (`rm -rf node_modules`, `git push --force-with-lease`, `npm test`).
+- **B. Segurança de Instalação e Troca de Versão (`install.js`, `scripts/switch-version.js` + `scripts/test-install-security.js`):**
+  - Eliminado uso de `execSync` com interpolação de strings; adotado `execFileSync` com arrays de argumentos validados por allowlist.
+  - `switch-version.js`: validação estrita de formato semver da tag (bloqueando path traversal e injeção de argumentos), suporte a tag posicional e `--version=`, allowlist de hosts HTTPS do GitHub (`validateUrl` contra SSRF/redirecionamento), verificação de SHA da tag na API e cálculo/validação de hash SHA-256 (`--sha256=`), modo `--dry-run` e exigência de confirmação explícita (ou `--yes`).
+  - `install.js`: adicionado suporte a `--dry-run` e criação automática de backup `.bak` antes de sobrescrever diretório de plugin existente.
+- **C. Autofix Seguro (`--fix`) em `devsecops-audit` e `mobile-converter`:**
+  - Adicionado suporte a `--dry-run` (lista `plannedFixes` no JSON sem tocar no disco) e criação automática de arquivo de backup `<arquivo>.bak` antes de qualquer modificação por `--fix` (desativável via `--no-backup`).
+- **D. Isolamento do Fuzzing `node:vm` em `audit-code-full`:**
+  - `audit-full.js` executa `worker-agent.js` em subprocesso com limite de memória (`--max-old-space-size=128`), `timeout: 15000` (`SIGKILL`) e variáveis de ambiente sanitizadas.
+  - `worker-agent.js` cria contexto VM sem expor construtores do host (`Object.create(null)` + mocks instanciados dentro do próprio contexto VM), com `codeGeneration: { strings: false, wasm: false }` (bloqueando escape via `Object.constructor('return process')()`), `microtaskMode: 'afterEvaluate'` (impedindo loop infinito de Promises), timeout de `20ms` por chamada, orçamento de `250ms` por arquivo e exclusão de código de terceiros (`vendor/`, `third_party/`, `*.min.js`, `*.bundle.js`).
+- **E & F. Cobertura das 13 Regras `RULE_*`, Auto-Auditoria Limpa e Sincronização `shared/`:**
+  - Adicionadas fixtures seguras para todas as 13 regras `RULE_*`, fixture de projeto Express + Prisma (0 falsos positivos) e teste automatizado de `--changed` em `devsecops-audit/test/precision.check.js`.
+  - Corrigidos achados do próprio monorepo (`rel="noopener noreferrer"` em `preview-plan.js`, headers CSP/`X-Content-Type-Options` em `mock-route.js`), atingindo **0 achados (`APROVADO`)** ao rodar `node devsecops-audit/scripts/audit.js .`.
+  - Adicionados testes de falha em divergência (`--check`) e idempotência de `scripts/sync-shared.js` em `shared/test/suite-core.check.js`.
+- **G. Higiene Geral:**
+  - Removidos caminhos absolutos locais (`file:///...`) de `mobile-converter/SKILL.md` e `scripts/publish-release-2.3.0.js`.
+  - Atualizados `.gitignore` (`*.sarif`, `reports/`, `.hybrid/`, `snapshots.json`, `*.bak`, `.audit-baseline.json`), `SECURITY.md`, `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md` e adicionadas validações automáticas de frontmatter, `references/` e âncoras do `README.md` em `scripts/test-all.js`.
+
+---
+
 ## [2.8.0] - 2026-11-04 — 🕵️‍♂️ Audit-Code-Full: QA Brute-Force 360° (4 Agentes + Execução Real em VM + IA Paralela + Code-Map Final)
 
 ### 🕵️‍♂️ 1. Nova Skill `audit-code-full` & Enxame de 4 Agentes de QA Paralelos

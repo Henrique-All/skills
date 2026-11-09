@@ -1,4 +1,4 @@
-# ⚡ Enterprise AI Suite (v2.8.0)
+# ⚡ Enterprise AI Suite (v2.8.1)
 
 > **Plugin Oficial, Enxame de 11 Subagentes Especialistas, 10 Skills de Engenharia e Firewall de Segurança no SO.**  
 > Desenvolvido para apoiar agentes de IA (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) com engenharia de software determinística — reduzindo alucinações de caminho e contrato por meio de evidências estáticas, isolamento de contexto e travas de ciclo de vida.
@@ -11,7 +11,7 @@
 
 ---
 
-## 🆕 Novidades da v2.8.0 — Audit-Code-Full (QA Brute-Force 360° com 4 Agentes Paralelos)
+## 🆕 Novidades da v2.8.1 — Audit-Code-Full (QA Brute-Force 360° com 4 Agentes Paralelos)
 
 | Recurso | O que resolve | Onde |
 | :--- | :--- | :--- |
@@ -84,7 +84,7 @@ npm test
 
 ## 💰 Eficiência de Contexto & Economia de Tokens
 
-> **Engenharia de Contexto Efêmero:** Como a v2.8.0 reduz o consumo de tokens enviados ao contexto principal da LLM por meio de indexação cartográfica local e subagentes descartáveis.
+> **Engenharia de Contexto Efêmero:** Como a v2.8.1 reduz o consumo de tokens enviados ao contexto principal da LLM por meio de indexação cartográfica local e subagentes descartáveis.
 
 ### 🧪 Benchmark Reproduzível no Próprio Repositório (`npm run benchmark:tokens`)
 
@@ -329,7 +329,7 @@ npm test
 
 ```
 enterprise-ai-suite/
-├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.8.0)
+├── plugin.json            # Manifesto oficial do Plugin Antigravity (v2.8.1)
 ├── hooks.json             # Travas de ciclo de vida reativas no SO (Firewall de comandos)
 ├── LICENSE                # Licença MIT
 ├── bin/

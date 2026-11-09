@@ -13,6 +13,7 @@ node_modules/
 .code-map/
 .craft/
 .mobile/
+.mobile-preview/
 .plan/
 .swarm/
 .hybrid/

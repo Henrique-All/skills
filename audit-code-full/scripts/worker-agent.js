@@ -33,9 +33,10 @@ const IGNORE_DIRS = new Set([
   '.swarm'
 ]);
 
-const MAX_FILE_FUZZ_MS = 250;
+const MAX_FILE_FUZZ_MS = 800;
 const MAX_FUNCTIONS_PER_FILE = 25;
-const VM_CALL_TIMEOUT_MS = 20;
+const VM_BOOTSTRAP_TIMEOUT_MS = 150;
+const VM_CALL_TIMEOUT_MS = 25;
 
 const CODE_EXTS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.html', '.css', '.scss', '.prisma', '.sql']);
 const UI_EXTS = new Set(['.jsx', '.tsx', '.vue', '.svelte', '.html', '.css', '.scss']);
@@ -234,9 +235,9 @@ function executeRuntimeFuzzOnFile(content, relPath, fuzzVectors) {
           rmSync: () => {}
         };
       `;
-      vm.runInContext(bootstrapMocks, context, { timeout: VM_CALL_TIMEOUT_MS });
-      vm.runInContext(fullFnCode, context, { timeout: VM_CALL_TIMEOUT_MS });
-      const isFn = vm.runInContext(`typeof ${fnName} === 'function'`, context, { timeout: VM_CALL_TIMEOUT_MS });
+      vm.runInContext(bootstrapMocks, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
+      vm.runInContext(fullFnCode, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
+      const isFn = vm.runInContext(`typeof ${fnName} === 'function'`, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
       if (!isFn) continue;
 
       runtimeResults.functionsExecutedInVm++;
