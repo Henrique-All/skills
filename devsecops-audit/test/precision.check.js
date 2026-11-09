@@ -54,36 +54,117 @@ function check(label, condition, detail = '') {
 console.log('🎯 Testes de Precisão do devsecops-audit (fixtures negativas, supressão e baseline)...\n');
 
 // ---------------------------------------------------------------------------
-// 1. Fixture LIMPA -> 0 achados
+// 1. Fixture LIMPA cobrindo todas as 13 regras RULE_* + Express/Prisma -> 0 achados
 // ---------------------------------------------------------------------------
 const cleanDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devsecops-clean-'));
+fs.mkdirSync(path.join(cleanDir, 'src', 'routes'), { recursive: true });
+fs.mkdirSync(path.join(cleanDir, 'prisma'), { recursive: true });
+
 fs.writeFileSync(path.join(cleanDir, 'package.json'), JSON.stringify({
-  name: 'clean-fixture', version: '1.0.0',
-  dependencies: { axios: '^1.5.0', jsonwebtoken: '^9.0.2' }
+  name: 'clean-express-prisma-fixture', version: '1.0.0',
+  dependencies: { axios: '^1.5.0', jsonwebtoken: '^9.0.2', express: '^4.21.2', '@prisma/client': '^6.0.0', zod: '^3.24.0' }
 }, null, 2));
 fs.writeFileSync(path.join(cleanDir, 'package-lock.json'), JSON.stringify({
-  name: 'clean-fixture', lockfileVersion: 3,
-  packages: { '': {}, 'node_modules/axios': { version: '1.7.9' }, 'node_modules/jsonwebtoken': { version: '9.0.2' } }
+  name: 'clean-express-prisma-fixture', lockfileVersion: 3,
+  packages: {
+    '': {},
+    'node_modules/axios': { version: '1.7.9' },
+    'node_modules/jsonwebtoken': { version: '9.0.2' },
+    'node_modules/express': { version: '4.21.2' }
+  }
 }, null, 2));
-fs.writeFileSync(path.join(cleanDir, 'session.ts'), [
-  "import jwt from 'jsonwebtoken';",
-  "import { z } from 'zod';",
-  "const UpdateSchema = z.object({ name: z.string().max(80) });",
-  'export function verifySession(token: string, secret: string) {',
-  "  return jwt.verify(token, secret, { algorithms: ['HS256'] });",
-  '}',
-  'export async function updateProfile(req, res) {',
-  '  const safeData = UpdateSchema.parse(req.body);',
-  '  await prisma.profile.update({ where: { id: req.params.id, userId: req.user.id }, data: safeData });',
-  "  res.cookie('session', 'abc', { httpOnly: true, secure: true, sameSite: 'strict' });",
-  '  return res.json({ ok: true });',
+
+// Schema Prisma limpo
+fs.writeFileSync(path.join(cleanDir, 'prisma', 'schema.prisma'), [
+  'datasource db { provider = "postgresql" url = env("DATABASE_URL") }',
+  'model Order {',
+  '  id        String @id @default(cuid())',
+  '  userId    String',
+  '  totalCents Int',
+  '  @@index([userId])',
   '}'
 ].join('\n'));
 
+// Tauri config seguro (RULE_TAURI_IPC_UNRESTRICTED_CSP negativa)
+fs.writeFileSync(path.join(cleanDir, 'tauri.conf.json'), JSON.stringify({
+  tauri: {
+    security: { csp: "default-src 'self'; script-src 'self'" },
+    allowlist: { shell: { execute: false, open: false } }
+  }
+}, null, 2));
+
+// Rotas Express + Prisma cobrindo versões SEGURAS de todas as 12 regras RULE_* de código
+fs.writeFileSync(path.join(cleanDir, 'src', 'routes', 'app.ts'), [
+  "import express from 'express';",
+  "import helmet from 'helmet';",
+  "import bcrypt from 'bcrypt';",
+  "import crypto from 'crypto';",
+  "import jwt from 'jsonwebtoken';",
+  "import DOMPurify from 'isomorphic-dompurify';",
+  "import { z } from 'zod';",
+  'const app = express();',
+  'app.use(helmet());',
+  "const UpdateSchema = z.object({ name: z.string().max(80) });",
+  // 1. RULE_JWT_MISSING_ALGORITHM_OPTION (seguro: algorithms explícito)
+  'export function verifySession(token: string, secret: string) {',
+  "  return jwt.verify(token, secret, { algorithms: ['HS256'] });",
+  '}',
+  // 2. RULE_AUTH_HARDCODED_MASTER_PASSWORDS + 3. RULE_AUTH_MFA_UNIVERSAL_BYPASS + 4. RULE_AUTH_INFO_DISCLOSURE_IN_ERRORS (seguro)
+  'export async function login(req, res) {',
+  '  const user = await prisma.user.findUnique({ where: { email: req.body.email } });',
+  '  if (!user || !(await bcrypt.compare(req.body.password, user.passwordHash))) {',
+  "    return res.status(401).json({ error: 'Credenciais inválidas' });",
+  '  }',
+  '  const mfaValid = authenticator.verify({ token: req.body.otp, secret: user.totpSecret });',
+  '  if (!mfaValid) return res.status(401).json({ error: "Código MFA inválido" });',
+  "  res.cookie('session', 'abc', { httpOnly: true, secure: true, sameSite: 'strict' });",
+  '  return res.json({ ok: true });',
+  '}',
+  // 5. RULE_BOLA_IDOR_MISSING_OWNERSHIP_CHECK + 6. RULE_MASS_ASSIGNMENT_UNSANITIZED_BODY (seguro)
+  'export async function updateProfile(req, res) {',
+  '  const safeData = UpdateSchema.parse(req.body);',
+  '  await prisma.profile.update({ where: { id: req.params.id, userId: req.user.id }, data: safeData });',
+  '  return res.json({ ok: true });',
+  '}',
+  // 7. RULE_WEBHOOK_MISSING_HMAC_SIGNATURE + 8. RULE_TIMING_ATTACK_STRING_COMPARE (seguro)
+  "app.post('/webhooks/stripe', (req, res) => {",
+  "  const expectedSignature = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET!).update(req.rawBody).digest('hex');",
+  "  const clientSignature = String(req.headers['x-signature'] || '');",
+  '  const isValid = crypto.timingSafeEqual(Buffer.from(clientSignature), Buffer.from(expectedSignature));',
+  '  if (!isValid) return res.status(401).end();',
+  '  return res.status(200).json({ received: true });',
+  '});',
+  // 9. RULE_WEBSOCKET_UNAUTHENTICATED_ROOMS (seguro: usa socket.data.user.id)
+  'export function setupSocket(io) {',
+  "  io.on('connection', (socket) => {",
+  "    socket.on('join-room', () => { socket.join(`user:${socket.data.user.id}`); });",
+  '  });',
+  '}',
+  // 10. RULE_SSRF_UNVALIDATED_MEDIA_DOWNLOAD (seguro: validateUrl + bloqueio de IPs privados)
+  'export async function fetchAvatar(req, res) {',
+  '  const mediaUrl = validateUrl(req.body.mediaUrl);',
+  "  if (mediaUrl.includes('127.0.0.1') || mediaUrl.includes('169.254.169.254') || isPrivateIP(mediaUrl)) {",
+  '    return res.status(400).end();',
+  '  }',
+  '  const resp = await fetch(mediaUrl);',
+  '  return res.json({ status: resp.status });',
+  '}',
+  // 11. RULE_STORED_XSS_UNSANITIZED_SVG_UPLOAD (seguro: DOMPurify.sanitize + Content-Disposition: attachment)
+  'export function sanitizeSvgUpload(file, res) {',
+  "  if (file.mimetype === 'image/svg+xml') {",
+  '    const clean = DOMPurify.sanitize(file.buffer.toString());',
+  "    res.setHeader('Content-Disposition', 'attachment');",
+  '    return clean;',
+  '  }',
+  '}',
+  // 12. RULE_UNPROTECTED_FILE_DOWNLOAD_ROUTE (seguro: middleware requireAuth presente)
+  "app.get('/api/files/:id', requireAuth, (req, res) => res.sendFile(req.params.id));"
+].join('\n'));
+
 const cleanReport = runAudit(cleanDir);
-check('Fixture limpa (axios 1.7.9 via lockfile + jwt com algorithms + zod) gera 0 achados',
+check('Fixture limpa (13 regras RULE_* seguras + projeto Express/Prisma + lockfile) gera 0 falsos positivos',
   cleanReport.findings.length === 0,
-  cleanReport.findings.map((f) => f.id).join(', '));
+  cleanReport.findings.map((f) => `${f.id}@${f.file}:${f.line}`).join(', '));
 fs.rmSync(cleanDir, { recursive: true, force: true });
 
 // ---------------------------------------------------------------------------
@@ -301,6 +382,24 @@ try {
       (linkLines[0].match(/rel="noopener noreferrer"/g) || []).length === 1,
     linkLines[0]);
   check('--fix não mexe em linha que não foi acusada', linkLines[1] === linkLine2, linkLines[1]);
+
+  // F. --changed: em repositório git, filtra apenas achados de arquivos modificados/untracked
+  const gitDir = path.join(fixRoot, 'git-changed');
+  fs.mkdirSync(gitDir);
+  execSync('git init', { cwd: gitDir, stdio: 'ignore' });
+  execSync('git config user.email "test@example.com"', { cwd: gitDir, stdio: 'ignore' });
+  execSync('git config user.name "Test"', { cwd: gitDir, stdio: 'ignore' });
+  fs.writeFileSync(path.join(gitDir, 'committed.ts'), "export function a(req, res) { res.cookie('sid', '1'); }\n");
+  execSync('git add committed.ts && git commit -m "init"', { cwd: gitDir, stdio: 'ignore' });
+  // Cria arquivo novo não commitado (untracked) com outro achado
+  fs.writeFileSync(path.join(gitDir, 'untracked.ts'), '<a href="https://example.com" target="_blank">x</a>\n');
+  const changedReport = runAudit(gitDir, '--changed');
+  const changedFiles = changedReport.findings.map((f) => f.file);
+  check('--changed retorna apenas achados de arquivos alterados/untracked no git',
+    changedReport.summary.changedOnly === true &&
+      changedFiles.includes('untracked.ts') &&
+      !changedFiles.includes('committed.ts'),
+    JSON.stringify(changedFiles));
 } catch (e) {
   check('Cenários de --fix executados sem exceções', false, e.message);
 } finally {

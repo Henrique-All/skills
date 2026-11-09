@@ -251,6 +251,12 @@ if (!selectedPilares || selectedPilares.includes(16)) {
 // Pilar 2, 3, 4, 5, 6, 7, 8, 9, 12, 14, 15, 18: Padrões estáticos no código
 for (const file of codeFiles) {
   try {
+    // Ignora arquivos de suíte de testes (.test.js, .spec.js, .check.js) nas regras de lógica de aplicação
+    // (o Pilar 16 acima continua escaneando todos os arquivos em busca de segredos reais).
+    if (/\.(?:test|spec|check)\.[jt]sx?$/i.test(file)) {
+      continue;
+    }
+
     const content = fs.readFileSync(file, 'utf-8');
 
     // Ignora o próprio motor de auditoria para evitar falsos positivos nos padrões de regex
@@ -263,7 +269,7 @@ for (const file of codeFiles) {
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
       const trimmedLine = line.trim();
-      const isComment = trimmedLine.startsWith('//') || trimmedLine.startsWith('*') || trimmedLine.startsWith('/*') || trimmedLine.startsWith('#');
+      const isComment = trimmedLine.startsWith('//') || trimmedLine.startsWith('*') || trimmedLine.startsWith('/*') || trimmedLine.startsWith('#') || /^\d+\.\s/.test(trimmedLine);
       if (isComment) return;
 
       // =========================================================================
