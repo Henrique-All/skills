@@ -26,9 +26,9 @@ const protectionRules = {
   required_status_checks: {
     strict: true,
     contexts: [
-      'validate-skills (18.x)',
       'validate-skills (20.x)',
-      'validate-skills (22.x)'
+      'validate-skills (22.x)',
+      'validate-skills (24.x)'
     ]
   },
   enforce_admins: false,
@@ -63,7 +63,7 @@ const req = https.request({
       console.log('🛡️  Sucesso! Branch master está agora PROTEGIDA no GitHub:');
       console.log('   - Exigência de Pull Request com pelo menos 1 aprovação;');
       console.log('   - Invalidação de reviews se novos commits forem adicionados;');
-      console.log('   - Exigência dos testes do GitHub Actions (Node 18, 20 e 22) passando;');
+      console.log('   - Exigência dos testes do GitHub Actions (Node 20, 22 e 24) passando;');
       console.log('   - Proibição absoluta de Force Pushes (git push --force);');
       console.log('   - Proibição de exclusão da branch master.');
     } else {

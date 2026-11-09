@@ -41,10 +41,10 @@ console.log(`${colors.gray}Verificando runtime, configurações de IA, subagente
 // 1. Runtime & Ferramental
 const nodeVer = process.version;
 const major = parseInt(nodeVer.replace('v', '').split('.')[0], 10);
-if (major >= 18) {
-  report('Runtime', `Node.js (${nodeVer})`, 'PASS', 'Compatível com especificações modernas (Node >= 18)');
+if (major >= 20) {
+  report('Runtime', `Node.js (${nodeVer})`, 'PASS', 'Compatível com especificações LTS modernas (Node >= 20)');
 } else {
-  report('Runtime', `Node.js (${nodeVer})`, 'FAIL', 'Necessário Node.js >= 18.0.0');
+  report('Runtime', `Node.js (${nodeVer})`, 'FAIL', 'Necessário Node.js >= 20.0.0');
 }
 
 try {
