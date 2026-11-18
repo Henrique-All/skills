@@ -51,13 +51,15 @@ function isExistingDir(candidate) {
   }
 }
 
-// Procura o script da skill nos dois layouts suportados:
+// Procura o script da skill nos layouts suportados:
 //  - monorepo:          <raiz>/<skill>/scripts/<arquivo>
 //  - plugin instalado:  <raiz>/skills/<skill>/scripts/<arquivo>
+//  - skills irmãs:      <raiz>/../<skill>/scripts/<arquivo>
 function resolveSkillScript(skill, ...parts) {
   const candidates = [
     path.join(rootDir, skill, ...parts),
-    path.join(rootDir, 'skills', skill, ...parts)
+    path.join(rootDir, 'skills', skill, ...parts),
+    path.join(rootDir, '..', skill, ...parts)
   ];
   return candidates.find((c) => fs.existsSync(c)) || null;
 }

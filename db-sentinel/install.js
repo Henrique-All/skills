@@ -29,19 +29,36 @@ function copyRecursiveSync(src, dest) {
   }
 }
 
-// 1. Instalação Local no Workspace
+// 1. Instalação Local no Workspace (Antigravity, Codex, OpenCode, Claude Code, Cursor)
 if (!isGlobal || isBoth) {
   copyRecursiveSync(sourceDir, path.join(process.cwd(), '.agents', 'skills', 'db-sentinel'));
+  copyRecursiveSync(sourceDir, path.join(process.cwd(), '.opencode', 'skills', 'db-sentinel'));
   copyRecursiveSync(sourceDir, path.join(process.cwd(), '.claude', 'skills', 'db-sentinel'));
   const cursorDir = path.join(process.cwd(), '.cursor', 'rules');
   if (!fs.existsSync(cursorDir)) fs.mkdirSync(cursorDir, { recursive: true });
   if (fs.existsSync(mdcPath)) fs.copyFileSync(mdcPath, path.join(cursorDir, 'db-sentinel.mdc'));
 }
 
-// 2. Instalação Global
+// 2. Instalação Global (Antigravity, Claude Code, ChatGPT Codex, OpenCode, Cursor)
 if (isGlobal || isBoth) {
+  const skillMdPath = path.join(sourceDir, 'SKILL.md');
   copyRecursiveSync(sourceDir, path.join(homeDir, '.gemini', 'config', 'skills', 'db-sentinel'));
   copyRecursiveSync(sourceDir, path.join(homeDir, '.claude', 'skills', 'db-sentinel'));
+  copyRecursiveSync(sourceDir, path.join(homeDir, '.codex', 'skills', 'db-sentinel'));
+  copyRecursiveSync(sourceDir, path.join(homeDir, '.agents', 'skills', 'db-sentinel'));
+  copyRecursiveSync(sourceDir, path.join(homeDir, '.config', 'opencode', 'skills', 'db-sentinel'));
+  copyRecursiveSync(sourceDir, path.join(homeDir, '.opencode', 'skills', 'db-sentinel'));
+  if (fs.existsSync(skillMdPath)) {
+    for (const cmdDir of [
+      path.join(homeDir, '.codex', 'prompts'),
+      path.join(homeDir, '.config', 'opencode', 'commands'),
+      path.join(homeDir, '.config', 'opencode', 'command'),
+      path.join(homeDir, '.claude', 'commands')
+    ]) {
+      fs.mkdirSync(cmdDir, { recursive: true });
+      fs.copyFileSync(skillMdPath, path.join(cmdDir, 'db-sentinel.md'));
+    }
+  }
   const globalCursorDir = path.join(homeDir, '.cursor', 'rules');
   if (!fs.existsSync(globalCursorDir)) fs.mkdirSync(globalCursorDir, { recursive: true });
   if (fs.existsSync(mdcPath)) fs.copyFileSync(mdcPath, path.join(globalCursorDir, 'db-sentinel.mdc'));

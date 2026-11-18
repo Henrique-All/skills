@@ -175,6 +175,22 @@ if (fs.existsSync(antigravityGlobalPlugin)) {
   report('Integrações', 'Google Antigravity (Global)', 'PASS', 'Workspace local ativo (instalação global opcional via npm run install:plugin:global)');
 }
 
+const codexGlobalSkill = path.join(homeDir, '.codex', 'skills', 'orch', 'SKILL.md');
+const agentsGlobalDbScript = path.join(homeDir, '.agents', 'skills', 'db-sentinel', 'scripts', 'db-audit.js');
+if (fs.existsSync(codexGlobalSkill) && fs.existsSync(agentsGlobalDbScript)) {
+  report('Integrações', 'ChatGPT Codex / OpenAI Codex (Global)', 'PASS', 'Skills completas + scripts sincronizados em ~/.codex/skills e ~/.agents/skills');
+} else {
+  report('Integrações', 'ChatGPT Codex / OpenAI Codex (Global)', 'WARN', 'Skills globais do Codex ausentes ou incompletas. Execute: npm run install:both');
+}
+
+const opencodeGlobalSkill = path.join(homeDir, '.config', 'opencode', 'skills', 'orch', 'SKILL.md');
+const opencodeGlobalCmd = path.join(homeDir, '.config', 'opencode', 'commands', 'orch.md');
+if (fs.existsSync(opencodeGlobalSkill) && fs.existsSync(opencodeGlobalCmd)) {
+  report('Integrações', 'OpenCode (Global Skills & Commands)', 'PASS', 'Skills e comandos /orch sincronizados em ~/.config/opencode/{skills,commands}');
+} else {
+  report('Integrações', 'OpenCode (Global Skills & Commands)', 'WARN', 'Skills/comandos do OpenCode ausentes. Execute: npm run install:both');
+}
+
 // 7. Auditoria de Segredos Rastreados no Git
 try {
   const trackedFiles = execSync('git ls-files', { cwd: rootDir, encoding: 'utf-8' }).split('\n');

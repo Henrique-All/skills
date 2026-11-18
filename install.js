@@ -49,6 +49,8 @@ const ALLOWED_SKILL_ARGS = new Set([
   '--target=all',
   '--target=gemini',
   '--target=claude',
+  '--target=codex',
+  '--target=opencode',
   '--target=cursor'
 ]);
 const safeSkillArgs = rawArgs.filter(a => ALLOWED_SKILL_ARGS.has(a));
@@ -181,12 +183,62 @@ if (!isGlobal || isBoth) {
 if (isGlobal || isBoth) {
   const globalPluginDir = path.join(homeDir, '.gemini', 'config', 'plugins', 'enterprise-ai-suite');
   installedSkillNames = deployAntigravityPlugin(globalPluginDir, 'Perfil Global (~/.gemini/config/plugins/enterprise-ai-suite)');
+  const universalPluginDir = path.join(homeDir, '.agents', 'plugins', 'enterprise-ai-suite');
+  deployAntigravityPlugin(universalPluginDir, 'Runtime Universal (~/.agents/plugins/enterprise-ai-suite)');
+
+  if (!isDryRun && !isPluginOnly) {
+    // Sincronizar subagentes e instruções globais para OpenCode, ChatGPT Codex e Agent Skills (~/.agents)
+    const srcAgentsDir = path.join(rootDir, 'agents');
+    if (fs.existsSync(srcAgentsDir)) {
+      for (const destAgentsDir of [
+        path.join(homeDir, '.agents', 'agents'),
+        path.join(homeDir, '.config', 'opencode', 'agents'),
+        path.join(homeDir, '.claude', 'agents')
+      ]) {
+        copyRecursiveSync(srcAgentsDir, destAgentsDir);
+      }
+    }
+
+    const globalAgentsMd = `# ⚡ Diretrizes Globais — Enterprise AI Suite (v${suiteVersion})
+
+## 1. PASSO ZERO OBRIGATÓRIO: Cartografia Primeiro (Economia de Tokens)
+- Antes de executar buscas às cegas no repositório, leia imediatamente \`.code-map/INDEX.md\` (ou \`.code-map/graph.json\`).
+- Caso \`.code-map/INDEX.md\` não exista, gere o mapa rodando:
+  \`node "$HOME/.agents/plugins/enterprise-ai-suite/skills/repo-cartographer/scripts/cartographer.js" init .\`
+- Para executar o pipeline unificado \`/orch\`:
+  \`node "$HOME/.agents/plugins/enterprise-ai-suite/bin/orch.js" run "<demanda>"\`
+
+## 2. EXCELÊNCIA PROATIVA (UI Dual-Theme, Mobile Master-Detail, Zero-Trust)
+- **Dual-Theme Obrigatório:** Contraste WCAG AA tanto no Modo Claro quanto no Modo Escuro (proibido \`#fff\` hardcoded no tema claro).
+- **Mobile Nativo:** Fluxo Master-Detail, \`100dvh\`, Safe Areas e Touch Targets >= 44px.
+- **Banco & Segurança:** Índices em todas as FKs, zero N+1, 18 pilares OWASP verificados.
+`;
+    for (const agentsMdDest of [
+      path.join(homeDir, '.codex', 'AGENTS.md'),
+      path.join(homeDir, '.config', 'opencode', 'AGENTS.md'),
+      path.join(homeDir, 'AGENTS.md')
+    ]) {
+      try {
+        fs.mkdirSync(path.dirname(agentsMdDest), { recursive: true });
+        fs.writeFileSync(agentsMdDest, globalAgentsMd, 'utf-8');
+      } catch {}
+    }
+
+    // Remover stubs legados de 8 linhas do eco-agent-suite que sombreavam as skills reais
+    const legacyEcoPlugin = path.join(homeDir, '.gemini', 'config', 'plugins', 'eco-agent-suite');
+    if (fs.existsSync(legacyEcoPlugin)) {
+      try {
+        fs.rmSync(legacyEcoPlugin, { recursive: true, force: true });
+        console.log('🧹 Stub legado (~/.gemini/config/plugins/eco-agent-suite) removido para evitar sombreamento das skills.');
+      } catch {}
+    }
+  }
 }
 
-// 2. INSTALAÇÃO DAS SKILLS INDIVIDUAIS (Retrocompatibilidade Claude Code e Cursor)
+// 2. INSTALAÇÃO DAS SKILLS INDIVIDUAIS (Claude Code, ChatGPT Codex, OpenCode e Cursor)
 if (!isPluginOnly) {
   console.log('\n---------------------------------------------------------------');
-  console.log('🔄 Sincronizando Skills Individuais (Claude Code & Cursor)...');
+  console.log('🔄 Sincronizando Skills Individuais (Claude Code, Codex, OpenCode & Cursor)...');
   console.log('---------------------------------------------------------------');
 
   const entries = fs.readdirSync(rootDir, { withFileTypes: true });
@@ -210,11 +262,8 @@ if (!isPluginOnly) {
   }
 }
 
-// 3. DESDUPLICAÇÃO NO ANTIGRAVITY
+// 3. DESDUPLICAÇÃO NO ANTIGRAVITY GLOBAL (Preservando .agents/skills para Codex e OpenCode)
 if (!rawArgs.includes('--keep-duplicates')) {
-  if (!isGlobal || isBoth) {
-    deduplicateAntigravitySkills(path.join(targetWorkspace, '.agents', 'skills'), installedSkillNames, '.agents/skills');
-  }
   if (isGlobal || isBoth) {
     deduplicateAntigravitySkills(path.join(homeDir, '.gemini', 'config', 'skills'), installedSkillNames, '~/.gemini/config/skills');
   }
@@ -224,8 +273,10 @@ console.log('\n===============================================================')
 console.log(isDryRun
   ? '🔍 SIMULAÇÃO (--dry-run) CONCLUÍDA SEM ALTERAR ARQUIVOS!'
   : '🎉 INSTALAÇÃO E SINCRONIZAÇÃO CONCLUÍDAS COM SUCESSO!');
-console.log('Ambientes configurados (Zero Duplicidade):');
+console.log('Ambientes configurados:');
 console.log('  1. Google Antigravity: Plugin Oficial + 11 Subagentes + Hooks (Desduplicado)');
-console.log('  2. Claude Code: Skills sincronizadas em ~/.claude/skills/');
-console.log('  3. Cursor / Windsurf: Regras sincronizadas em ~/.cursor/rules/');
+console.log('  2. ChatGPT Codex (OpenAI): Skills e Prompts em ~/.codex/skills/, ~/.agents/skills/ e .agents/skills/');
+console.log('  3. OpenCode: Skills e Comandos em ~/.config/opencode/skills/, ~/.config/opencode/commands/ e .opencode/skills/');
+console.log('  4. Claude Code: Skills e Comandos em ~/.claude/skills/ e ~/.claude/commands/');
+console.log('  5. Cursor / Windsurf: Regras sincronizadas em ~/.cursor/rules/');
 console.log('===============================================================\n');

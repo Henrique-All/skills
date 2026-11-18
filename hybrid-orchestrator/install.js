@@ -40,6 +40,23 @@ const AGENT_TARGETS = {
     dir: path.join(homeDir, '.claude', 'skills', 'hybrid-orchestrator'),
     type: 'dir',
   },
+  codex: {
+    label: 'ChatGPT Codex / OpenAI Codex',
+    dir: path.join(homeDir, '.codex', 'skills', 'hybrid-orchestrator'),
+    extraDirs: [path.join(homeDir, '.agents', 'skills', 'hybrid-orchestrator')],
+    promptDir: path.join(homeDir, '.codex', 'prompts'),
+    type: 'dir',
+  },
+  opencode: {
+    label: 'OpenCode',
+    dir: path.join(homeDir, '.config', 'opencode', 'skills', 'hybrid-orchestrator'),
+    extraDirs: [path.join(homeDir, '.opencode', 'skills', 'hybrid-orchestrator')],
+    commandDirs: [
+      path.join(homeDir, '.config', 'opencode', 'commands'),
+      path.join(homeDir, '.config', 'opencode', 'command')
+    ],
+    type: 'dir',
+  },
   cursor: {
     label: 'Cursor Rules',
     dir: path.join(homeDir, '.cursor', 'rules'),
@@ -116,6 +133,7 @@ function installCursorRule(targetDir, label, note) {
 if (!isGlobal || isBoth) {
   const targetWorkspace = path.join(process.cwd(), '.agents', 'skills', 'hybrid-orchestrator');
   installDirectory(targetWorkspace, 'Workspace Local (.agents/skills)');
+  installDirectory(path.join(process.cwd(), '.opencode', 'skills', 'hybrid-orchestrator'), 'Workspace Local (.opencode/skills)');
 
   // Se houver pasta .claude no projeto ou para Claude Code
   const targetClaudeWorkspace = path.join(process.cwd(), '.claude', 'skills', 'hybrid-orchestrator');
@@ -139,6 +157,17 @@ if (isGlobal || isBoth) {
       installCursorRule(agent.dir, `Perfil Global — ${agent.label}`, agent.note);
     } else {
       installDirectory(agent.dir, `Perfil Global — ${agent.label}`, agent.note);
+      (agent.extraDirs || []).forEach((d) => installDirectory(d, `Perfil Global — ${agent.label} (Extra)`));
+      if (agent.promptDir && fs.existsSync(skillMdPath)) {
+        fs.mkdirSync(agent.promptDir, { recursive: true });
+        fs.copyFileSync(skillMdPath, path.join(agent.promptDir, 'hybrid-orchestrator.md'));
+      }
+      (agent.commandDirs || []).forEach((cmdDir) => {
+        if (fs.existsSync(skillMdPath)) {
+          fs.mkdirSync(cmdDir, { recursive: true });
+          fs.copyFileSync(skillMdPath, path.join(cmdDir, 'hybrid-orchestrator.md'));
+        }
+      });
     }
   });
 }

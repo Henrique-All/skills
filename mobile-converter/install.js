@@ -40,6 +40,23 @@ const AGENT_TARGETS = {
     dir: path.join(homeDir, '.claude', 'skills', 'mobile-converter'),
     type: 'dir',
   },
+  codex: {
+    label: 'ChatGPT Codex / OpenAI Codex',
+    dir: path.join(homeDir, '.codex', 'skills', 'mobile-converter'),
+    extraDirs: [path.join(homeDir, '.agents', 'skills', 'mobile-converter')],
+    promptDir: path.join(homeDir, '.codex', 'prompts'),
+    type: 'dir',
+  },
+  opencode: {
+    label: 'OpenCode',
+    dir: path.join(homeDir, '.config', 'opencode', 'skills', 'mobile-converter'),
+    extraDirs: [path.join(homeDir, '.opencode', 'skills', 'mobile-converter')],
+    commandDirs: [
+      path.join(homeDir, '.config', 'opencode', 'commands'),
+      path.join(homeDir, '.config', 'opencode', 'command')
+    ],
+    type: 'dir',
+  },
   cursor: {
     label: 'Cursor Rules',
     dir: path.join(homeDir, '.cursor', 'rules'),
@@ -83,10 +100,13 @@ function cleanOrPrepare(targetDir) {
 if (!isGlobal || isBoth) {
   console.log('📁 MODO: Instalação no Workspace Local');
   const workspaceSkillsDir = path.resolve(process.cwd(), '.agents', 'skills', 'mobile-converter');
+  const opencodeSkillsDir = path.resolve(process.cwd(), '.opencode', 'skills', 'mobile-converter');
   
   try {
     cleanOrPrepare(workspaceSkillsDir);
     copyRecursiveSync(sourceDir, workspaceSkillsDir);
+    cleanOrPrepare(opencodeSkillsDir);
+    copyRecursiveSync(sourceDir, opencodeSkillsDir);
     console.log(`   ✅ Instalado com sucesso em: ${workspaceSkillsDir}\n`);
   } catch (err) {
     console.error(`   ❌ Falha ao instalar no workspace local: ${err.message}\n`);
@@ -124,6 +144,20 @@ if (isGlobal || isBoth) {
       try {
         cleanOrPrepare(config.dir);
         copyRecursiveSync(sourceDir, config.dir);
+        for (const extraDir of config.extraDirs || []) {
+          cleanOrPrepare(extraDir);
+          copyRecursiveSync(sourceDir, extraDir);
+        }
+        if (config.promptDir && fs.existsSync(skillMdPath)) {
+          fs.mkdirSync(config.promptDir, { recursive: true });
+          fs.copyFileSync(skillMdPath, path.join(config.promptDir, 'mobile-converter.md'));
+        }
+        for (const cmdDir of config.commandDirs || []) {
+          if (fs.existsSync(skillMdPath)) {
+            fs.mkdirSync(cmdDir, { recursive: true });
+            fs.copyFileSync(skillMdPath, path.join(cmdDir, 'mobile-converter.md'));
+          }
+        }
         console.log(`   ✅ Instalado com sucesso!\n`);
       } catch (err) {
         console.error(`   ❌ Falha ao instalar em ${config.label}: ${err.message}\n`);

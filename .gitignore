@@ -7,9 +7,11 @@ node_modules/
 # Cache e artefatos de agentes locais
 .agents/
 .claude/
+.codex/
 .cursor/
 .gemini/
 .kiro/
+.opencode/
 .code-map/
 .craft/
 .mobile/

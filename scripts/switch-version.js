@@ -37,6 +37,8 @@ const ALLOWED_FORWARD_FLAGS = new Set([
   '--target=all',
   '--target=gemini',
   '--target=claude',
+  '--target=codex',
+  '--target=opencode',
   '--target=cursor'
 ]);
 

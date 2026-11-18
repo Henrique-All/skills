@@ -1,7 +1,7 @@
 # ⚡ Enterprise AI Suite (v2.8.1)
 
 > **Plugin Oficial, Enxame de 11 Subagentes Especialistas, 10 Skills de Engenharia e Firewall de Segurança no SO.**  
-> Desenvolvido para apoiar agentes de IA (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) com engenharia de software determinística — reduzindo alucinações de caminho e contrato por meio de evidências estáticas, isolamento de contexto e travas de ciclo de vida.
+> Desenvolvido para apoiar agentes de IA (**Google Antigravity**, **ChatGPT Codex / OpenAI Codex**, **OpenCode**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot**) com engenharia de software determinística — reduzindo alucinações de caminho e contrato por meio de evidências estáticas, isolamento de contexto e travas de ciclo de vida.
 
 [![Release](https://img.shields.io/github/v/release/Henrique-All/skills?color=brightgreen&label=release)](https://github.com/Henrique-All/skills/releases)
 [![CI Status](https://github.com/Henrique-All/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Henrique-All/skills/actions)
@@ -18,6 +18,7 @@
 | **Nova Skill `audit-code-full` (`orch qa`)** | QA 360° que percorre todo o código, executa fuzzing brute-force isolado em subprocesso `node:vm`, valida paleta de cores UI, testa se todos os botões têm ação real e gera o `.code-map/INDEX.md` completo ao final | `audit-code-full` |
 | **Enxame de 4 Subagentes de QA em Paralelo** | `qa-crawler` (6 camadas), `qa-bruteforce` (fuzzing VM + AST), `qa-ui-palette` (tokens de cor & Dual-Theme) e `qa-button-action` (detecção de botões mortos/vazios) | `agents/qa-*.agent.md` |
 | **Despacho Híbrido para Subagentes de IA** | Gera `.code-map/ai-agents-dispatch.json` com o código já estruturado para revisão semântica paralela pelos 4 agentes de IA | `audit-code-full` |
+| **Suporte Nativo a OpenCode & ChatGPT Codex** | Sincronização automática de skills completas, slash commands (`/orch`, `/db-sentinel`, etc.), prompts, subagentes e `AGENTS.md` em `~/.codex/`, `~/.agents/`, `~/.config/opencode/` e `.opencode/` | `install.js` / `doctor.js` |
 
 ## 📦 Recursos Consolidados — Precisão Antes de Volume
 
@@ -38,7 +39,7 @@
 
 ## 📌 Referências & Navegação Rápida
 
-- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Antigravity, Claude Code, Cursor e Monorepo
+- 🚀 [**Instalação Rápida**](#-como-instalar-e-usar) — Antigravity, ChatGPT Codex, OpenCode, Claude Code, Cursor e Monorepo
 - 🎛️ [**Ferramental CLI (Doctor & Init)**](#%EF%B8%8F-ferramental-cli-master) — `orch doctor`, `orch init`, `orch switch`, `orch qa`
 - 💰 [**Economia de Tokens (Estimativa Teórica & Benchmark Real)**](#-efici%C3%AAncia-de-contexto--economia-de-tokens) — Simulação teórica de 9 turnos + benchmark reproduzível
 - 🤖 [**Como Usar no Chat**](#-como-acionar-no-chat-com-seu-agente-de-ia) — Slash commands (`/`) e regras (`@`)
@@ -127,7 +128,7 @@ npm run benchmark:tokens
 
 ## 🤖 Como Acionar no Chat com seu Agente de IA
 
-Você pode acionar as ferramentas tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no Antigravity e Claude Code, ou via **Regras Contextuais (`@`)** no Cursor e Windsurf:
+Você pode acionar as ferramentas tanto por **linguagem natural** quanto diretamente por **Slash Commands (`/`)** no **Antigravity**, **OpenCode**, **ChatGPT Codex** (`/prompts:<skill>` ou `$<skill>`) e **Claude Code**, ou via **Regras Contextuais (`@`)** no **Cursor** e **Windsurf**:
 
 | Slash Command / Atalho | Especialidade | Exemplo de Uso no Chat |
 | :--- | :--- | :--- |
@@ -284,15 +285,29 @@ O monorepo conta com firewall determinístico de comandos no SO (`pre-command-gu
 ## 🚀 Como Instalar e Usar
 
 ### 1. Instalação Unificada (Todos os Agentes e Todas as 10 Skills)
-Instala simultaneamente no **Google Antigravity**, **Claude Code** e **Cursor Rules**:
+Instala simultaneamente no **Google Antigravity**, **ChatGPT Codex (OpenAI Codex)**, **OpenCode**, **Claude Code** e **Cursor Rules**:
 
 ```bash
-# Na raiz do monorepo:
+# Na raiz do monorepo (instala globalmente em todos os agentes):
 npm run install:all
 
-# Ou instalando tanto local quanto globalmente:
+# Ou instalando tanto no projeto local (.agents/ e .opencode/) quanto globalmente:
 npm run install:both
+
+# Instalação direcionada por agente específico:
+node install.js --global --target=codex
+node install.js --global --target=opencode
+node install.js --global --target=claude
+node install.js --global --target=gemini
 ```
+
+| Agente de IA | Diretórios Globais Sincronizados | Diretórios Locais (Workspace) |
+| :--- | :--- | :--- |
+| **Google Antigravity** | `~/.gemini/config/plugins/enterprise-ai-suite/` | `.agents/plugins/enterprise-ai-suite/` |
+| **ChatGPT Codex (OpenAI)** | `~/.codex/skills/`, `~/.agents/skills/`, `~/.codex/prompts/`, `~/.codex/AGENTS.md` | `.agents/skills/` |
+| **OpenCode** | `~/.config/opencode/skills/`, `~/.config/opencode/commands/`, `~/.config/opencode/agents/`, `~/.config/opencode/AGENTS.md` | `.opencode/skills/`, `.agents/skills/` |
+| **Claude Code** | `~/.claude/skills/`, `~/.claude/commands/`, `~/.claude/agents/` | `.claude/skills/` |
+| **Cursor / Windsurf** | `~/.cursor/rules/*.mdc` | `.cursor/rules/*.mdc` |
 
 ### 2. Instalação como Plugin Oficial do Antigravity:
 ```bash
