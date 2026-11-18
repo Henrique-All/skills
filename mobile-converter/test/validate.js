@@ -174,6 +174,55 @@ try {
   hasErrors = true;
 }
 
+// 7. Testar --fix --dry-run e backup .bak em mobile-audit.js
+const os = require('os');
+const tmpMobDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mobile-fix-test-'));
+try {
+  const sampleFile = path.join(tmpMobDir, 'Screen.tsx');
+  const originalCode = 'export const Screen = () => <div className="h-screen">Hello</div>;\n';
+  fs.writeFileSync(sampleFile, originalCode, 'utf-8');
+
+  let dryOut = '';
+  try {
+    dryOut = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${sampleFile}" --fix --dry-run --json`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+  } catch (e) {
+    dryOut = (e.stdout || '').toString();
+  }
+  const dryJson = JSON.parse(dryOut);
+  if (fs.readFileSync(sampleFile, 'utf-8') !== originalCode || !dryJson.dryRun || !Array.isArray(dryJson.plannedFixes) || dryJson.plannedFixes.length === 0) {
+    console.error('❌ mobile-audit.js --fix --dry-run falhou (modificou arquivo ou não listou plannedFixes)');
+    hasErrors = true;
+  } else {
+    console.log('✅ mobile-audit.js --fix --dry-run validado sem alterar arquivo no disco');
+  }
+
+  let fixOut = '';
+  try {
+    fixOut = execSync(`node "${path.join(rootDir, 'scripts', 'mobile-audit.js')}" "${sampleFile}" --fix --json`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+  } catch (e) {
+    fixOut = (e.stdout || '').toString();
+  }
+  const fixJson = JSON.parse(fixOut);
+  const bakFile = `${sampleFile}.bak`;
+  if (!fs.existsSync(bakFile) || fs.readFileSync(bakFile, 'utf-8') !== originalCode || !fixJson.fixed || fixJson.fixed.length === 0) {
+    console.error('❌ mobile-audit.js --fix não criou backup .bak ou não aplicou correção');
+    hasErrors = true;
+  } else {
+    console.log('✅ mobile-audit.js --fix validado com geração de backup .bak');
+  }
+} catch (err) {
+  console.error(`❌ Erro ao testar --fix/--dry-run em mobile-audit.js: ${err.message}`);
+  hasErrors = true;
+} finally {
+  fs.rmSync(tmpMobDir, { recursive: true, force: true });
+}
+
 if (hasErrors) {
   console.error('\n💥 Validação da skill mobile-converter falhou!');
   process.exit(1);

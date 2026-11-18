@@ -8,12 +8,14 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const rootDir = path.resolve(__dirname, '..');
+const rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+
 console.log('===============================================================');
-console.log('🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v2.8.0');
-console.log('   (Skills + Plugin Oficial + Subagentes + Hooks Reativos)');
+console.log(`🧪 MONOREPO CI — VALIDANDO ENTERPRISE AI SUITE v${rootPkg.version}`);
+console.log('   (10 Skills + Plugin Oficial + 11 Subagentes + Hooks Reativos)');
 console.log('===============================================================\n');
 
-const rootDir = path.resolve(__dirname, '..');
 let hasFailures = false;
 
 // 1. VALIDAR COMPONENTES DO PLUGIN NATIVO
@@ -49,39 +51,11 @@ try {
   if (testPostCart.trim() !== '{}') throw new Error('post-edit-cartography.js deve retornar {} silencioso!');
   console.log('   ✅ Scripts de hooks (pre-command-guard.js & post-edit-cartography.js) verificados');
 
-  // Testar funcionalidade do firewall pre-command-guard.js
-  const testDeny = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'DROP TABLE users;' } } }), encoding: 'utf-8' }
-  );
-  const testDenyJson = JSON.parse(testDeny);
-  if (testDenyJson.decision !== 'deny') throw new Error('Firewall falhou ao bloquear "DROP TABLE"!');
+  // Testar funcionalidade do firewall pre-command-guard.js (suíte completa)
+  execSync(`node "${path.join(rootDir, 'scripts', 'test-firewall.js')}"`, { stdio: 'inherit' });
 
-  const testDenyForce = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin main --force' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testDenyForce).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "git push --force"!');
-
-  const testAllowForceWithLease = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'git push origin feat/branch --force-with-lease' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testAllowForceWithLease).decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "git push --force-with-lease"!');
-
-  const testDenyRmDot = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'rm -rf .' } } }), encoding: 'utf-8' }
-  );
-  if (JSON.parse(testDenyRmDot).decision !== 'deny') throw new Error('Firewall falhou ao bloquear "rm -rf ."!');
-
-  const testAllow = execSync(
-    `node "${preGuardPath}"`,
-    { input: JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'npm test' } } }), encoding: 'utf-8' }
-  );
-  const testAllowJson = JSON.parse(testAllow);
-  if (testAllowJson.decision !== 'allow') throw new Error('Firewall bloqueou incorretamente "npm test"!');
-  console.log('   ✅ Firewall de segurança testado: Bloqueio de DROP TABLE, git push --force, rm -rf . & aprovação de --force-with-lease e npm test');
+  // Testar segurança do instalador e seletor de versão (install.js & switch-version.js)
+  execSync(`node "${path.join(rootDir, 'scripts', 'test-install-security.js')}"`, { stdio: 'inherit' });
 
   // Validar paridade dos utilitários compartilhados entre frontend-craftsman e mobile-converter
   const craftBlocks = fs.readFileSync(path.join(rootDir, 'frontend-craftsman', 'scripts', 'lib', 'style-blocks.js'), 'utf-8');
@@ -119,7 +93,7 @@ try {
 }
 
 // 2. VALIDAR SUBAGENTES DEDICADOS
-console.log('\n🤖 [2/3] Validando Subagentes Especialistas (agents/)...');
+console.log('\n🤖 [2/3] Validando 11 Subagentes Especialistas (agents/)...');
 const expectedSubagents = [
   'cartographer.agent.md',
   'route-guard.agent.md',
@@ -133,6 +107,12 @@ const expectedSubagents = [
   'qa-ui-palette.agent.md',
   'qa-button-action.agent.md'
 ];
+
+const actualAgentFiles = fs.readdirSync(path.join(rootDir, 'agents')).filter(f => f.endsWith('.agent.md'));
+if (actualAgentFiles.length !== expectedSubagents.length) {
+  console.error(`   ❌ Contagem de subagentes divergente em agents/: ${actualAgentFiles.length} (esperado ${expectedSubagents.length})`);
+  hasFailures = true;
+}
 
 for (const agentFile of expectedSubagents) {
   const agentPath = path.join(rootDir, 'agents', agentFile);
@@ -151,18 +131,44 @@ for (const agentFile of expectedSubagents) {
 }
 
 // 3. VALIDAR SKILLS INDIVIDUAIS
-console.log('\n📚 [3/3] Validando Testes Unitários de Cada Skill...');
+console.log('\n📚 [3/3] Validando Testes Unitários de Cada uma das 10 Skills...');
 const entries = fs.readdirSync(rootDir, { withFileTypes: true });
 const skillDirs = entries
   .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && e.name !== 'scripts' && e.name !== 'agents' && e.name !== 'rules')
   .filter((e) => fs.existsSync(path.join(rootDir, e.name, 'SKILL.md')))
   .map((e) => e.name);
 
+if (skillDirs.length !== 10) {
+  console.error(`   ❌ Contagem de skills divergente: ${skillDirs.length} (esperado 10)`);
+  hasFailures = true;
+}
+
+const readmeContent = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf-8');
+if (/7\s+subagentes/i.test(readmeContent) || /9\s+skills/i.test(readmeContent)) {
+  console.error('   ❌ README.md ainda contém contagens desatualizadas ("7 subagentes" ou "9 skills")!');
+  hasFailures = true;
+}
+
 console.log(`🔍 Skills detectadas (${skillDirs.length}): ${skillDirs.join(', ')}\n`);
 
 for (const skillName of skillDirs) {
   const skillPath = path.join(rootDir, skillName);
   console.log(`▶️  Testando skill: [${skillName}]...`);
+
+  // Validar frontmatter YAML (name, description) e arquivos referenciados em references/ no SKILL.md
+  const skillMdContent = fs.readFileSync(path.join(skillPath, 'SKILL.md'), 'utf-8');
+  const fmMatch = skillMdContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fmMatch || !/^name:\s*\S+/m.test(fmMatch[1]) || !/^description:\s*\S+/m.test(fmMatch[1])) {
+    console.error(`❌ [${skillName}/SKILL.md] Frontmatter YAML inválido (name e description obrigatórios)!`);
+    hasFailures = true;
+  }
+  const refMatches = [...skillMdContent.matchAll(/references\/[A-Za-z0-9_./-]+\.md/g)].map(m => m[0]);
+  for (const refRel of refMatches) {
+    if (!fs.existsSync(path.join(skillPath, refRel))) {
+      console.error(`❌ [${skillName}/SKILL.md] Referência quebrada: ${refRel} não existe!`);
+      hasFailures = true;
+    }
+  }
   
   try {
     execSync('npm test', { cwd: skillPath, stdio: 'inherit' });
@@ -171,6 +177,33 @@ for (const skillName of skillDirs) {
     console.error(`❌ [${skillName}] falhou nos testes!\n`);
     hasFailures = true;
   }
+}
+
+// 4. VALIDAR HIGIENE DE LINKS, ÂNCORAS E AUSÊNCIA DE CAMINHOS LOCAIS HARDCODED
+try {
+  const headings = [...readmeContent.matchAll(/^#{1,6}\s+(.+)$/gm)].map(m =>
+    m[1].trim().toLowerCase().replace(/[`*~]/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s/g, '-')
+  );
+  for (const m of readmeContent.matchAll(/\[([^\]]+)\]\(#([^)]+)\)/g)) {
+    const anchor = decodeURIComponent(m[2]).toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '');
+    if (!headings.includes(anchor)) {
+      throw new Error(`Âncora quebrada no README.md: #${m[2]}`);
+    }
+  }
+  const tracked = execSync('git ls-files', { cwd: rootDir, encoding: 'utf-8' }).split('\n').filter(Boolean);
+  for (const rel of tracked) {
+    if (rel === 'AUDIT_REPORT.md' || rel === 'scripts/test-all.js') continue;
+    const abs = path.join(rootDir, rel);
+    if (!fs.existsSync(abs) || fs.statSync(abs).isDirectory()) continue;
+    const txt = fs.readFileSync(abs, 'utf-8');
+    if (/file:\/\/\/[a-zA-Z]:\/Users\//i.test(txt)) {
+      throw new Error(`Caminho local hardcoded detectado em ${rel}`);
+    }
+  }
+  console.log('✅ Higiene geral validada: âncoras do README, frontmatters SKILL.md, references/ e ausência de caminhos pessoais.');
+} catch (err) {
+  console.error(`❌ Falha de higiene geral: ${err.message}`);
+  hasFailures = true;
 }
 
 if (hasFailures) {

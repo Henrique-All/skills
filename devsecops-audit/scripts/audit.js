@@ -35,6 +35,8 @@ const sarifArg = args.find((a) => a === '--sarif' || a.startsWith('--sarif='));
 const isSarifOutput = Boolean(sarifArg);
 const sarifOutFile = sarifArg && sarifArg.includes('=') ? sarifArg.split('=')[1] : null;
 const shouldFix = args.includes('--fix') || args.includes('--autofix');
+const isDryRun = args.includes('--dry-run');
+const noBackup = args.includes('--no-backup');
 const pilaresArg = args.find((a) => a.startsWith('--pilares=') || a.startsWith('--pillars='));
 const targetDirArg = args.find((a) => !a.startsWith('--'));
 
@@ -249,6 +251,12 @@ if (!selectedPilares || selectedPilares.includes(16)) {
 // Pilar 2, 3, 4, 5, 6, 7, 8, 9, 12, 14, 15, 18: Padrões estáticos no código
 for (const file of codeFiles) {
   try {
+    // Ignora arquivos de suíte de testes (.test.js, .spec.js, .check.js) nas regras de lógica de aplicação
+    // (o Pilar 16 acima continua escaneando todos os arquivos em busca de segredos reais).
+    if (/\.(?:test|spec|check)\.[jt]sx?$/i.test(file)) {
+      continue;
+    }
+
     const content = fs.readFileSync(file, 'utf-8');
 
     // Ignora o próprio motor de auditoria para evitar falsos positivos nos padrões de regex
@@ -261,7 +269,7 @@ for (const file of codeFiles) {
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
       const trimmedLine = line.trim();
-      const isComment = trimmedLine.startsWith('//') || trimmedLine.startsWith('*') || trimmedLine.startsWith('/*') || trimmedLine.startsWith('#');
+      const isComment = trimmedLine.startsWith('//') || trimmedLine.startsWith('*') || trimmedLine.startsWith('/*') || trimmedLine.startsWith('#') || /^\d+\.\s/.test(trimmedLine);
       if (isComment) return;
 
       // =========================================================================
@@ -1195,11 +1203,12 @@ if (!selectedPilares || selectedPilares.includes(12)) {
   }
 }
 
-// 4. Autofix (se ativado via --fix / --autofix) ANTES da consolidação do relatório
-// Cada regra corrige só a linha (ou o pacote) do próprio achado. O achado só sai do relatório
-// quando foi corrigido de fato, e o arquivo só é gravado quando o conteúdo mudou.
+// 4. Autofix (se ativado via --fix / --autofix, ou simulação --dry-run) ANTES da consolidação do relatório
+// Por padrão a ferramenta é somente-leitura. Quando --fix é usado sem --dry-run, cria backup .bak antes de gravar.
 const fixedFiles = new Set();
-if (shouldFix && findings.length > 0) {
+const backupFiles = new Set();
+const plannedFixes = [];
+if ((shouldFix || isDryRun) && findings.length > 0) {
   const fixableRuleIds = new Set(['FRONTEND_REVERSE_TABNABBING', 'COOKIE_INSECURE_FLAGS', 'SUPPLY_CHAIN_KNOWN_CVE']);
   const installCommandByLockfile = { 'package-lock.json': 'npm install', 'pnpm-lock.yaml': 'pnpm install', 'yarn.lock': 'yarn install' };
 
@@ -1289,21 +1298,36 @@ if (shouldFix && findings.length > 0) {
       }
 
       if (updated !== original) {
-        fs.writeFileSync(absFile, updated, 'utf-8');
-        fixedFiles.add(relFile);
+        if (isDryRun) {
+          plannedFixes.push({
+            file: relFile,
+            rules: fixedHere.map((idx) => findings[idx].id)
+          });
+        } else {
+          if (!noBackup) {
+            fs.writeFileSync(`${absFile}.bak`, original, 'utf-8');
+            backupFiles.add(`${relFile}.bak`);
+          }
+          fs.writeFileSync(absFile, updated, 'utf-8');
+          fixedFiles.add(relFile);
+          fixedHere.forEach((idx) => fixedIndexes.add(idx));
+          remediationUpdates.forEach(({ idx, text }) => { findings[idx].remediation = text; });
+        }
       }
-      fixedHere.forEach((idx) => fixedIndexes.add(idx));
-      remediationUpdates.forEach(({ idx, text }) => { findings[idx].remediation = text; });
     } catch {
       // Arquivo ilegível ou JSON inválido: nada é corrigido e os achados continuam no relatório
     }
   }
 
-  // Remove do relatório só os achados corrigidos de fato (de trás para frente)
-  Array.from(fixedIndexes).sort((a, b) => b - a).forEach((idx) => findings.splice(idx, 1));
+  if (!isDryRun) {
+    // Remove do relatório só os achados corrigidos de fato (de trás para frente)
+    Array.from(fixedIndexes).sort((a, b) => b - a).forEach((idx) => findings.splice(idx, 1));
+  }
 
-  if (fixedFiles.size > 0 && !isJsonOutput && !isSarifOutput) {
-    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura.\n`);
+  if (isDryRun && plannedFixes.length > 0 && !isJsonOutput && !isSarifOutput) {
+    console.log(`🔍 [DRY-RUN] ${plannedFixes.length} arquivo(s) seriam corrigidos por --fix (nenhum arquivo modificado).\n`);
+  } else if (fixedFiles.size > 0 && !isJsonOutput && !isSarifOutput) {
+    console.log(`🔧 [AUTO-FIX] ${fixedFiles.size} arquivo(s) corrigidos automaticamente de forma segura (backups .bak gerados).\n`);
   }
 }
 
@@ -1337,6 +1361,9 @@ const report = {
     medium: mediumCount,
     low: lowCount,
     autoFixedFiles: Array.from(fixedFiles),
+    backupFiles: Array.from(backupFiles),
+    dryRun: isDryRun,
+    plannedFixes,
     suppressedInline: processed.meta.suppressed.length,
     baselined: processed.meta.baselined,
     baselineUpdated: processed.meta.baselineUpdated,

@@ -423,7 +423,7 @@ const htmlContent = `<!DOCTYPE html>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary);">Mapeamento 360° em 6 camadas orientado a evidência.</p>
         ${hasGraph 
-          ? `<a class="eco-action-btn" href="file:///${codeMapHtml.replace(/\\/g, '/')}" target="_blank">🌐 Abrir Grafo 360° ↗</a>`
+          ? `<a class="eco-action-btn" href="file:///${codeMapHtml.replace(/\\/g, '/')}" target="_blank" rel="noopener noreferrer">🌐 Abrir Grafo 360° ↗</a>`
           : `<span class="eco-action-btn" style="opacity: 0.6; cursor: default;">Grafo em geração...</span>`
         }
       </div>
@@ -436,7 +436,7 @@ const htmlContent = `<!DOCTYPE html>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary);">Molas Framer Motion, tokens refinados e anti-AI slop.</p>
         ${hasCraft 
-          ? `<a class="eco-action-btn" href="file:///${craftPreviewHtml.replace(/\\/g, '/')}" target="_blank">🎨 Abrir Preview Visual ↗</a>`
+          ? `<a class="eco-action-btn" href="file:///${craftPreviewHtml.replace(/\\/g, '/')}" target="_blank" rel="noopener noreferrer">🎨 Abrir Preview Visual ↗</a>`
           : `<span class="eco-action-btn" style="opacity: 0.6; cursor: default;">Preview em geração...</span>`
         }
       </div>

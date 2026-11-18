@@ -16,6 +16,11 @@ const vm = require('vm');
 
 const IGNORE_DIRS = new Set([
   'node_modules',
+  'vendor',
+  'third_party',
+  'third-party',
+  'bower_components',
+  'external',
   '.git',
   'dist',
   'build',
@@ -27,6 +32,11 @@ const IGNORE_DIRS = new Set([
   '.plan',
   '.swarm'
 ]);
+
+const MAX_FILE_FUZZ_MS = 800;
+const MAX_FUNCTIONS_PER_FILE = 25;
+const VM_BOOTSTRAP_TIMEOUT_MS = 150;
+const VM_CALL_TIMEOUT_MS = 25;
 
 const CODE_EXTS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.html', '.css', '.scss', '.prisma', '.sql']);
 const UI_EXTS = new Set(['.jsx', '.tsx', '.vue', '.svelte', '.html', '.css', '.scss']);
@@ -163,8 +173,12 @@ function executeRuntimeFuzzOnFile(content, relPath, fuzzVectors) {
 
   const fnHeaderRegex = /(export\s+(?:default\s+)?)?function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*\{/g;
   let match;
+  const fileDeadline = Date.now() + MAX_FILE_FUZZ_MS;
 
   while ((match = fnHeaderRegex.exec(content)) !== null) {
+    if (Date.now() > fileDeadline || runtimeResults.functionsExecutedInVm >= MAX_FUNCTIONS_PER_FILE) {
+      break;
+    }
     const isExported = Boolean(match[1]) || exportedNames.has(match[2]);
     const fnName = match[2];
     if (!isExported) continue;
@@ -192,57 +206,49 @@ function executeRuntimeFuzzOnFile(content, relPath, fuzzVectors) {
 
     const lineNum = content.slice(0, match.index).split('\n').length;
 
-    const sandbox = {
-      console: { log: () => {}, error: () => {}, warn: () => {} },
-      JSON,
-      Math,
-      Number,
-      String,
-      Boolean,
-      Array,
-      Object,
-      RegExp,
-      Date,
-      Error,
-      TypeError,
-      RangeError,
-      SyntaxError,
-      parseInt,
-      parseFloat,
-      isNaN,
-      path: {
-        extname: () => '.js',
-        basename: () => 'mock.js',
-        join: (...p) => p.filter(Boolean).join('/'),
-        resolve: (...p) => p.filter(Boolean).join('/'),
-        relative: () => 'mock.js',
-        dirname: () => '.'
-      },
-      fs: {
-        existsSync: () => false,
-        readFileSync: () => '',
-        readdirSync: () => [],
-        statSync: () => ({ isDirectory: () => false, isFile: () => true, size: 0 }),
-        writeFileSync: () => {},
-        mkdirSync: () => {},
-        copyFileSync: () => {},
-        rmSync: () => {}
-      }
-    };
-
     try {
-      const context = vm.createContext(sandbox);
-      vm.runInContext(fullFnCode, context, { timeout: 25 });
-      if (typeof sandbox[fnName] !== 'function') continue;
+      // Cria contexto sem expor construtores do host (evita escape via Object.constructor('return process')())
+      // Bloqueia eval/Function (codeGeneration.strings=false) e drena microtasks dentro do timeout (microtaskMode='afterEvaluate')
+      const context = vm.createContext(Object.create(null), {
+        codeGeneration: { strings: false, wasm: false },
+        microtaskMode: 'afterEvaluate'
+      });
+
+      const bootstrapMocks = `
+        globalThis.console = { log: () => {}, error: () => {}, warn: () => {} };
+        globalThis.path = {
+          extname: () => '.js',
+          basename: () => 'mock.js',
+          join: (...p) => p.filter(Boolean).join('/'),
+          resolve: (...p) => p.filter(Boolean).join('/'),
+          relative: () => 'mock.js',
+          dirname: () => '.'
+        };
+        globalThis.fs = {
+          existsSync: () => false,
+          readFileSync: () => '',
+          readdirSync: () => [],
+          statSync: () => ({ isDirectory: () => false, isFile: () => true, size: 0 }),
+          writeFileSync: () => {},
+          mkdirSync: () => {},
+          copyFileSync: () => {},
+          rmSync: () => {}
+        };
+      `;
+      vm.runInContext(bootstrapMocks, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
+      vm.runInContext(fullFnCode, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
+      const isFn = vm.runInContext(`typeof ${fnName} === 'function'`, context, { timeout: VM_BOOTSTRAP_TIMEOUT_MS });
+      if (!isFn) continue;
 
       runtimeResults.functionsExecutedInVm++;
       let crashedForFn = false;
 
       for (const vec of fuzzVectors) {
+        if (Date.now() > fileDeadline) break;
         runtimeResults.realRuntimeCalls++;
         try {
-          sandbox.__arg0 = vec.value;
-          const res = vm.runInContext(`${fnName}(__arg0, __arg0, __arg0)`, context, { timeout: 20 });
+          const argExpr = vec.expr || JSON.stringify(vec.value);
+          const res = vm.runInContext(`(() => { const __a = ${argExpr}; return ${fnName}(__a, __a, __a); })()`, context, { timeout: VM_CALL_TIMEOUT_MS });
           if (res && typeof res.catch === 'function') {
             res.catch(() => {});
           }
@@ -281,24 +287,27 @@ function runBruteforceAgent(targetDir) {
   let realRuntimeCalls = 0;
 
   const fuzzVectors = [
-    { label: 'null', value: null },
-    { label: 'undefined', value: undefined },
-    { label: 'NaN', value: NaN },
-    { label: 'empty_string ""', value: '' },
-    { label: 'malformed_json "{bad"', value: '{bad_json' },
-    { label: 'negative -1', value: -1 },
-    { label: 'zero 0', value: 0 },
-    { label: 'MAX_SAFE_INTEGER', value: Number.MAX_SAFE_INTEGER },
-    { label: 'empty_object {}', value: {} },
-    { label: 'empty_array []', value: [] },
-    { label: 'null_proto_obj', value: Object.create(null) }
+    { label: 'null', value: null, expr: 'null' },
+    { label: 'undefined', value: undefined, expr: 'undefined' },
+    { label: 'NaN', value: NaN, expr: 'NaN' },
+    { label: 'empty_string ""', value: '', expr: '""' },
+    { label: 'malformed_json "{bad"', value: '{bad_json', expr: '"{bad_json"' },
+    { label: 'negative -1', value: -1, expr: '-1' },
+    { label: 'zero 0', value: 0, expr: '0' },
+    { label: 'MAX_SAFE_INTEGER', value: Number.MAX_SAFE_INTEGER, expr: 'Number.MAX_SAFE_INTEGER' },
+    { label: 'empty_object {}', value: {}, expr: '({})' },
+    { label: 'empty_array []', value: [], expr: '([])' },
+    { label: 'null_proto_obj', value: Object.create(null), expr: 'Object.create(null)' }
   ];
 
   const jsonParseCallPattern = new RegExp('\\bJSON\\.' + 'parse\\s*\\(');
 
   for (const file of files) {
     const rel = path.relative(targetDir, file).replace(/\\/g, '/');
-    if (/(^|\/)(test|tests|__tests__|fixtures)\//.test(rel) || /\.(test|spec)\.[jt]sx?$/.test(rel)) {
+    if (
+      /(^|\/)(test|tests|__tests__|fixtures|vendor|third_party|third-party|bower_components|external)\//.test(rel) ||
+      /\.(test|spec|min|bundle)\.[jt]sx?$/i.test(rel)
+    ) {
       continue;
     }
 

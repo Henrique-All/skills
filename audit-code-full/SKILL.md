@@ -3,7 +3,7 @@ name: audit-code-full
 description: QA Brute-Force 360° movido por 4 Agentes de IA Paralelos + Motor Estruturado. Anda pelo código inteiro, usa coisa por coisa fazendo teste bruto (bruteforce), analisa semanticamente a UI e o código da UI (paletas de cores e Dual-Theme), rastreia a fundo a funcionalidade real de todos os botões e ao final roda o code-map para listar tudo.
 ---
 
-# 🕵️‍♂️ Audit Code Full — QA Brute-Force 360° com 4 Agentes de IA em Paralelo (Nota: 10.0/10)
+# 🕵️‍♂️ Audit Code Full — QA Brute-Force 360° com 4 Agentes de IA em Paralelo
 
 A **`audit-code-full`** é a skill de **Engenharia de QA Exaustiva (Brute-Force 360°)** onde **4 Agentes de IA trabalham simultaneamente em paralelo** sobre o código já estruturado.
 
@@ -73,3 +73,12 @@ node audit-code-full/scripts/worker-agent.js button-action .
 # 4. Validar integridade da skill e dos 4 agentes:
 cd audit-code-full && npm test
 ```
+
+---
+
+## 🔒 Limites de Segurança e Isolamento do Fuzzing (`node:vm`)
+
+> **Aviso de Segurança:** O módulo nativo `node:vm` do Node.js **não é um sandbox de segurança contra código malicioso arbitrário**. Por isso, o worker `qa-bruteforce` aplica as seguintes barreiras de contenção:
+> 1. **Escopo restrito ao código autoral:** Diretórios de terceiros (`node_modules/`, `vendor/`, `third_party/`, `bower_components/`, `dist/`, `build/`) e pacotes minificados (`*.min.js`, `*.bundle.js`) são estritamente ignorados.
+> 2. **Isolamento em Processo Filho com Limite de Memória e Tempo:** Cada worker roda em um subprocesso separado com `--max-old-space-size=128` (128 MB de heap máximo), `timeout: 15000` (15s com `SIGKILL`) e variáveis de ambiente sanitizadas (sem expor segredos de `process.env`).
+> 3. **Bloqueio de Geração Dinâmica e Loops de Microtasks:** O contexto `vm.createContext` desativa `eval`/`new Function`/WASM (`codeGeneration: { strings: false, wasm: false }`) e usa `microtaskMode: 'afterEvaluate'` com timeout de `20ms` por chamada e orçamento máximo de `250ms` por arquivo.

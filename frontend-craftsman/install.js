@@ -40,6 +40,23 @@ const AGENT_TARGETS = {
     dir: path.join(homeDir, '.claude', 'skills', 'frontend-craftsman'),
     type: 'dir',
   },
+  codex: {
+    label: 'ChatGPT Codex / OpenAI Codex',
+    dir: path.join(homeDir, '.codex', 'skills', 'frontend-craftsman'),
+    extraDirs: [path.join(homeDir, '.agents', 'skills', 'frontend-craftsman')],
+    promptDir: path.join(homeDir, '.codex', 'prompts'),
+    type: 'dir',
+  },
+  opencode: {
+    label: 'OpenCode',
+    dir: path.join(homeDir, '.config', 'opencode', 'skills', 'frontend-craftsman'),
+    extraDirs: [path.join(homeDir, '.opencode', 'skills', 'frontend-craftsman')],
+    commandDirs: [
+      path.join(homeDir, '.config', 'opencode', 'commands'),
+      path.join(homeDir, '.config', 'opencode', 'command')
+    ],
+    type: 'dir',
+  },
   cursor: {
     label: 'Cursor Rules',
     dir: path.join(homeDir, '.cursor', 'rules'),
@@ -116,6 +133,7 @@ if (!isGlobal || isBoth) {
   const localTarget = path.resolve(process.cwd(), '.agents', 'skills', 'frontend-craftsman');
   console.log('📍 MODO: Instalação no Workspace Local (.agents/skills/frontend-craftsman)');
   installDirectory(localTarget, 'Workspace Local (.agents)', 'Disponível imediatamente para este repositório.');
+  installDirectory(path.resolve(process.cwd(), '.opencode', 'skills', 'frontend-craftsman'), 'Workspace Local (.opencode)');
 }
 
 // 2. Instalação Global (Perfis dos Agentes)
@@ -129,7 +147,7 @@ if (isGlobal || isBoth) {
   targetsToInstall.forEach((targetKey) => {
     const target = AGENT_TARGETS[targetKey];
     if (!target) {
-      console.warn(`\n⚠️  Alvo desconhecido: "${targetKey}". Opções: gemini, claude, cursor, all.`);
+      console.warn(`\n⚠️  Alvo desconhecido: "${targetKey}". Opções: gemini, claude, codex, opencode, cursor, all.`);
       return;
     }
 
@@ -137,6 +155,17 @@ if (isGlobal || isBoth) {
       installCursorRule(target.dir, `Perfil Global — ${target.label}`, target.note);
     } else {
       installDirectory(target.dir, `Perfil Global — ${target.label}`, target.note);
+      (target.extraDirs || []).forEach((d) => installDirectory(d, `Perfil Global — ${target.label} (Extra)`));
+      if (target.promptDir && fs.existsSync(skillMdPath)) {
+        fs.mkdirSync(target.promptDir, { recursive: true });
+        fs.copyFileSync(skillMdPath, path.join(target.promptDir, 'frontend-craftsman.md'));
+      }
+      (target.commandDirs || []).forEach((cmdDir) => {
+        if (fs.existsSync(skillMdPath)) {
+          fs.mkdirSync(cmdDir, { recursive: true });
+          fs.copyFileSync(skillMdPath, path.join(cmdDir, 'frontend-craftsman.md'));
+        }
+      });
     }
   });
 }

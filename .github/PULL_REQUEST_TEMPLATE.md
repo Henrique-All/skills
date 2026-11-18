@@ -1,41 +1,24 @@
-## 📌 Descrição da Mudança
+## 📝 Descrição das Mudanças
+<!-- Descreva de forma clara e objetiva o que este Pull Request adiciona, corrige ou melhora -->
 
-Descreva de forma clara e concisa o que este Pull Request introduz, corrige ou melhora.
-
----
-
-## 🎯 Skill(s) Afetada(s)
-- [ ] `hybrid-orchestrator`
+## 🎯 Skills / Componentes Afetados
+Marque os componentes impactados por este PR:
+- [ ] `audit-code-full`
+- [ ] `db-sentinel`
+- [ ] `devsecops-audit`
 - [ ] `frontend-craftsman`
+- [ ] `hybrid-orchestrator`
 - [ ] `mobile-converter`
+- [ ] `orch`
 - [ ] `repo-cartographer`
 - [ ] `route-guard`
-- [ ] `security-audit`
-- [ ] Infraestrutura / Monorepo (`scripts/`, `install.js`, CI)
+- [ ] `test-forge`
+- [ ] `agents/` (11 Subagentes) / `shared/` / Infraestrutura / CI / `install.js`
 
----
-
-## 📋 Tipo de Alteração
-- [ ] 🚀 Nova funcionalidade / Nova ferramenta CLI
-- [ ] 🐛 Correção de bug
-- [ ] 📝 Documentação / Exemplos
-- [ ] 🧪 Novos testes de validação
-- [ ] ⚡ Refatoração de desempenho sem alterar comportamento
-
----
-
-## ✅ Checklist de Qualidade Obrigatório
-
-Marque todos os itens antes de solicitar review:
-
-- [ ] **Zero Dependências:** Todos os novos scripts em `scripts/` utilizam apenas módulos nativos do Node.js.
-- [ ] **Testes Integrados:** Os novos arquivos foram adicionados ao `requiredFiles` do `test/validate.js` correspondente.
-- [ ] **Bateria Passando:** O comando `npm test` foi executado na raiz e todas as skills passaram com sucesso.
-- [ ] **Documentação Atualizada:** O `README.md` da respectiva skill e o `README.md` raiz foram atualizados com os novos comandos.
-- [ ] **Nota 10 Mantida:** A alteração adiciona garantias determinísticas, segurança ou feedback visual, mantendo a excelência do ecossistema.
-- [ ] **Proteção da Master:** O PR foi criado a partir de uma branch temática (`feat/...` ou `fix/...`) e não da master.
-
----
-
-## 📸 Evidências / Demonstração (se aplicável)
-Adicione capturas de tela, saídas de terminal ou logs de execução demonstrando o funcionamento.
+## ✅ Checklist de Qualidade e Segurança
+- [ ] Executei `npm test` e `npm run doctor` localmente e todas as 10 skills e 11 subagentes passaram sem erros.
+- [ ] Caso tenha alterado `shared/`, executei `node scripts/sync-shared.js`.
+- [ ] Caso tenha alterado versões, executei `node scripts/sync-versions.js --check`.
+- [ ] O frontmatter YAML do `SKILL.md` (`name`, `description`) continua válido e as referências em `references/` existem.
+- [ ] Nenhum segredo, token, `.env` ou caminho absoluto pessoal foi incluído nos commits.
+- [ ] A documentação (`README.md` / `CHANGELOG.md`) foi atualizada se aplicável.

@@ -68,6 +68,8 @@ Regras: ${Object.keys(RULES).join(', ')}`);
 
 const asJson = has('--json');
 const shouldFix = has('--fix');
+const isDryRun = has('--dry-run');
+const noBackup = has('--no-backup');
 const minScore = Number(opt('min-score', has('--strict') ? 85 : 0)) || 0;
 const targets = argv.filter((a) => !a.startsWith('-'));
 if (targets.length === 0) targets.push('.');
@@ -560,8 +562,9 @@ function runAudit(files) {
   });
 }
 
-function applyFixes(results) {
+function applyFixes(results, { dryRun = false, createBackup = true } = {}) {
   const applied = [];
+  const backups = [];
   for (const r of results) {
     if (!r.fixes.length) continue;
     const content = fs.readFileSync(r.filePath, 'utf8');
@@ -576,9 +579,16 @@ function applyFixes(results) {
       else lines[fx.line - 1] = fx.text;
       applied.push({ file: r.rel, line: fx.line, ruleId: fx.ruleId });
     }
-    fs.writeFileSync(r.filePath, lines.join('\n'), 'utf8');
+    const updated = lines.join('\n');
+    if (!dryRun && updated !== content) {
+      if (createBackup) {
+        fs.writeFileSync(`${r.filePath}.bak`, content, 'utf8');
+        backups.push(`${r.rel}.bak`);
+      }
+      fs.writeFileSync(r.filePath, updated, 'utf8');
+    }
   }
-  return applied;
+  return { applied, backups };
 }
 
 // ---------------------------------------------------------------------------
@@ -591,9 +601,17 @@ for (const t of targets) collect(path.resolve(process.cwd(), t), files, missing)
 
 let results = runAudit(files);
 let fixed = [];
-if (shouldFix) {
-  fixed = applyFixes(results);
+let plannedFixes = [];
+let backupFiles = [];
+if (shouldFix && isDryRun) {
+  plannedFixes = applyFixes(results, { dryRun: true, createBackup: false }).applied;
+} else if (shouldFix) {
+  const fixRes = applyFixes(results, { dryRun: false, createBackup: !noBackup });
+  fixed = fixRes.applied;
+  backupFiles = fixRes.backups;
   if (fixed.length) results = runAudit(files);
+} else if (isDryRun) {
+  plannedFixes = applyFixes(results, { dryRun: true, createBackup: false }).applied;
 }
 
 const rawFindings = results.flatMap((r) => r.findings);
@@ -626,6 +644,9 @@ if (asJson) {
     baselined: processed.meta.baselined,
     findings,
     fixed,
+    plannedFixes,
+    backupFiles,
+    dryRun: isDryRun,
     parseErrors,
     note: 'Análise estática. Sobreposição real e layout final exigem visual-check.js.',
   }, null, 2));

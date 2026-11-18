@@ -13,15 +13,17 @@ const rootDir = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const command = args[0] || 'help';
 
-// Scripts de skill: monorepo (<raiz>/<skill>) ou plugin instalado (<raiz>/skills/<skill>)
+// Scripts de skill: monorepo (<raiz>/<skill>), plugin (<raiz>/skills/<skill>) ou diretório irmão (<raiz>/../<skill>)
 const auditCandidates = [
   path.join(rootDir, 'devsecops-audit', 'scripts', 'audit.js'),
-  path.join(rootDir, 'skills', 'devsecops-audit', 'scripts', 'audit.js')
+  path.join(rootDir, 'skills', 'devsecops-audit', 'scripts', 'audit.js'),
+  path.join(rootDir, '..', 'devsecops-audit', 'scripts', 'audit.js')
 ];
 
 const qaCandidates = [
   path.join(rootDir, 'audit-code-full', 'scripts', 'audit-full.js'),
-  path.join(rootDir, 'skills', 'audit-code-full', 'scripts', 'audit-full.js')
+  path.join(rootDir, 'skills', 'audit-code-full', 'scripts', 'audit-full.js'),
+  path.join(rootDir, '..', 'audit-code-full', 'scripts', 'audit-full.js')
 ];
 
 const commands = {

@@ -41,10 +41,10 @@ console.log(`${colors.gray}Verificando runtime, configurações de IA, subagente
 // 1. Runtime & Ferramental
 const nodeVer = process.version;
 const major = parseInt(nodeVer.replace('v', '').split('.')[0], 10);
-if (major >= 18) {
-  report('Runtime', `Node.js (${nodeVer})`, 'PASS', 'Compatível com especificações modernas (Node >= 18)');
+if (major >= 20) {
+  report('Runtime', `Node.js (${nodeVer})`, 'PASS', 'Compatível com especificações LTS modernas (Node >= 20)');
 } else {
-  report('Runtime', `Node.js (${nodeVer})`, 'FAIL', 'Necessário Node.js >= 18.0.0');
+  report('Runtime', `Node.js (${nodeVer})`, 'FAIL', 'Necessário Node.js >= 20.0.0');
 }
 
 try {
@@ -173,6 +173,22 @@ if (fs.existsSync(antigravityGlobalPlugin)) {
   report('Integrações', 'Google Antigravity (Global)', 'PASS', 'Plugin instalado em ~/.gemini/config/plugins/enterprise-ai-suite');
 } else {
   report('Integrações', 'Google Antigravity (Global)', 'PASS', 'Workspace local ativo (instalação global opcional via npm run install:plugin:global)');
+}
+
+const codexGlobalSkill = path.join(homeDir, '.codex', 'skills', 'orch', 'SKILL.md');
+const agentsGlobalDbScript = path.join(homeDir, '.agents', 'skills', 'db-sentinel', 'scripts', 'db-audit.js');
+if (fs.existsSync(codexGlobalSkill) && fs.existsSync(agentsGlobalDbScript)) {
+  report('Integrações', 'ChatGPT Codex / OpenAI Codex (Global)', 'PASS', 'Skills completas + scripts sincronizados em ~/.codex/skills e ~/.agents/skills');
+} else {
+  report('Integrações', 'ChatGPT Codex / OpenAI Codex (Global)', 'WARN', 'Skills globais do Codex ausentes ou incompletas. Execute: npm run install:both');
+}
+
+const opencodeGlobalSkill = path.join(homeDir, '.config', 'opencode', 'skills', 'orch', 'SKILL.md');
+const opencodeGlobalCmd = path.join(homeDir, '.config', 'opencode', 'commands', 'orch.md');
+if (fs.existsSync(opencodeGlobalSkill) && fs.existsSync(opencodeGlobalCmd)) {
+  report('Integrações', 'OpenCode (Global Skills & Commands)', 'PASS', 'Skills e comandos /orch sincronizados em ~/.config/opencode/{skills,commands}');
+} else {
+  report('Integrações', 'OpenCode (Global Skills & Commands)', 'WARN', 'Skills/comandos do OpenCode ausentes. Execute: npm run install:both');
 }
 
 // 7. Auditoria de Segredos Rastreados no Git

@@ -1,6 +1,6 @@
 {
   "name": "orch-skill",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "Atalho mestre para o Hybrid Orchestrator e Enterprise AI Suite",
   "main": "install.js",
   "scripts": {
@@ -14,5 +14,8 @@
     "skills"
   ],
   "author": "Henrique Alves",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

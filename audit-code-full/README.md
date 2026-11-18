@@ -22,3 +22,8 @@ node scripts/audit-full.js . --json
 npm test
 ```
 
+## 🔒 Limites do Fuzzing em `node:vm`
+- `node:vm` é usado exclusivamente para testar funções exportadas do próprio projeto (ignorando `node_modules/`, `vendor/`, `third_party/`, `*.min.js` e `*.bundle.js`).
+- O worker `qa-bruteforce` executa em subprocesso isolado com limite de memória (`--max-old-space-size=128`), timeout de processo (`15s`), timeout por chamada (`20ms`), orçamento por arquivo (`250ms`), `microtaskMode: 'afterEvaluate'` e `codeGeneration: { strings: false, wasm: false }`.
+- Não execute `audit-full.js` sobre repositórios não confiáveis sem antes inspecioná-los em ambiente containerizado.
+

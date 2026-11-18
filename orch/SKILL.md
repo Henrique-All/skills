@@ -16,11 +16,12 @@ Quando o usuário invocar `/orch <demanda>`:
 ### 🚀 PASSO 1: EXECUÇÃO COMPULSÓRIA DO PIPELINE UNIFICADO
 ⛔ **É PROIBIDO** tentar adivinhar, buscar arquivos no chat manualmente (`grep_search`/`view_file`) ou pular skills sem flag explícita!
 
-1. Execute **IMEDIATAMENTE** a ferramenta `run_command` rodando o pipeline determinístico na CPU local (consumindo 0 tokens da LLM), repassando as flags fornecidas pelo usuário:
-   ```powershell
-   node "$env:USERPROFILE\.gemini\config\plugins\enterprise-ai-suite\bin\orch.js" run "<demanda_do_usuario>"
+1. Execute **IMEDIATAMENTE** a ferramenta de terminal (`run_command` / `bash`) rodando o pipeline determinístico na CPU local (consumindo 0 tokens da LLM), repassando as flags fornecidas pelo usuário:
+   ```bash
+   # Universal (PowerShell, Bash, Zsh ou CMD — Antigravity, OpenCode, ChatGPT Codex e Claude Code):
+   node -e "const fs=require('fs'),os=require('os'),p=require('path'),cp=require('child_process');const c=[p.join(process.cwd(),'bin','orch.js'),p.join(process.cwd(),'.agents','plugins','enterprise-ai-suite','bin','orch.js'),p.join(os.homedir(),'.agents','plugins','enterprise-ai-suite','bin','orch.js'),p.join(os.homedir(),'.gemini','config','plugins','enterprise-ai-suite','bin','orch.js')].find(fs.existsSync);if(!c){console.error('orch.js not found');process.exit(2)}process.exit(cp.spawnSync(process.execPath,[c,'run',...process.argv.slice(1)],{stdio:'inherit'}).status??1)" "<demanda_do_usuario>"
    ```
-   *(Fallback se rodando no monorepo: `node bin/orch.js run "<demanda>"`).*
+   *(Atalhos diretos: PowerShell `node "$env:USERPROFILE\.gemini\config\plugins\enterprise-ai-suite\bin\orch.js" run "<demanda>"` | Bash `node "$HOME/.agents/plugins/enterprise-ai-suite/bin/orch.js" run "<demanda>"` | Monorepo `node bin/orch.js run "<demanda>"`).*
 
 2. **Flags de Foco Direto (S1 Fundação SEMPRE é executada):**
    - `--front` ou `--ui` : Executa **S1 (Cartografia)** ➔ **S3 (UI Craftsman)** + **S4 (Mobile)**

@@ -117,6 +117,41 @@ try {
   const keys = afterBaseline.findings.map((f) => f.fingerprintKey);
   check('Baseline com chave: achado novo na mesma linha aparece', keys.includes('b'), JSON.stringify(keys));
   check('Baseline com chave: achado conhecido some', !keys.includes('a'), JSON.stringify(keys));
+
+  // -------------------------------------------------------------------------
+  // 4. scripts/sync-shared.js: falha ao divergir (--check) e idempotência
+  // -------------------------------------------------------------------------
+  const { execFileSync } = require('child_process');
+  const rootDir = path.resolve(__dirname, '..', '..');
+  const syncScript = path.join(rootDir, 'scripts', 'sync-shared.js');
+  const targetCopy = path.join(rootDir, 'db-sentinel', 'scripts', 'lib', 'suite-core.js');
+  const originalCopyContent = fs.readFileSync(targetCopy, 'utf-8');
+
+  try {
+    // 4a. Provoca divergência temporária em uma cópia e verifica que --check falha (exit 1)
+    fs.writeFileSync(targetCopy, originalCopyContent + '\n// divergence-test\n', 'utf-8');
+    let checkFailedOnDivergence = false;
+    try {
+      execFileSync(process.execPath, [syncScript, '--check'], { stdio: 'pipe' });
+    } catch (err) {
+      checkFailedOnDivergence = err.status === 1;
+    }
+    check('sync-shared.js --check falha (exit 1) quando uma cópia diverge de shared/suite-core.js', checkFailedOnDivergence);
+
+    // 4b. Executa sync-shared.js para restaurar e verifica idempotência na 2ª execução
+    execFileSync(process.execPath, [syncScript], { stdio: 'pipe' });
+    const afterFirstSync = fs.readFileSync(targetCopy, 'utf-8');
+    const secondSyncOut = execFileSync(process.execPath, [syncScript], { encoding: 'utf-8' });
+    const afterSecondSync = fs.readFileSync(targetCopy, 'utf-8');
+
+    check('sync-shared.js restaura a cópia divergente exatamente ao estado canônico', afterFirstSync === originalCopyContent);
+    check('sync-shared.js é idempotente (2ª execução consecutiva não altera nada)',
+      afterSecondSync === afterFirstSync && secondSyncOut.includes('Tudo já estava sincronizado'));
+  } finally {
+    if (fs.readFileSync(targetCopy, 'utf-8') !== originalCopyContent) {
+      fs.writeFileSync(targetCopy, originalCopyContent, 'utf-8');
+    }
+  }
 } catch (e) {
   check('Execução sem exceções', false, e && e.stack ? e.stack : String(e));
 } finally {

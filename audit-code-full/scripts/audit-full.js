@@ -8,7 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execFile, execSync } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 
 const rawArgs = process.argv.slice(2);
 const isJson = rawArgs.includes('--json');
@@ -29,17 +29,33 @@ const colors = {
   gray: '\x1b[90m'
 };
 
+const WORKER_MEMORY_LIMIT_MB = 128;
+const WORKER_TIMEOUT_MS = 15000;
+
 function spawnAgentWorker(agentName, dir) {
   if (typeof agentName !== 'string' || typeof dir !== 'string') return Promise.resolve({});
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
+    // Isola o worker (especialmente qa-bruteforce / node:vm) em processo filho com limite de memória (128MB),
+    // timeout rígido (15s) e variáveis de ambiente sanitizadas (sem vazar segredos do host).
+    const safeEnv = {
+      PATH: process.env.PATH || '',
+      SYSTEMROOT: process.env.SYSTEMROOT || '',
+      HOME: process.env.HOME || process.env.USERPROFILE || '',
+      NODE_ENV: 'test'
+    };
     execFile(
       process.execPath,
-      [workerScript, agentName, dir],
-      { maxBuffer: 10 * 1024 * 1024 },
+      [`--max-old-space-size=${WORKER_MEMORY_LIMIT_MB}`, workerScript, agentName, dir],
+      {
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: WORKER_TIMEOUT_MS,
+        killSignal: 'SIGKILL',
+        env: safeEnv
+      },
       (err, stdout, stderr) => {
         if (err) {
-          return reject(new Error(`Falha no agente ${agentName}: ${stderr || err.message}`));
+          return reject(new Error(`Falha ou timeout no agente ${agentName}: ${stderr || err.message}`));
         }
         try {
           const parsed = JSON.parse(stdout);
@@ -130,7 +146,7 @@ function runFinalCodeMap(dir, crawlerReport, bruteReport, uiReport, buttonReport
   const cartScript = cartographerCandidates.find((p) => fs.existsSync(p));
   if (cartScript) {
     try {
-      execSync(`node "${cartScript}" init "${dir}"`, { cwd: dir, stdio: 'pipe' });
+      execFileSync(process.execPath, [cartScript, 'init', dir], { cwd: dir, stdio: 'pipe', timeout: 15000 });
     } catch {}
   }
 

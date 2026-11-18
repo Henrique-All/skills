@@ -3,21 +3,21 @@
 Agradecemos imensamente pelo seu interesse em contribuir com o **Enterprise AI Skills Monorepo**!  
 Nosso objetivo é fornecer as ferramentas de maior fidelidade, precisão e governança do mundo para Agentes de IA (**Google Antigravity**, **Claude Code**, **Cursor**, **Windsurf**, **Copilot** e **Aider**).
 
-Para manter a qualidade no nível **Nota 10.0/10**, todas as contribuições passam por validação automatizada e revisão rigorosa.
+Para manter a qualidade técnica e a estabilidade do ecossistema, todas as contribuições passam por validação automatizada em CI.
 
 ---
 
 ## 🛡️ Regras de Ouro do Repositório (Invioláveis)
 
 1. **Zero Dependências Externas Obrigatórias nas Skills:**
-   - Todos os scripts em `scripts/` e testes em `test/` devem executar nativamente com módulos padrão do **Node.js** (`fs`, `path`, `http`, `https`, `child_process`, `crypto`, `url`).
+   - Todos os scripts em `scripts/` e testes em `test/` devem executar nativamente com módulos padrão do **Node.js >= 20** (`fs`, `path`, `http`, `https`, `child_process`, `crypto`, `url`, `vm`).
    - Não adicione pacotes externos pesados ao `dependencies` das skills.
-2. **Nota 10.0/10 Inegociável:**
+2. **Ferramental Determinístico e Verificado:**
    - Nenhuma funcionalidade deve ser "apenas um prompt no markdown". Cada skill possui ferramentas determinísticas de terminal (CLI), testes de integridade e saídas estruturadas.
 3. **100% de Testes Passando:**
-   - Antes de abrir qualquer PR, execute `npm test` na raiz. Todas as 6 baterias de testes devem retornar `✅ aprovado`.
-4. **Respeito à Proteção da Branch `master`:**
-   - Ninguém faz push direto na `master`. Todas as alterações entram via **Pull Request (PR)** aprovado e com CI verde no GitHub Actions.
+   - Antes de abrir qualquer PR, execute `npm test` e `npm run doctor` na raiz. Todas as 10 skills e os 11 subagentes devem retornar `✅ aprovado`.
+4. **Proteção da Branch `master`:**
+   - A branch `master` possui bloqueio de *force push* e deleção, exigência de CI verde (`validate-skills` em Node 20, 22 e 24) e política de 1 aprovação em Pull Requests para contribuidores não-administradores (`enforce_admins: false`).
 
 ---
 
@@ -71,7 +71,7 @@ Utilizamos mensagens de commit semânticas e claras:
    ```
 2. Abra um Pull Request apontando para a branch `master` do repositório oficial (`Henrique-All/skills`).
 3. Preencha todos os campos do **Pull Request Template**.
-4. Aguarde a validação dos 3 ambientes do **GitHub Actions** (Node.js 18, 20 e 22).
+4. Aguarde a validação dos 3 ambientes do **GitHub Actions** (Node.js 20, 22 e 24).
 
 ---
 
